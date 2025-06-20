@@ -61,6 +61,9 @@ model Medicine {
   lot            String
   prescriptions  Prescription[]
   salesItems     SaleItem[]
+
+  provider       Provider?     @relation(fields: [providerId], references: [id])
+  providerId     String?       // UUID de proveedor (opcional)
 }
 
 model Sale {
@@ -90,4 +93,17 @@ model AuditLog {
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
   createdAt DateTime @default(now())
+}
+
+model Provider {
+  id        String     @id @default(uuid())
+  name      String
+  contact   String?
+  email     String?
+  phone     String?
+  address   String?
+  taxId     String?    // RNC o identificación fiscal
+  createdAt DateTime   @default(now())
+
+  medicines Medicine[] // Relación inversa a medicamentos
 }

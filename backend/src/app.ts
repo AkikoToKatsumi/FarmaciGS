@@ -7,6 +7,7 @@ import salesRoutes from './routes/sales.routes';
 import clientsRoutes from './routes/clients.routes';
 import reportsRoutes from './routes/reports.routes';
 import rolesRoutes from './routes/roles.routes';
+import providerRoutes from './routes/provider.routes';
 
 dotenv.config();
 
@@ -20,5 +21,6 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/roles', rolesRoutes);
+app.use('/api/provider', providerRoutes);
 
 export default app;
