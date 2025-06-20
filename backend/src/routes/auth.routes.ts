@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, refreshToken, getProfile } from '../controllers/auth.controller';
+import { login, refreshToken } from '../controllers/auth.controller';
 import { validateBody } from '../middleware/validation.middleware';
 import { verifyToken } from '../middleware/auth.middleware';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ const loginSchema = z.object({
 });
 
 router.post('/login', validateBody(loginSchema), login);
-router.post('/refresh', refreshToken);
-router.get('/me', verifyToken, getProfile);
+router.post('/refresh-token', refreshToken);
 
 export default router;
+

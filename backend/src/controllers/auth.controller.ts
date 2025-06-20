@@ -1,29 +1,64 @@
-// src/controllers/auth.controller.ts
 import { Request, Response } from 'express';
+// @ts-ignore
+import bcrypt from 'bcrypt';
 import { prisma } from '../config/database';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import {
+  generateAccessToken,
+  // generateRefreshToken, // Eliminado
+  verifyRefreshToken
+} from '../config/jwt';
+import crypto from 'crypto';
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { email }, include: { role: true } });
 
-  if (!user || !await bcrypt.compare(password, user.password)) {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { role: true }
+  });
+
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ message: 'Credenciales inválidas' });
   }
 
-  const accessToken = jwt.sign({ id: user.id, role: user.role.name }, process.env.JWT_SECRET!, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET!, { expiresIn: '7d' });
+  const payload = {
+    id: user.id,
+    email: user.email,
+    role: user.role.name
+  };
 
-  return res.json({ accessToken, refreshToken, user: { id: user.id, name: user.name, role: user.role.name } });
+  const accessToken = generateAccessToken(payload);
+
+  // 🔒 Generate secure refresh token and store hash
+  const refreshTokenRaw = crypto.randomBytes(64).toString('hex');
+  const refreshTokenHash = crypto.createHash('sha256').update(refreshTokenRaw).digest('hex');
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7); // 7 días
+
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      tokenHash: refreshTokenHash,
+      expiresAt
+    }
+  });
+
+  res.json({ accessToken, refreshToken: refreshTokenRaw, user: payload });
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
-  // Lógica para refrescar el token
-  res.json({ message: 'Token refrescado' });
-};
+  const { token } = req.body;
 
-export const getProfile = async (req: Request, res: Response) => {
-  // Lógica para obtener el perfil del usuario autenticado
-  res.json({ message: 'Perfil del usuario' });
+  if (!token) return res.status(400).json({ message: 'Token requerido' });
+
+  try {
+    const payload = verifyRefreshToken(token);
+    const accessToken = generateAccessToken(
+      typeof payload === 'object' && payload !== null ? payload : {}
+    );
+    res.json({ accessToken });
+  } catch (err) {
+    res.status(403).json({ message: 'Refresh token inválido' });
+  }
 };
