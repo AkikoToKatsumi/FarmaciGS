@@ -25,3 +25,11 @@ export const createSale = async (req: Request, res: Response) => {
 
   return res.status(201).json(sale);
 };
+
+export const getSales = async (req: Request, res: Response) => {
+  // Lógica para obtener ventas
+  // Ejemplo:
+  // const ventas = await Sale.findAll();
+  // return res.json(ventas);
+  res.json({ message: 'Listado de ventas' });
+};

@@ -18,7 +18,7 @@ export const getSalesReport = async (req: Request, res: Response) => {
   return res.json(sales);
 };
 
-export const getLowStockMedicines = async (_: Request, res: Response) => {
+export const getLowStock = async (req: Request, res: Response) => {
   const lowStock = await prisma.medicine.findMany({ where: { stock: { lt: 10 } } });
   return res.json(lowStock);
 };

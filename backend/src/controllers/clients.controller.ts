@@ -12,3 +12,18 @@ export const addClient = async (req: Request, res: Response) => {
   const client = await prisma.client.create({ data: { name, email, phone } });
   return res.status(201).json(client);
 };
+
+export const createClient = async (req: Request, res: Response) => {
+  // Lógica para crear cliente
+  res.status(201).json({ message: 'Cliente creado' });
+};
+
+export const getClientPrescriptions = async (req: Request, res: Response) => {
+  // Lógica para obtener recetas de un cliente
+  res.json({ message: 'Recetas del cliente' });
+};
+
+export const addPrescription = async (req: Request, res: Response) => {
+  // Lógica para agregar una receta a un cliente
+  res.status(201).json({ message: 'Receta agregada' });
+};

@@ -17,3 +17,13 @@ export const login = async (req: Request, res: Response) => {
 
   return res.json({ accessToken, refreshToken, user: { id: user.id, name: user.name, role: user.role.name } });
 };
+
+export const refreshToken = async (req: Request, res: Response) => {
+  // Lógica para refrescar el token
+  res.json({ message: 'Token refrescado' });
+};
+
+export const getProfile = async (req: Request, res: Response) => {
+  // Lógica para obtener el perfil del usuario autenticado
+  res.json({ message: 'Perfil del usuario' });
+};
