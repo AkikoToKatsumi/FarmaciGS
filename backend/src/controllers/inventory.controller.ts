@@ -2,6 +2,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 
+// Función para validar la entrada de los medicamentos
+const validateMedicineInput = async (data: any) => {
+  const { name, lot } = data;
+  if (!name || !lot) {
+    return { isValid: false, message: 'Nombre y lote son requeridos' };
+  }
+  // Otras validaciones según sea necesario
+  return { isValid: true, message: '' };
+};
+
 // Obtener todos los medicamentos
 export const getAllMedicines = async (_req: Request, res: Response) => {
   const medicines = await prisma.medicine.findMany();
@@ -19,6 +29,11 @@ export const getMedicineById = async (req: Request, res: Response) => {
 // Crear medicamento
 export const createMedicine = async (req: Request, res: Response) => {
   const { name, description, stock, price, expirationDate, lot } = req.body;
+
+  const validation = await validateMedicineInput({ name, lot });
+  if (!validation.isValid) {
+    return res.status(400).json({ message: validation.message });
+  }
 
   const newMed = await prisma.medicine.create({
     data: {

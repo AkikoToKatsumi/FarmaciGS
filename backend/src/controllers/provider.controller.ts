@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { validateProviderInput } from '../validators/provider.validator';
 
 export const getProviders = async (_req: Request, res: Response) => {
   const providers = await prisma.provider.findMany();
@@ -16,12 +17,22 @@ export const getProviderById = async (req: Request, res: Response) => {
 };
 
 export const createProvider = async (req: Request, res: Response) => {
+  const { name, email, phone, taxId } = req.body;
+  const validation = await validateProviderInput({ name, email, phone, taxId });
+  if (!validation.isValid) {
+    return res.status(400).json({ message: validation.message });
+  }
   const provider = await prisma.provider.create({ data: req.body });
   res.status(201).json(provider);
 };
 
 export const updateProvider = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const { name, email, phone, taxId } = req.body;
+  const validation = await validateProviderInput({ name, email, phone, taxId, id });
+  if (!validation.isValid) {
+    return res.status(400).json({ message: validation.message });
+  }
   const provider = await prisma.provider.update({ where: { id }, data: req.body });
   res.json(provider);
 };

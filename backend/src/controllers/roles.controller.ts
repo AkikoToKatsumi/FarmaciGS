@@ -2,6 +2,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { validateRoleInput } from '../validators/role.validator';
 
 export const getRoles = async (_: Request, res: Response) => {
   try {
@@ -15,6 +16,12 @@ export const getRoles = async (_: Request, res: Response) => {
 };
 
 export const createRole = async (req: Request, res: Response) => {
+  const validation = await validateRoleInput(req.body);
+
+  if (!validation.isValid) {
+    return res.status(400).json({ message: validation.message });
+  }
+
   const { name, permissions } = req.body;
 
   // Verifica si ya existe un rol con ese nombre

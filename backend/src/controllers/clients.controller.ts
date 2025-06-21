@@ -1,6 +1,8 @@
 // src/controllers/clients.controller.ts
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { validateClientInput } from '../validators/client.validator';
+import { validatePrescriptionInput } from '../validators/prescription.validator';
 
 export const getClients = async (_: Request, res: Response) => {
   const clients = await prisma.client.findMany({ include: { prescriptions: true } });
@@ -16,7 +18,10 @@ export const addClient = async (req: Request, res: Response) => {
 export const createClient = async (req: Request, res: Response) => {
   try {
     const { name, email, phone } = req.body;
-    if (!name) return res.status(400).json({ message: 'El nombre es requerido' });
+    const validation = await validateClientInput({ name, email, phone });
+    if (!validation.isValid) {
+      return res.status(400).json({ message: validation.message });
+    }
     const client = await prisma.client.create({ data: { name, email, phone } });
     res.status(201).json(client);
   } catch (error) {
@@ -28,6 +33,10 @@ export const updateClient = async (req: Request, res: Response) => {
   try {
     const clientId = Number(req.params.id);
     const { name, email, phone } = req.body;
+    const validation = await validateClientInput({ name, email, phone, id: clientId });
+    if (!validation.isValid) {
+      return res.status(400).json({ message: validation.message });
+    }
     const client = await prisma.client.update({
       where: { id: clientId },
       data: { name, email, phone }
@@ -54,6 +63,18 @@ export const getClientPrescriptions = async (req: Request, res: Response) => {
 };
 
 export const addPrescription = async (req: Request, res: Response) => {
+  const clientId = Number(req.params.id);
+  const { medicineIds } = req.body;
+
+  const validation = await validatePrescriptionInput({
+    clientId,
+    medicineIds,
+  });
+
+  if (!validation.isValid) {
+    return res.status(400).json({ message: validation.message });
+  }
+
   // Lógica para agregar una receta a un cliente
   res.status(201).json({ message: 'Receta agregada' });
 };

@@ -4,11 +4,17 @@ import { prisma } from '../config/database';
 import { createAuditLog } from '../services/audit.service';
 import { Parser } from 'json2csv';
 import { AuthRequest } from '../types/express';
+import { validateSaleInput } from '../validators/sale.validator';
 
 // Crear venta
 export const createSale = async (req: AuthRequest, res: Response) => {
   const { clientId, items } = req.body;
   const userId = req.user.id; // <- desde middleware JWT
+
+  const validation = await validateSaleInput({ userId, clientId, items });
+  if (!validation.isValid) {
+    return res.status(400).json({ message: validation.message });
+  }
 
   try {
     let total = 0;

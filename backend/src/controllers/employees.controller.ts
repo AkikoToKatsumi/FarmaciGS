@@ -2,8 +2,15 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import bcrypt from 'bcryptjs';
+import { validateEmployeeInput } from '../validators/employee.validator';
 
 export const createEmployee = async (req: Request, res: Response) => {
+  const validation = await validateEmployeeInput(req.body);
+
+  if (!validation.isValid) {
+    return res.status(400).json({ message: validation.message });
+  }
+
   const { name, email, password, roleId } = req.body;
 
   // Verifica si ya existe un usuario con ese correo
