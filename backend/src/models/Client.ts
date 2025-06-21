@@ -1,64 +1,71 @@
+// Definición de la interfaz para un cliente
 export interface Client {
-  id: number;
-  name: string;
-  phone?: string;
-  email?: string;
-  created_at: Date;
-  prescriptions?: Prescription[];
-  sales?: Sale[];
+  id: number; // Identificador único del cliente
+  name: string; // Nombre del cliente
+  phone?: string; // Teléfono del cliente (opcional)
+  email?: string; // Correo electrónico del cliente (opcional)
+  created_at: Date; // Fecha de creación del cliente
+  prescriptions?: Prescription[]; // Recetas asociadas al cliente (opcional)
+  sales?: Sale[]; // Ventas asociadas al cliente (opcional)
 }
 
+// Datos requeridos para crear un cliente
 export interface CreateClientData {
-  name: string;
-  phone?: string;
-  email?: string;
+  name: string; // Nombre del cliente
+  phone?: string; // Teléfono (opcional)
+  email?: string; // Correo electrónico (opcional)
 }
 
+// Datos permitidos para actualizar un cliente
 export interface UpdateClientData {
-  name?: string;
-  phone?: string;
-  email?: string;
+  name?: string; // Nombre (opcional)
+  phone?: string; // Teléfono (opcional)
+  email?: string; // Correo electrónico (opcional)
 }
 
+// Respuesta de cliente con información adicional
 export interface ClientResponse {
   id: number;
   name: string;
   phone?: string;
   email?: string;
   created_at: Date;
-  total_purchases?: number;
-  last_purchase?: Date;
-  prescriptions_count?: number;
+  total_purchases?: number; // Total de compras realizadas
+  last_purchase?: Date; // Fecha de la última compra
+  prescriptions_count?: number; // Cantidad de recetas
 }
 
+// Cliente con historial de compras y recetas
 export interface ClientWithHistory {
   id: number;
   name: string;
   phone?: string;
   email?: string;
   created_at: Date;
-  purchase_history: ClientPurchaseHistory[];
-  prescriptions: Prescription[];
-  total_spent: number;
-  last_purchase_date?: Date;
+  purchase_history: ClientPurchaseHistory[]; // Historial de compras
+  prescriptions: Prescription[]; // Recetas
+  total_spent: number; // Total gastado
+  last_purchase_date?: Date; // Fecha de la última compra
 }
 
+// Historial de compras de un cliente
 export interface ClientPurchaseHistory {
-  sale_id: number;
-  date: Date;
-  total: number;
-  payment_method?: string;
+  sale_id: number; // ID de la venta
+  date: Date; // Fecha de la venta
+  total: number; // Total de la venta
+  payment_method?: string; // Método de pago (opcional)
   items: Array<{
-    medicine_name: string;
-    quantity: number;
-    price: number;
+    medicine_name: string; // Nombre del medicamento
+    quantity: number; // Cantidad
+    price: number; // Precio
   }>;
 }
 
+// Estadísticas generales de clientes
 export interface ClientStats {
-  total_clients: number;
-  new_clients_this_month: number;
-  active_clients: number;
+  total_clients: number; // Total de clientes
+  new_clients_this_month: number; // Nuevos clientes este mes
+  active_clients: number; // Clientes activos
   top_clients: Array<{
     id: number;
     name: string;
@@ -67,5 +74,6 @@ export interface ClientStats {
   }>;
 }
 
+// Importa las interfaces de Prescription y Sale para asociar con el cliente
 import { Prescription } from './Prescription';
 import { Sale } from './Sale';

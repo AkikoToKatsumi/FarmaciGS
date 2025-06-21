@@ -1,43 +1,49 @@
+// Importa nodemailer para el envío de correos electrónicos
 import * as nodemailer from 'nodemailer';
 import * as path from 'path';
 import * as fs from 'fs';
 import { SaleResponse, Client, Medicine } from '../models';
 
+// Configuración para el envío de emails
 interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
+  host: string; // Servidor SMTP
+  port: number; // Puerto SMTP
+  secure: boolean; // Conexión segura (SSL/TLS)
   auth: {
-    user: string;
-    pass: string;
+    user: string; // Usuario SMTP
+    pass: string; // Contraseña SMTP
   };
 }
 
+// Estructura de un template de email
 interface EmailTemplate {
-  subject: string;
-  html: string;
-  text?: string;
+  subject: string; // Asunto
+  html: string; // Contenido HTML
+  text?: string; // Contenido de texto plano (opcional)
 }
 
+// Estructura para adjuntos de email
 interface EmailAttachment {
-  filename: string;
-  content: Buffer | string;
-  contentType?: string;
+  filename: string; // Nombre del archivo
+  content: Buffer | string; // Contenido
+  contentType?: string; // Tipo MIME (opcional)
 }
 
+// Opciones para enviar un email
 interface SendEmailOptions {
-  to: string | string[];
-  subject: string;
-  html?: string;
-  text?: string;
-  attachments?: EmailAttachment[];
-  cc?: string[];
-  bcc?: string[];
+  to: string | string[]; // Destinatario(s)
+  subject: string; // Asunto
+  html?: string; // Contenido HTML (opcional)
+  text?: string; // Contenido de texto plano (opcional)
+  attachments?: EmailAttachment[]; // Adjuntos (opcional)
+  cc?: string[]; // Copia (opcional)
+  bcc?: string[]; // Copia oculta (opcional)
 }
 
+// Servicio de email
 class EmailService {
-  private transporter!: nodemailer.Transporter;
-  private templatesPath: string;
+  private transporter!: nodemailer.Transporter; // Transportador de nodemailer
+  private templatesPath: string; // Ruta a los templates de email
 
   constructor() {
     this.templatesPath = path.join(__dirname, '../templates/email');
@@ -58,7 +64,7 @@ class EmailService {
       }
     };
 
-    this.transporter = nodemailer.createTransport(config); // ← Cambiado aquí
+    this.transporter = nodemailer.createTransport(config); // Crea el transportador
   }
 
   /**
@@ -456,4 +462,5 @@ ${JSON.stringify(data, null, 2)}
   }
 }
 
+// Exporta una instancia del servicio de email
 export const emailService = new EmailService();

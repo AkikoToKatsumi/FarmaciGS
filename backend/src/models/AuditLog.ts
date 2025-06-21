@@ -1,13 +1,15 @@
+// Definición de la interfaz para un registro de bitácora (audit log)
 export interface AuditLog {
   id: number;
-  user_id?: number;
-  action: string;
-  target_table?: string;
-  target_id?: number;
-  timestamp: Date;
-  user?: User;
+  user_id?: number; // ID del usuario que realizó la acción
+  action: string; // Acción realizada
+  target_table?: string; // Tabla objetivo de la acción
+  target_id?: number; // ID del registro objetivo
+  timestamp: Date; // Fecha y hora de la acción
+  user?: User; // Información del usuario (opcional)
 }
 
+// Datos requeridos para crear un registro de bitácora
 export interface CreateAuditLogData {
   user_id: number;
   action: string;
@@ -15,6 +17,7 @@ export interface CreateAuditLogData {
   target_id?: number;
 }
 
+// Respuesta de un registro de bitácora con detalles de usuario
 export interface AuditLogResponse {
   id: number;
   user_id?: number;
@@ -30,6 +33,7 @@ export interface AuditLogResponse {
   };
 }
 
+// Registro de bitácora con detalles adicionales
 export interface AuditLogWithDetails {
   id: number;
   action: string;
@@ -47,6 +51,7 @@ export interface AuditLogWithDetails {
   user_agent?: string;
 }
 
+// Enum para las acciones posibles en la bitácora
 export enum AuditAction {
   // Usuarios
   USER_LOGIN = 'user_login',
@@ -86,9 +91,10 @@ export enum AuditAction {
   SYSTEM_CONFIG_UPDATE = 'system_config_update'
 }
 
+// Estructura para reportes de auditoría
 export interface AuditReport {
-  period: string;
-  total_actions: number;
+  period: string; // Periodo del reporte
+  total_actions: number; // Total de acciones
   actions_by_type: Array<{
     action: string;
     count: number;
@@ -98,17 +104,19 @@ export interface AuditReport {
     user_name: string;
     actions_count: number;
   }>;
-  recent_activities: AuditLogResponse[];
+  recent_activities: AuditLogResponse[]; // Actividades recientes
 }
 
+// Registro de bitácora de seguridad con detalles adicionales
 export interface SecurityAuditLog extends AuditLog {
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'; // Nivel de severidad
   ip_address?: string;
   user_agent?: string;
   session_id?: string;
   additional_data?: Record<string, any>;
 }
 
+// Filtros para consultar registros de bitácora
 export interface AuditFilters {
   user_id?: number;
   action?: string;
@@ -119,4 +127,5 @@ export interface AuditFilters {
   offset?: number;
 }
 
+// Importa la interfaz de usuario para asociar con la bitácora
 import { User } from './User';

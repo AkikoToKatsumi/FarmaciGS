@@ -1,3 +1,4 @@
+// Importa exec para ejecutar comandos de sistema y promisify para usar promesas
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
@@ -8,8 +9,10 @@ import { notificationService } from './notification.service';
 import { emailService } from './email.service';
 import { createAuditLog } from './audit.service';
 
+// Convierte exec a una función basada en promesas
 const execAsync = promisify(exec);
 
+// Configuración para los respaldos
 interface BackupConfig {
   host: string;
   port: number;
@@ -20,6 +23,7 @@ interface BackupConfig {
   retentionDays: number;
 }
 
+// Resultado de un respaldo
 interface BackupResult {
   success: boolean;
   filename?: string;
@@ -28,17 +32,20 @@ interface BackupResult {
   error?: string;
 }
 
+// Opciones para restaurar un respaldo
 interface RestoreOptions {
   filename: string;
   dropExisting?: boolean;
   createDatabase?: boolean;
 }
 
+// Servicio de respaldos de base de datos
 class BackupService {
   private config: BackupConfig;
   private isRunning = false;
 
   constructor() {
+    // Inicializa la configuración desde variables de entorno o valores por defecto
     this.config = {
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT || '5432'),
@@ -69,7 +76,7 @@ class BackupService {
       const filename = `backup_${this.config.database}_${timestamp}.sql`;
       const filepath = path.join(this.config.backupDir, filename);
 
-      // Comando pg_dump
+      // Comando pg_dump para crear el respaldo
       const command = `PGPASSWORD="${this.config.password}" pg_dump -h ${this.config.host} -p ${this.config.port} -U ${this.config.username} -d ${this.config.database} --verbose --clean --no-owner --no-privileges --format=plain --file="${filepath}"`;
 
       await execAsync(command);
@@ -159,7 +166,6 @@ class BackupService {
         await createAuditLog({
           userId,
           action: AuditAction.BACKUP_RESTORE,
-         
           details: JSON.stringify({
             filename: options.filename,
             duration,
@@ -247,7 +253,6 @@ class BackupService {
         await createAuditLog({
           userId,
           action: 'backup_delete',
-         
           details: JSON.stringify({
             filename
           })
@@ -362,4 +367,5 @@ class BackupService {
   }
 }
 
+// Exporta una instancia del servicio de respaldos
 export const backupService = new BackupService();

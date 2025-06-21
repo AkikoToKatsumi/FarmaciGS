@@ -1,33 +1,40 @@
+// Importa EventEmitter para emitir eventos internos
 import { EventEmitter } from 'events';
+// Importa uuid para generar identificadores únicos
 import { v4 as uuidv4 } from 'uuid';
+// Importa WebSocket para comunicación en tiempo real
 import * as WebSocket from 'ws';
+// Importa modelos relacionados
 import { User, Medicine } from '../models';
 
+// Estructura de una notificación
 interface Notification {
-  id: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  title: string;
-  message: string;
-  user_id?: number;
-  read: boolean;
-  created_at: Date;
-  expires_at?: Date;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: 'system' | 'inventory' | 'sales' | 'user' | 'backup' | 'audit';
-  data?: any;
+  id: string; // Identificador único de la notificación
+  type: 'info' | 'warning' | 'error' | 'success'; // Tipo de notificación
+  title: string; // Título
+  message: string; // Mensaje
+  user_id?: number; // ID del usuario destinatario (opcional)
+  read: boolean; // ¿Leída?
+  created_at: Date; // Fecha de creación
+  expires_at?: Date; // Fecha de expiración (opcional)
+  priority: 'low' | 'medium' | 'high' | 'urgent'; // Prioridad
+  category: 'system' | 'inventory' | 'sales' | 'user' | 'backup' | 'audit'; // Categoría
+  data?: any; // Datos adicionales (opcional)
 }
 
+// Datos requeridos para crear una notificación
 interface CreateNotificationData {
-  type: 'info' | 'warning' | 'error' | 'success';
-  title: string;
-  message: string;
-  user_id?: number;
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
-  category?: 'system' | 'inventory' | 'sales' | 'user' | 'backup' | 'audit';
-  expires_in?: number; // en segundos
-  data?: any;
+  type: 'info' | 'warning' | 'error' | 'success'; // Tipo
+  title: string; // Título
+  message: string; // Mensaje
+  user_id?: number; // Usuario destinatario (opcional)
+  priority?: 'low' | 'medium' | 'high' | 'urgent'; // Prioridad (opcional)
+  category?: 'system' | 'inventory' | 'sales' | 'user' | 'backup' | 'audit'; // Categoría (opcional)
+  expires_in?: number; // Tiempo de expiración en segundos (opcional)
+  data?: any; // Datos adicionales (opcional)
 }
 
+// Servicio de notificaciones
 class NotificationService extends EventEmitter {
   private clients: Set<WebSocket>;
 
@@ -70,7 +77,7 @@ class NotificationService extends EventEmitter {
     return notification;
   }
 
-  // Enviar a todos los clientes
+  // Enviar notificación a todos los clientes WebSocket conectados
   private broadcast(notification: Notification) {
     const payload = JSON.stringify({
       type: 'notification',
@@ -84,6 +91,7 @@ class NotificationService extends EventEmitter {
     }
   }
 
+  // Crear y emitir una notificación simple (ejemplo de uso)
   async create(data: {
     type: 'info' | 'warning' | 'error';
     title: string;
@@ -97,4 +105,5 @@ class NotificationService extends EventEmitter {
   }
 }
 
+// Exporta una instancia del servicio de notificaciones
 export const notificationService = new NotificationService();
