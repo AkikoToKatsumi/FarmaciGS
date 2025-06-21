@@ -14,8 +14,38 @@ export const addClient = async (req: Request, res: Response) => {
 };
 
 export const createClient = async (req: Request, res: Response) => {
-  // Lógica para crear cliente
-  res.status(201).json({ message: 'Cliente creado' });
+  try {
+    const { name, email, phone } = req.body;
+    if (!name) return res.status(400).json({ message: 'El nombre es requerido' });
+    const client = await prisma.client.create({ data: { name, email, phone } });
+    res.status(201).json(client);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al crear cliente' });
+  }
+};
+
+export const updateClient = async (req: Request, res: Response) => {
+  try {
+    const clientId = Number(req.params.id);
+    const { name, email, phone } = req.body;
+    const client = await prisma.client.update({
+      where: { id: clientId },
+      data: { name, email, phone }
+    });
+    res.json(client);
+  } catch (error) {
+    res.status(404).json({ message: 'Cliente no encontrado o error al actualizar' });
+  }
+};
+
+export const deleteClient = async (req: Request, res: Response) => {
+  try {
+    const clientId = Number(req.params.id);
+    await prisma.client.delete({ where: { id: clientId } });
+    res.json({ message: 'Cliente eliminado' });
+  } catch (error) {
+    res.status(404).json({ message: 'Cliente no encontrado o error al eliminar' });
+  }
 };
 
 export const getClientPrescriptions = async (req: Request, res: Response) => {

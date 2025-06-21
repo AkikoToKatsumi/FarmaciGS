@@ -2,11 +2,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { createAuditLog } from '../services/audit.service';
-
-// Extiende Request para incluir user
-interface AuthRequest extends Request {
-  user: any;
-}
+import { Parser } from 'json2csv';
+import { AuthRequest } from '../types/express';
 
 // Crear venta
 export const createSale = async (req: AuthRequest, res: Response) => {
@@ -66,18 +63,30 @@ export const createSale = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Listar todas las ventas
-export const getAllSales = async (_req: Request, res: Response) => {
+// Listar todas las ventas con filtros opcionales
+export const getAllSales = async (req: Request, res: Response) => {
+  const { clientId, userId, startDate, endDate } = req.query;
+
+  const filters: any = {};
+
+  if (clientId) filters.clientId = Number(clientId);
+  if (userId) filters.userId = Number(userId);
+  if (startDate || endDate) {
+    filters.createdAt = {};
+    if (startDate) filters.createdAt.gte = new Date(startDate as string);
+    if (endDate) filters.createdAt.lte = new Date(endDate as string);
+  }
+
   const sales = await prisma.sale.findMany({
+    where: filters,
     include: {
-      items: {
-        include: { medicine: true },
-      },
+      items: { include: { medicine: true } },
       user: true,
       client: true,
     },
     orderBy: { createdAt: 'desc' },
   });
+
   res.json(sales);
 };
 
@@ -94,4 +103,51 @@ export const getSaleById = async (req: Request, res: Response) => {
 
   if (!sale) return res.status(404).json({ message: 'Venta no encontrada' });
   res.json(sale);
+};
+
+export const exportSalesToCSV = async (req: Request, res: Response) => {
+  const { clientId, userId, startDate, endDate } = req.query;
+
+  const filters: any = {};
+  if (clientId) filters.clientId = Number(clientId);
+  if (userId) filters.userId = Number(userId);
+  if (startDate || endDate) {
+    filters.createdAt = {};
+    if (startDate) filters.createdAt.gte = new Date(startDate as string);
+    if (endDate) filters.createdAt.lte = new Date(endDate as string);
+  }
+
+  const sales = await prisma.sale.findMany({
+    where: filters,
+    include: {
+      client: true,
+      user: true,
+      items: {
+        include: {
+          medicine: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const flatSales = sales.map((sale: { id: any; createdAt: { toISOString: () => string; }; user: { name: any; }; client: { name: any; }; total: number; items: any[]; }) => ({
+    id: sale.id,
+    fecha: sale.createdAt.toISOString().split('T')[0],
+    usuario: sale.user.name,
+    cliente: sale.client?.name ?? 'Consumidor Final',
+    total: sale.total.toFixed(2),
+   productos: sale.items.map((i: typeof sale.items[number]) =>`${i.medicine.name} (x${i.quantity})`).join('; ')
+  }));
+
+  const parser = new Parser({
+    fields: ['id', 'fecha', 'usuario', 'cliente', 'total', 'productos'],
+    delimiter: ','
+  });
+
+  const csv = parser.parse(flatSales);
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=ventas.csv');
+  res.status(200).send(csv);
 };

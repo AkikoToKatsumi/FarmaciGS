@@ -17,6 +17,17 @@ export const getRoles = async (_: Request, res: Response) => {
 export const createRole = async (req: Request, res: Response) => {
   const { name, permissions } = req.body;
 
+  // Verifica si ya existe un rol con ese nombre
+  const existingRole = await prisma.role.findUnique({
+    where: { name },
+  });
+
+  if (existingRole) {
+    return res.status(400).json({
+      message: 'El nombre del rol ya está en uso.',
+    });
+  }
+
   try {
     const role = await prisma.role.create({
       data: {
