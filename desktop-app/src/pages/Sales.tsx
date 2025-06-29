@@ -23,7 +23,7 @@ const Sales = () => {
   const [medicines, setMedicines] = useState<any[]>([]);
   const [form, setForm] = useState<SaleForm>({
     clientId: '',
-    items: [],
+    items: [] as SaleItem[],
   });
 
   // Filtro por fechas
@@ -57,9 +57,9 @@ const Sales = () => {
     });
   };
 
-  const handleItemChange = (index: number, field: keyof SaleItem, value: any) => {
+  const handleItemChange = <K extends keyof SaleItem>(index: number, field: K, value: SaleItem[K]) => {
     const updatedItems = [...form.items];
-    updatedItems[index][field] = value;
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
     setForm({ ...form, items: updatedItems });
   };
 

@@ -24,10 +24,10 @@ const App = () => {
             <Route path="/clients" element={<Clients />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<Navigate to="/dashboard" />} />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
           </>
         ) : (
-          <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to="/login" />} />
         )}
       </Routes>
     </Router>
