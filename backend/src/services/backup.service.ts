@@ -3,7 +3,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as cron from 'node-cron';
+import cron from 'node-cron';
 import { AuditAction } from '../models';
 import { notificationService } from './notification.service';
 import { emailService } from './email.service';
@@ -369,3 +369,15 @@ class BackupService {
 
 // Exporta una instancia del servicio de respaldos
 export const backupService = new BackupService();
+
+// Elimina este bloque duplicado al final del archivo:
+// Agendar backup automático diario a las 2:00 AM
+// cron.schedule('0 2 * * *', async () => {
+//   try {
+//     // Cambia el userId por el del sistema o admin (ejemplo: 1)
+//     await createDatabaseBackup(1);
+//     console.log('Backup automático realizado');
+//   } catch (err) {
+//     console.error('Error en backup automático:', err);
+//   }
+// });

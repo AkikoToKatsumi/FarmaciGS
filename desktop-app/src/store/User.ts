@@ -20,3 +20,4 @@ export const useUserStore = create<UserStore>((set) => ({
   setUser: (user, token) => set({ user, token }),
   logout: () => set({ user: null, token: null }),
 }));
+const user = useUserStore((s) => s.user);
