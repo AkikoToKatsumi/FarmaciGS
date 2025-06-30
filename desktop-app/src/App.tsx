@@ -11,6 +11,8 @@ import { useUserStore } from './store/user';
 export default function App() {
   const { user } = useUserStore();
 
+  console.log('Usuario actual:', user);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -26,7 +28,11 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </>
       ) : (
-        <Route path="/" element={<Navigate to="/login" />} />
+        <>
+          <Route path="/" element={<Navigate to="/login" />} />
+          {/* Mensaje temporal para depuración */}
+          <Route path="*" element={<div>No hay usuario autenticado</div>} />
+        </>
       )}
     </Routes>
   );
