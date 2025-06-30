@@ -77,7 +77,7 @@ class Application {
         // Load the app
         if (isDev) {
             this.mainWindow.loadURL('http://localhost:5173');
-            this.mainWindow.webContents.openDevTools();
+            this.mainWindow.webContents.openDevTools(); // para depurar errores en React
         }
         else {
             this.mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
