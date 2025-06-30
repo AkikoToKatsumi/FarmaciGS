@@ -4,7 +4,7 @@ import { useUserStore } from '../store/user';
 import StatCard from '../components/common/StatCard';
 // Asegúrate de instalar recharts y sus tipos ejecutando:
 // npm install recharts
-// npm install --save-dev @types/recharts
+// 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const Dashboard = () => {

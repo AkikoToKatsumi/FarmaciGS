@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
@@ -8,30 +8,26 @@ import Admin from './pages/Admin';
 import Login from './pages/Login';
 import { useUserStore } from './store/user';
 
-const App = () => {
+export default function App() {
   const { user } = useUserStore();
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        {/* Rutas protegidas */}
-        {user ? (
-          <>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/sales" element={<Sales />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-          </>
-        ) : (
-          <Route path="/" element={<Navigate to="/login" />} />
-        )}
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      {/* Rutas protegidas */}
+      {user ? (
+        <>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/sales" element={<Sales />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+        </>
+      ) : (
+        <Route path="/" element={<Navigate to="/login" />} />
+      )}
+    </Routes>
   );
-};
-
-export default App;
+}
