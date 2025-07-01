@@ -3,8 +3,20 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import pool from "../config/db";
 import crypto from "crypto";
-import { generateAccessToken, verifyRefreshToken } from "../config/jwt";
+import jwt from "jsonwebtoken";
 import { logger } from "../config/logger";
+
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
+
+// Generar el token de acceso
+const generateAccessToken = (payload: object) => {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+};
+
+// Verificar el refresh token
+const verifyRefreshToken = (token: string) => {
+  return jwt.verify(token, JWT_SECRET);
+};
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
