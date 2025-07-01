@@ -1,5 +1,6 @@
-import { app, BrowserWindow, Menu, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain, dialog, MenuItemConstructorOptions } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -70,7 +71,7 @@ class Application {
   }
 
   private setupMenu(): void {
-    const template: Electron.MenuItemConstructorOptions[] = [
+    const template: MenuItemConstructorOptions[] = [
       {
         label: 'Archivo',
         submenu: [
@@ -85,15 +86,18 @@ class Application {
           {
             label: 'Exportar Datos',
             click: async () => {
-              const result = await dialog.showSaveDialog(this.mainWindow!, {
-                filters: [
-                  { name: 'JSON', extensions: ['json'] },
-                  { name: 'CSV', extensions: ['csv'] }
-                ]
+              // Pasar la ventana principal como primer argumento para tipado correcto
+              const saveResult = await dialog.showSaveDialog(this.mainWindow!, {
+                title: 'Guardar archivo',
+                defaultPath: 'venta.csv',
               });
-              
-              if (!result.canceled) {
-                this.mainWindow?.webContents.send('export-data', result.filePath);
+
+              // Electron >=7 returns { canceled, filePath }
+              const { canceled, filePath } = saveResult as unknown as Electron.SaveDialogReturnValue;
+
+              if (!canceled && filePath) {
+                const contenido = 'id,nombre,precio\n1,Paracetamol,100'; // Ejemplo de contenido
+                fs.writeFileSync(filePath, contenido, 'utf8');
               }
             }
           },
@@ -232,18 +236,18 @@ class Application {
 
   private setupIpcHandlers(): void {
     // Handle file operations
-    ipcMain.handle('show-save-dialog', async (event, options) => {
+    ipcMain.handle('show-save-dialog', async (event: Electron.IpcMainInvokeEvent, options: Electron.SaveDialogOptions) => {
       const result = await dialog.showSaveDialog(this.mainWindow!, options);
       return result;
     });
 
-    ipcMain.handle('show-open-dialog', async (event, options) => {
+    ipcMain.handle('show-open-dialog', async (event: Electron.IpcMainInvokeEvent, options: Electron.OpenDialogOptions) => {
       const result = await dialog.showOpenDialog(this.mainWindow!, options);
       return result;
     });
 
     // Handle notifications
-    ipcMain.handle('show-notification', (event, title: string, body: string) => {
+    ipcMain.handle('show-notification', (event: Electron.IpcMainInvokeEvent, title: string, body: string) => {
       new Notification(title, { body });
     });
 
