@@ -1,6 +1,6 @@
 // inventory.controller.ts
 import { Request, Response } from 'express';
-import pool from '../db';
+import pool from '../config/db';
 
 const validateMedicineInput = async (data: any) => {
   const { name, lot } = data;

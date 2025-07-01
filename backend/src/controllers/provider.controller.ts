@@ -1,6 +1,6 @@
 // src/controllers/provider.controller.ts
 import { Request, Response } from 'express';
-import pool from '../db';
+import pool from '../config/db';
 import { validateProviderInput } from '../validators/provider.validator';
 
 export const getProviders = async (_req: Request, res: Response) => {

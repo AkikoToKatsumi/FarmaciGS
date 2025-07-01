@@ -1,6 +1,6 @@
 // src/controllers/reports.controller.ts
 import { Request, Response } from 'express';
-import pool from '../db';
+import pool from '../config/db';
 import { backupService } from '../services/backup.service';
 
 type AuthRequest = Request & { user: { id: number } };

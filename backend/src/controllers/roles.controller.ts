@@ -1,6 +1,6 @@
 // src/controllers/roles.controller.ts
 import { Request, Response } from 'express';
-import pool from '../db';
+import pool from '../config/db';
 import { validateRoleInput } from '../validators/role.validator';
 
 // Obtiene todos los roles, incluyendo sus permisos

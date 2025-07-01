@@ -2,7 +2,7 @@
 // Importa los tipos de Request y Response de Express
 import { Request, Response } from 'express';
 // Importa el pool de conexiones a la base de datos
-import pool from '../db';
+import pool from '../config/db';
 // Importa el validador para clientes
 import { validateClientInput } from '../validators/client.validator';
 // Importa el validador para recetas
