@@ -1,21 +1,17 @@
+import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
-dotenv.config(); // Cargar variables de entorno desde .env
+import salesRoutes from './routes/sales.routes';
 
-import app from './app';
-import { connectDatabase } from './config/database';
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.use('/api/sales', salesRoutes);
 
 const PORT = process.env.PORT || 4000;
-
-const startServer = async () => {
-  try {
-    await connectDatabase(); // Conexión a la base de datos
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error('❌ Error al iniciar el servidor:', error);
-  }
-};
-
-startServer();
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
+});
