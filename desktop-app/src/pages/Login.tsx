@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth.service';
 import { useUserStore } from '../store/user';
+import './Login.css'; // Importamos el CSS
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [bgError, setBgError] = useState(false);
   const setUser = useUserStore((s) => s.setUser);
   const navigate = useNavigate();
 
@@ -20,50 +22,52 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#ece8ff] px-4">
-      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl flex overflow-hidden">
-        {/* Izquierda: Formulario */}
-        <div className="w-full md:w-1/2 p-10 md:p-14 flex flex-col justify-center">
-          <h2 className="text-3xl font-bold text-gray-800 text-center mb-2">LOGIN</h2>
-          <p className="text-center text-gray-500 mb-8">How to i get started lorem ipsum dolor at?</p>
-
-          <div className="space-y-5">
+    <div
+      className="login-container"
+      style={
+        bgError
+          ? { background: 'linear-gradient(120deg, #e0d7fa 0%, #b5c6e0 100%)' }
+          : {}
+      }
+    >
+      {/* Imagen de fondo oculta, solo para comprobar si existe */}
+      <img
+        src="imagenes/partes-de-una-farmacia.jpg"
+        alt=""
+        style={{ display: 'none' }}
+        onError={() => setBgError(true)}
+        onLoad={() => setBgError(false)}
+      />
+      <div className="login-card">
+        <div className="login-image-section">
+          <img
+            src="imagenes/Logo-Farmacia-Sencillo-Azul.gif"
+            alt="login"
+            className="login-image"
+          />
+        </div>
+        <div className="login-form-section">
+          <h2 className="login-title">INICIAR SESIÓN</h2>
+          <p className="login-subtitle">¿Con qué perfil quieres iniciar?</p>
+          <div className="input-group">
             <input
               type="email"
-              placeholder="Username"
+              placeholder="Usuario"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
             />
+          </div>
+          <div className="input-group">
             <input
               type="password"
-              placeholder="Password"
+              placeholder="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-400"
-            />
-            <button
-              onClick={handleLogin}
-              className="w-full bg-violet-500 text-white py-3 rounded-lg hover:bg-violet-600 transition"
-            >
-              Login Now
-            </button>
-          </div>
-
-          <div className="mt-8 text-center text-gray-400">Login with Others</div>
-
-          
-        </div>
-
-        {/* Derecha: Imagen */}
-        <div className="hidden md:flex w-1/2 bg-gradient-to-br from-violet-500 to-blue-400 items-center justify-center relative">
-          <div className="rounded-xl p-6">
-            <img
-              src="imagenes/partes-de-una-farmacia.jpg"
-              alt="login visual"
-              className="object-cover w-[300px] h-[300px] rounded-2xl shadow-lg"
             />
           </div>
+          <button className="login-button" onClick={handleLogin}>
+            Entrar
+          </button>
         </div>
       </div>
     </div>
