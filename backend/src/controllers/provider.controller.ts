@@ -1,68 +1,52 @@
-// Importa los tipos de Request y Response de Express
+// src/controllers/provider.controller.ts
 import { Request, Response } from 'express';
-// Importa la instancia de Prisma para interactuar con la base de datos
-import { prisma } from '../config/database';
-// Importa el validador para proveedores
+import pool from '../db';
 import { validateProviderInput } from '../validators/provider.validator';
 
-// Obtiene todos los proveedores de la base de datos
 export const getProviders = async (_req: Request, res: Response) => {
-  // Busca todos los proveedores
-  const providers = await prisma.provider.findMany();
-  // Devuelve la lista de proveedores en formato JSON
-  res.json(providers);
+  const result = await pool.query('SELECT * FROM providers');
+  res.json(result.rows);
 };
 
-// Obtiene un proveedor por su ID
 export const getProviderById = async (req: Request, res: Response) => {
   const { id } = req.params;
-  // Busca el proveedor por ID
-  const provider = await prisma.provider.findUnique({ where: { id } });
-
-  // Si no existe, responde con error 404
-  if (!provider) return res.status(404).json({ message: 'Proveedor no encontrado' });
-
-  // Devuelve el proveedor encontrado
-  res.json(provider);
+  const result = await pool.query('SELECT * FROM providers WHERE id = $1', [Number(id)]);
+  if (result.rows.length === 0) return res.status(404).json({ message: 'Proveedor no encontrado' });
+  res.json(result.rows[0]);
 };
 
-// Crea un nuevo proveedor
 export const createProvider = async (req: Request, res: Response) => {
-  // Extrae los datos del cuerpo de la petición
   const { name, email, phone, taxId } = req.body;
-  // Valida los datos del proveedor
   const validation = await validateProviderInput({ name, email, phone, taxId });
   if (!validation.isValid) {
-    // Si la validación falla, responde con error 400 y el mensaje correspondiente
     return res.status(400).json({ message: validation.message });
   }
-  // Crea el proveedor en la base de datos
-  const provider = await prisma.provider.create({ data: req.body });
-  // Devuelve el proveedor creado con estado 201
-  res.status(201).json(provider);
+
+  const result = await pool.query(
+    'INSERT INTO providers (name, email, phone, tax_id) VALUES ($1, $2, $3, $4) RETURNING *',
+    [name, email, phone, taxId]
+  );
+  res.status(201).json(result.rows[0]);
 };
 
-// Actualiza un proveedor existente
 export const updateProvider = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, email, phone, taxId } = req.body;
-  // Valida los datos antes de actualizar
-  const validation = await validateProviderInput({ name, email, phone, taxId, id });
+  const validation = await validateProviderInput({ name, email, phone, taxId });
   if (!validation.isValid) {
-    // Si la validación falla, responde con error 400
     return res.status(400).json({ message: validation.message });
   }
-  // Actualiza el proveedor en la base de datos
-  const provider = await prisma.provider.update({ where: { id }, data: req.body });
-  // Devuelve el proveedor actualizado
-  res.json(provider);
+
+  const result = await pool.query(
+    'UPDATE providers SET name = $1, email = $2, phone = $3, tax_id = $4 WHERE id = $5 RETURNING *',
+    [name, email, phone, taxId, Number(id)]
+  );
+  if (result.rows.length === 0) return res.status(404).json({ message: 'Proveedor no encontrado' });
+  res.json(result.rows[0]);
 };
 
-// Elimina un proveedor por su ID
 export const deleteProvider = async (req: Request, res: Response) => {
   const { id } = req.params;
-  // Elimina el proveedor de la base de datos
-  await prisma.provider.delete({ where: { id } });
-  // Responde con estado 204 (sin contenido)
+  await pool.query('DELETE FROM providers WHERE id = $1', [Number(id)]);
   res.status(204).send();
 };
