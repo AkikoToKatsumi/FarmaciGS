@@ -7,6 +7,10 @@ import pool from '../config/db';
 import { validateClientInput } from '../validators/client.validator';
 // Importa el validador para recetas
 import { validatePrescriptionInput } from '../validators/prescription.validator';
+import { Client } from '../models'; // importamos desde models/index.ts
+// Importa el modelo de cliente (si es necesario, dependiendo de tu estructura de carpetas)
+
+
 
 // Obtiene todos los clientes, incluyendo sus recetas
 export const getClients = async (_: Request, res: Response) => {
@@ -89,26 +93,42 @@ export const deleteClient = async (req: Request, res: Response) => {
 
 // Obtiene las recetas de un cliente (implementación pendiente)
 export const getClientPrescriptions = async (req: Request, res: Response) => {
-  // Lógica para obtener recetas de un cliente
-  res.json({ message: 'Recetas del cliente' });
-};
+  const clientId = Number(req.params.id);
+  try {
+    const result = await pool.query(`
+      SELECT p.*, m.name AS medicine_name
+      FROM prescriptions p
+      JOIN medicines m ON p.medicine_id = m.id
+      WHERE p.client_id = $1
+    `, [clientId]);
 
-// Agrega una receta a un cliente con validación
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener recetas' });
+  }
+};
 export const addPrescription = async (req: Request, res: Response) => {
   const clientId = Number(req.params.id);
   const { medicineIds } = req.body;
 
-  // Valida los datos de la receta
-  const validation = await validatePrescriptionInput({
-    clientId,
-    medicineIds,
-  });
-
+  const validation = await validatePrescriptionInput({ clientId, medicineIds });
   if (!validation.isValid) {
-    // Si la validación falla, responde con error 400
     return res.status(400).json({ message: validation.message });
   }
 
-  // Lógica para agregar una receta a un cliente (implementación pendiente)
-  res.status(201).json({ message: 'Receta agregada' });
+  try {
+    const inserted = [];
+
+    for (const medicineId of medicineIds) {
+      const result = await pool.query(
+        'INSERT INTO prescriptions (client_id, medicine_id) VALUES ($1, $2) RETURNING *',
+        [clientId, medicineId]
+      );
+      inserted.push(result.rows[0]);
+    }
+
+    res.status(201).json({ message: 'Receta agregada', data: inserted });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al agregar receta' });
+  }
 };
