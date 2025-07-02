@@ -126,5 +126,5 @@ export interface POS_Sale {
 
 // Importa las interfaces de Client, User y Medicine para asociar con la venta
 import { Client } from './Client';
-import { User } from './User';
+import { User } from './user';
 import { Medicine } from './Medicine';

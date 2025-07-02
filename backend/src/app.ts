@@ -17,7 +17,7 @@ import reportsRoutes from './routes/reports.routes';
 // Importa las rutas de roles
 import rolesRoutes from './routes/roles.routes';
 // Importa las rutas de proveedores
-import providerRoutes from './routes/provider.routes';
+import providersRoutes from './routes/provider.routes';
 import prescriptionRoutes from './routes/prescription.routes';
 
 
@@ -40,7 +40,7 @@ app.use('/api/sales', salesRoutes); // Rutas de ventas
 app.use('/api/clients', clientsRoutes); // Rutas de clientes
 app.use('/api/reports', reportsRoutes); // Rutas de reportes
 app.use('/api/roles', rolesRoutes); // Rutas de roles
-app.use('/api/provider', providerRoutes); // Rutas de proveedores
+app.use('/api/provider', providersRoutes); // Rutas de proveedores
 app.use('/api/prescriptions', prescriptionRoutes);
 
 // Exporta la app para ser utilizada en el archivo principal (server)

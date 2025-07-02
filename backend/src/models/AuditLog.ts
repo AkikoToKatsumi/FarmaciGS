@@ -128,4 +128,4 @@ export interface AuditFilters {
 }
 
 // Importa la interfaz de usuario para asociar con la bitácora
-import { User } from './User';
+import { User } from './user';

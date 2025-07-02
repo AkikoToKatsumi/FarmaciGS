@@ -1,5 +1,4 @@
-// Importa la instancia de Prisma para interactuar con la base de datos
-import { prisma } from '../config/database';
+import pool from '../config/db';
 
 // Interfaz para los parámetros requeridos al crear un registro de bitácora (audit log)
 export interface CreateAuditLogParams {
@@ -10,5 +9,8 @@ export interface CreateAuditLogParams {
 
 // Función para crear un registro de bitácora en la base de datos
 export const createAuditLog = async ({ userId, action, details }: CreateAuditLogParams) => {
-  // ... Lógica para crear el registro de auditoría (implementación pendiente)
+  await pool.query(
+    'INSERT INTO audit_logs (user_id, action, details, created_at) VALUES ($1, $2, $3, NOW())',
+    [userId, action, details || null]
+  );
 };

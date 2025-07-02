@@ -1,5 +1,5 @@
 // Exporta todos los modelos para uso global en la aplicación
-export * from './User';
+export * from './user';
 export * from './Medicine';
 export * from './Client';
 export * from './Sale';
