@@ -24,3 +24,15 @@ export const createSale = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error al crear venta' });
   }
 };
+
+export function getSaleById(arg0: string, getSaleById: any) {
+    throw new Error('Function not implemented.');
+}
+export function updateSale(arg0: string, updateSale: any) {
+    throw new Error('Function not implemented.');
+}
+
+export function deleteSale(arg0: string, deleteSale: any) {
+    throw new Error('Function not implemented.');
+}
+

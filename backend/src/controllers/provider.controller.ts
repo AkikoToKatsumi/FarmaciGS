@@ -1,8 +1,8 @@
 // src/controllers/provider.controller.ts
 import { Request, Response } from 'express';
 import pool from '../config/db';
-import { validateProviderInput } from '../validators/provider.validator';
-
+import { validatePrescriptionInput } from '../validators/prescription.validator'; // ✅ Correcto
+// Importa el validador para proveedores
 export const getProviders = async (_req: Request, res: Response) => {
   const result = await pool.query('SELECT * FROM providers');
   res.json(result.rows);

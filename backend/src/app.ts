@@ -18,6 +18,9 @@ import reportsRoutes from './routes/reports.routes';
 import rolesRoutes from './routes/roles.routes';
 // Importa las rutas de proveedores
 import providerRoutes from './routes/provider.routes';
+import prescriptionRoutes from './routes/prescription.routes';
+
+
 
 // Carga las variables de entorno
 dotenv.config();
@@ -30,6 +33,7 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas principales de la API
+
 app.use('/api/auth', authRoutes); // Rutas de autenticación
 app.use('/api/inventory', inventoryRoutes); // Rutas de inventario
 app.use('/api/sales', salesRoutes); // Rutas de ventas
@@ -37,6 +41,7 @@ app.use('/api/clients', clientsRoutes); // Rutas de clientes
 app.use('/api/reports', reportsRoutes); // Rutas de reportes
 app.use('/api/roles', rolesRoutes); // Rutas de roles
 app.use('/api/provider', providerRoutes); // Rutas de proveedores
+app.use('/api/prescriptions', prescriptionRoutes);
 
 // Exporta la app para ser utilizada en el archivo principal (server)
 export default app;

@@ -1,29 +1,15 @@
-// Importa la instancia de Prisma para interactuar con la base de datos
-import { prisma } from '../config/database';
+// src/validators/role.validator.ts
+import { z } from 'zod';
 
-// Interfaz para los datos de entrada del rol
-interface RoleInput {
-  name: string; // Nombre del rol
-  id?: number; // ID del rol (opcional, para edición)
-}
+const roleSchema = z.object({
+  name: z.string().min(1, 'Nombre de rol requerido'),
+});
 
-// Función para validar los datos de un rol antes de crear o actualizar
-export const validateRoleInput = async (data: RoleInput): Promise<{ isValid: boolean; message?: string }> => {
-  const { name, id } = data;
-
-  // Validar que el nombre tenga al menos 3 caracteres
-  if (!name || name.trim().length < 3) {
-    return { isValid: false, message: 'Nombre del rol demasiado corto.' };
+export const validateRoleInput = (data: any) => {
+  const result = roleSchema.safeParse(data);
+  if (result.success) {
+    return { isValid: true, message: '' };
+  } else {
+    return { isValid: false, message: result.error.errors[0]?.message || 'Datos inválidos' };
   }
-
-  // Verificar si ya existe un rol con ese nombre
-  const existing = await prisma.role.findUnique({ where: { name } });
-
-  // Si existe y no es el mismo (en edición), retorna error
-  if (existing && existing.id !== id) {
-    return { isValid: false, message: 'Ya existe un rol con ese nombre.' };
-  }
-
-  // Si pasa todas las validaciones, es válido
-  return { isValid: true };
 };

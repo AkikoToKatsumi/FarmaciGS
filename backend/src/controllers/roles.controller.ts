@@ -84,31 +84,7 @@ export const deleteRole = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Error al eliminar el rol', error });
   }
 };
-      },
-      include: { permissions: true },
-    });
+export function getRoleById(arg0: string, getRoleById: any) {
+  throw new Error('Function not implemented.');
+}
 
-    // Devuelve el rol actualizado
-    return res.json(role);
-  } catch (error) {
-    // Si ocurre un error, responde con error 500
-    return res.status(500).json({ message: 'Error al actualizar el rol', error });
-  }
-};
-
-// Elimina un rol y sus permisos asociados
-export const deleteRole = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  try {
-    // Elimina todos los permisos asociados al rol
-    await prisma.permission.deleteMany({ where: { roleId: parseInt(id) } });
-    // Elimina el rol
-    await prisma.role.delete({ where: { id: parseInt(id) } });
-    // Devuelve mensaje de éxito
-    return res.json({ message: 'Rol eliminado correctamente' });
-  } catch (error) {
-    // Si ocurre un error, responde con error 500
-    return res.status(500).json({ message: 'Error al eliminar el rol', error });
-  }
-};

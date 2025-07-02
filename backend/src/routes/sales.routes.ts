@@ -1,9 +1,16 @@
+// src/routes/sales.routes.ts
 import { Router } from 'express';
-import { getSales, createSale } from '../controllers/sales.controller';
+import * as salesController from '../controllers/sales.controller';
+import { verifyToken }  from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/', getSales);
-router.post('/', createSale);
+router.use(verifyToken);
+
+router.get('/', salesController.getSales);
+router.get('/:id', salesController.getSaleById);
+router.post('/', salesController.createSale);
+router.put('/:id', salesController.updateSale);
+router.delete('/:id', salesController.deleteSale);
 
 export default router;
