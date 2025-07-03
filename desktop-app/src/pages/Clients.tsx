@@ -54,71 +54,157 @@ const Clients = () => {
     }
   };
 
-  return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Clientes</h1>
+  // Estilos en línea optimizados tipo "carta"
+  const styles = {
+    card: {
+      background: '#fff',
+      borderRadius: '16px',
+      boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+      padding: '32px',
+      maxWidth: '1100px',
+      margin: '32px auto',
+      minHeight: '400px'
+    },
+    formRow: {
+      display: 'flex',
+      gap: '16px',
+      marginBottom: '24px',
+      flexWrap: 'wrap' as 'wrap' // Corrige el tipo para React.CSSProperties
+    },
+    formInput: {
+      flex: 1,
+      minWidth: '200px',
+      marginBottom: '0',
+      padding: '12px',
+      borderRadius: '8px',
+      border: '1px solid #d1d5db',
+      fontSize: '1rem'
+    },
+    error: {
+      color: '#ef4444',
+      fontSize: '0.95rem',
+      margin: '4px 0 0 4px'
+    },
+    actionBtn: {
+      marginRight: '8px',
+      padding: '8px 16px',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: 600,
+      fontSize: '0.95rem'
+    },
+    editBtn: {
+      background: '#3b82f6',
+      color: '#fff'
+    },
+    deleteBtn: {
+      background: '#ef4444',
+      color: '#fff'
+    },
+    submitBtn: {
+      background: '#22c55e',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '12px 24px',
+      fontWeight: 700,
+      fontSize: '1rem',
+      marginTop: '8px',
+      marginBottom: '16px',
+      cursor: 'pointer'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'separate' as const,
+      borderSpacing: '0 8px'
+    },
+    th: {
+      background: '#f3f4f6',
+      fontWeight: 700,
+      padding: '12px',
+      border: 'none'
+    },
+    td: {
+      background: '#f9fafb',
+      padding: '12px',
+      border: 'none',
+      borderRadius: '8px'
+    },
+    tableRow: {
+      boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+    }
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
+  return (
+    <div style={styles.card}>
+      <h1 className="text-xl font-bold mb-4" style={{marginBottom: 24}}>Clientes</h1>
+      <div style={styles.formRow}>
+        <div style={{flex: 1}}>
           <input
             type="text"
             placeholder="Nombre"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className={`border p-2 w-full ${errors.name ? 'border-red-500' : ''}`}
+            style={styles.formInput}
+            className={errors.name ? 'border-red-500' : ''}
           />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+          {errors.name && <p style={styles.error}>{errors.name}</p>}
         </div>
-
-        <div>
+        <div style={{flex: 1}}>
           <input
             type="email"
             placeholder="Email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className={`border p-2 w-full ${errors.email ? 'border-red-500' : ''}`}
+            style={styles.formInput}
+            className={errors.email ? 'border-red-500' : ''}
           />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          {errors.email && <p style={styles.error}>{errors.email}</p>}
         </div>
-
-        <div>
+        <div style={{flex: 1}}>
           <input
             type="text"
             placeholder="Teléfono"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            className={`border p-2 w-full ${errors.phone ? 'border-red-500' : ''}`}
+            style={styles.formInput}
+            className={errors.phone ? 'border-red-500' : ''}
           />
-          {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+          {errors.phone && <p style={styles.error}>{errors.phone}</p>}
         </div>
       </div>
-
-      <button onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2 rounded">
+      <button onClick={handleSubmit} style={styles.submitBtn}>
         {editingId ? 'Actualizar' : 'Crear'} Cliente
       </button>
-
-      <table className="w-full border mt-6">
+      <table style={styles.table}>
         <thead>
-          <tr className="bg-gray-200">
-            <th className="p-2 border">ID</th>
-            <th className="p-2 border">Nombre</th>
-            <th className="p-2 border">Email</th>
-            <th className="p-2 border">Teléfono</th>
-            <th className="p-2 border">Acciones</th>
+          <tr>
+            <th style={styles.th}>ID</th>
+            <th style={styles.th}>Nombre</th>
+            <th style={styles.th}>Email</th>
+            <th style={styles.th}>Teléfono</th>
+            <th style={styles.th}>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {clients.map((c: any) => (
-            <tr key={c.id}>
-              <td className="p-2 border">{c.id}</td>
-              <td className="p-2 border">{c.name}</td>
-              <td className="p-2 border">{c.email}</td>
-              <td className="p-2 border">{c.phone}</td>
-              <td className="p-2 border">
-                <button onClick={() => handleEdit(c)} className="mr-2 text-blue-500">
+            <tr key={c.id} style={styles.tableRow}>
+              <td style={styles.td}>{c.id}</td>
+              <td style={styles.td}>{c.name}</td>
+              <td style={styles.td}>{c.email}</td>
+              <td style={styles.td}>{c.phone}</td>
+              <td style={styles.td}>
+                <button
+                  onClick={() => handleEdit(c)}
+                  style={{ ...styles.actionBtn, ...styles.editBtn }}
+                >
                   Editar
                 </button>
-                <button onClick={() => handleDelete(c.id)} className="text-red-500">
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  style={{ ...styles.actionBtn, ...styles.deleteBtn }}
+                >
                   Eliminar
                 </button>
               </td>

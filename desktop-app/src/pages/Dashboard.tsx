@@ -2,6 +2,7 @@
 import React from 'react';
 import { useUserStore } from '../store/user';
 import { useNavigate } from 'react-router-dom';
+import './Dashboard.css';
 
 const Dashboard = () => {
   const { user, clearUser } = useUserStore();
@@ -13,56 +14,64 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Dashboard</h1>
-        <button onClick={handleLogout} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px' }}>
-          Cerrar Sesión
-        </button>
-      </div>
-      
-      <div style={{ backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-        <h2>Bienvenido, {user?.name}!</h2>
-        <p><strong>Email:</strong> {user?.email}</p>
-        <p><strong>Rol:</strong> {user?.role_name || 'N/A'}</p>
-        <p><strong>ID:</strong> {user?.id}</p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>Inventario</h3>
-          <p>Gestiona los productos</p>
-          <button onClick={() => navigate('/inventory')} style={{ padding: '8px 16px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}>
-            Ir a Inventario
+    <div className="dashboard">
+      <header className="dashboard-header">
+        <h1>Panel de Control - Farmacia</h1>
+        <div className="user-info">
+          <span>Bienvenido, {user?.name}</span>
+          <span className="role">({user?.role_name})</span>
+          <button onClick={handleLogout} className="logout-btn">
+            Cerrar Sesión
           </button>
         </div>
+      </header>
 
-        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>Ventas</h3>
-          <p>Registra las ventas</p>
-          <button onClick={() => navigate('/sales')} style={{ padding: '8px 16px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px' }}>
-            Ir a Ventas
-          </button>
-        </div>
-
-        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>Clientes</h3>
-          <p>Gestiona los clientes</p>
-          <button onClick={() => navigate('/clients')} style={{ padding: '8px 16px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px' }}>
-            Ir a Clientes
-          </button>
-        </div>
-
+      <nav className="dashboard-nav">
+        <button onClick={() => navigate('/inventory')}>Inventario</button>
+        <button onClick={() => navigate('/sales')}>Ventas</button>
+        <button onClick={() => navigate('/clients')}>Clientes</button>
+        <button onClick={() => navigate('/prescriptions')}>Prescripciones</button>
+        <button onClick={() => navigate('/employees')}>Empleados</button>
+        <button onClick={() => navigate('/reports')}>Reportes</button>
         {user?.role_name === 'admin' && (
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-            <h3>Administración</h3>
-            <p>Panel de administración</p>
-            <button onClick={() => navigate('/admin')} style={{ padding: '8px 16px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px' }}>
-              Ir a Admin
-            </button>
-          </div>
+          <>
+            <button onClick={() => navigate('/admin')}>Administración</button>
+            <button onClick={() => navigate('/roles')}>Roles</button>
+            <button onClick={() => navigate('/backups')}>Respaldos</button>
+            <button onClick={() => navigate('/audit')}>Auditoría</button>
+          </>
         )}
-      </div>
+      </nav>
+
+      <main className="dashboard-content">
+        <div className="dashboard-grid">
+          <div className="dashboard-card">
+            <h3>Ventas del Día</h3>
+            <p className="dashboard-stat">$1,234.56</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>Productos Vendidos</h3>
+            <p className="dashboard-stat">45</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>Clientes Atendidos</h3>
+            <p className="dashboard-stat">23</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>Stock Bajo</h3>
+            <p className="dashboard-stat">8</p>
+          </div>
+        </div>
+
+        <div className="recent-activities">
+          <h3>Actividades Recientes</h3>
+          <ul>
+            <li>Venta realizada - Cliente: Juan Pérez - $45.00</li>
+            <li>Producto agregado - Paracetamol 500mg - 100 unidades</li>
+            <li>Cliente registrado - María García</li>
+          </ul>
+        </div>
+      </main>
     </div>
   );
 };

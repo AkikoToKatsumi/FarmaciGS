@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: 'http://localhost:4000/api' });
+const API = axios.create({ baseURL: 'http://localhost:4002/api' });
 
 export const getSalesReport = async (from: string, to: string, token: string) => {
   const res = await API.get(`/reports/sales?from=${from}&to=${to}`, {

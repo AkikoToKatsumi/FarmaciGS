@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user';
 import {
   getSalesReport,
   getExpiringSoonReport,
   getStockLowReport,
 } from '../services/report.service';
-// Corrige la importación: no existen downloadBackup ni restoreBackup
 import { createBackup } from '../services/backup.service';
 
 const Reports = () => {
+  const navigate = useNavigate();
   const token = useUserStore((s) => s.token);
   const [sales, setSales] = useState([]);
   const [expiring, setExpiring] = useState([]);
@@ -88,6 +89,19 @@ const Reports = () => {
 
   return (
     <div className="p-6 space-y-6">
+      <button
+        onClick={() => navigate('/dashboard')}
+        style={{
+          marginBottom: '20px',
+          padding: '8px 16px',
+          backgroundColor: '#6c757d',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+        }}
+      >
+        ← Volver al Dashboard
+      </button>
       <h2 className="text-2xl font-bold">Reportes</h2>
 
       {/* Backup y Restore */}

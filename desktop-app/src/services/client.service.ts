@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: 'http://localhost:4000/api' });
+const API = axios.create({ baseURL: 'http://localhost:4002/api' });
 
 export const getClients = async (token: string) => {
   const res = await API.get('/clients', {
@@ -29,3 +29,6 @@ export const deleteClient = async (id: number, token: string) => {
   });
   return res.data;
 };
+
+// Puedes agregar estilos globales o específicos en los componentes React, pero aquí en el service no es necesario ni recomendable agregar estilos.
+// Este archivo debe permanecer solo para lógica de datos y peticiones HTTP.
