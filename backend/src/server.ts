@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth.routes';
 import salesRoutes from './routes/sales.routes';
 import clientsRoutes from './routes/clients.routes';
 import rolesRoutes from './routes/roles.routes';
@@ -19,6 +20,8 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/auth', authRoutes);
 
 app.use('/api/sales', salesRoutes);
 app.use('/api/clients', clientsRoutes);
@@ -40,7 +43,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(err.status || 500).json({ message: err.message || "Error interno del servidor" });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4002;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
 });
