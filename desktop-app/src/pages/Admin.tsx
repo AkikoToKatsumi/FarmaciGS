@@ -1,34 +1,31 @@
-import React, { useEffect } from 'react';
+// src/pages/Admin.tsx
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user';
-import Employees from './Employees';
-import Roles from './Roles';
 
-const AdminPanel = () => {
-  const user = useUserStore((s) => s.user);
+const Admin = () => {
+  const navigate = useNavigate();
+  const { user } = useUserStore();
 
-  if (!user || user.role?.name !== 'Administrador') {
+  if (user?.role_name !== 'admin') {
     return (
-      <div className="p-6 text-red-500 font-semibold">
-        No tienes permiso para acceder a este módulo.
+      <div style={{ padding: '20px' }}>
+        <h1>Acceso Denegado</h1>
+        <p>No tienes permisos para acceder a esta página</p>
+        <button onClick={() => navigate('/dashboard')}>Volver al Dashboard</button>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <h2 className="text-2xl font-bold">Panel de Administración</h2>
-
-      <section>
-        <h3 className="text-xl font-semibold mb-2">Gestión de Roles</h3>
-        <Roles />
-      </section>
-
-      <section>
-        <h3 className="text-xl font-semibold mb-2">Gestión de Empleados</h3>
-        <Employees />
-      </section>
+    <div style={{ padding: '20px' }}>
+      <button onClick={() => navigate('/dashboard')} style={{ marginBottom: '20px', padding: '8px 16px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px' }}>
+        ← Volver al Dashboard
+      </button>
+      <h1>Panel de Administración</h1>
+      <p>Página de administración del sistema</p>
     </div>
   );
 };
 
-export default AdminPanel;
+export default Admin;

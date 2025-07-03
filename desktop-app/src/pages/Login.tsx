@@ -1,23 +1,38 @@
+// src/pages/Login.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth.service';
 import { useUserStore } from '../store/user';
-import './Login.css'; // Importamos el CSS
+import './Login.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [bgError, setBgError] = useState(false);
-  const setUser = useUserStore((s) => s.setUser);
+  const { setUser } = useUserStore();
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
     try {
-      const res = await login(email, password);
-      setUser(res.user, res.accessToken);
+      const response = await login(email, password);
+      console.log('Respuesta del login:', response);
+      
+      // El servicio ya maneja el localStorage, solo necesitamos actualizar el store
+      setUser(response.user, response.accessToken);
+      
+      console.log('Usuario logueado:', response.user);
       navigate('/dashboard');
-    } catch (error) {
-      alert('Error de autenticación');
+    } catch (error: any) {
+      console.error('Error de autenticación:', error);
+      setError(error.response?.data?.message || 'Error de autenticación');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -30,7 +45,6 @@ const Login = () => {
           : {}
       }
     >
-      {/* Imagen de fondo oculta, solo para comprobar si existe */}
       <img
         src="imagenes/partes-de-una-farmacia.jpg"
         alt=""
@@ -49,25 +63,42 @@ const Login = () => {
         <div className="login-form-section">
           <h2 className="login-title">INICIAR SESIÓN</h2>
           <p className="login-subtitle">¿Con qué perfil quieres iniciar?</p>
-          <div className="input-group">
-            <input
-              type="email"
-              placeholder="Usuario"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="input-group">
-            <input
-              type="password"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button className="login-button" onClick={handleLogin}>
-            Entrar
-          </button>
+          
+          {error && (
+            <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleLogin}>
+            <div className="input-group">
+              <input
+                type="email"
+                placeholder="Usuario"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <button 
+              type="submit" 
+              className="login-button"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Iniciando...' : 'Entrar'}
+            </button>
+          </form>
         </div>
       </div>
     </div>
