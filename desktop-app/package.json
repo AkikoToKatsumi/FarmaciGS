@@ -3,7 +3,7 @@
   "name": "desktop-app",
   "private": true,
   "version": "0.0.0",
-  "type": "commonjs",
+ 
   "scripts": {
     "start": "electron .",
     "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",

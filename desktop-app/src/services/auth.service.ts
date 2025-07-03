@@ -5,8 +5,13 @@ const API = axios.create({
 });
 
 export const login = async (email: string, password: string) => {
-  const res = await API.post('/auth/login', { email, password });
-  return res.data;
+  try {
+    const res = await API.post('/auth/login', { email, password });
+    return res.data;
+  } catch (error: any) {
+    console.error('Error en login:', error.response?.data || error.message);
+    throw error;
+  }
 };
 
 export const logout = async () => API.post('/auth/logout');

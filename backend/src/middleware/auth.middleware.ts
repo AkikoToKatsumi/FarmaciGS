@@ -6,23 +6,23 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
-// Función auxiliar para verificar token
-const verifyAccessToken = (token: string): any => {
-  const secret = process.env.JWT_SECRET!;
-  return jwt.verify(token, secret);
-};
-
 export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: 'Token no proporcionado' });
+  const authHeader = req.header('Authorization');
+  if (!authHeader) {
+    return res.status(401).json({ message: 'Acceso denegado. No hay token.' });
+  }
 
-  const token = authHeader.split(' ')[1];
+  // Permite formato "Bearer <token>" y solo "<token>"
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : authHeader;
 
   try {
-    const decoded = verifyAccessToken(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
     req.user = decoded;
     next();
-  } catch (err) {
-    return res.status(403).json({ message: 'Token inválido o expirado' });
+  } catch (error) {
+    res.status(401).json({ message: 'Token inválido.' });
   }
 };
+

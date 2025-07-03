@@ -1,3 +1,6 @@
+import pool from '../config/db';
+
+
 // Definición de la interfaz para un registro de bitácora (audit log)
 export interface AuditLog {
   id: number;

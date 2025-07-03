@@ -27,14 +27,17 @@ dotenv.config();
 
 // Crea la instancia principal de la aplicación Express
 const app = express();
-// Habilita CORS para todas las rutas
+// Habilita CORS para todas las rutas // Middlewares
 app.use(cors());
+app.use(express.json());
 // Permite recibir y procesar JSON en las peticiones
 app.use(express.json());
+const PORT = process.env.PORT || 4002;
 
 // Rutas principales de la API
 
 app.use('/api/auth', authRoutes); // Rutas de autenticación
+
 app.use('/api/inventory', inventoryRoutes); // Rutas de inventario
 app.use('/api/sales', salesRoutes); // Rutas de ventas
 app.use('/api/clients', clientsRoutes); // Rutas de clientes
@@ -42,6 +45,10 @@ app.use('/api/reports', reportsRoutes); // Rutas de reportes
 app.use('/api/roles', rolesRoutes); // Rutas de roles
 app.use('/api/provider', providersRoutes); // Rutas de proveedores
 app.use('/api/prescriptions', prescriptionRoutes);
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
+});
 
 // Exporta la app para ser utilizada en el archivo principal (server)
 export default app;
