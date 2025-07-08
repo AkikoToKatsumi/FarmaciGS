@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: 'http://localhost:4002/api' });
+const API = axios.create({ baseURL: 'http://localhost:4003/api' });
 
 export const getDashboardStats = async (token: string) => {
   const headers = { Authorization: `Bearer ${token}` };
@@ -12,6 +12,7 @@ export const getDashboardStats = async (token: string) => {
       API.get('/inventory/low-stock', { headers }),
       API.get('/clients/count', { headers }),
       API.get('/sales/latest', { headers }),
+      API.get('/admin/latest?limit=5', { headers }),
     ]);
 
   return {

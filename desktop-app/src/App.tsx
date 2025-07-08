@@ -49,7 +49,7 @@ export default function App() {
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/sales" element={<Sales />} />
           <Route path="/clients" element={<Clients />} />
-          <Route path="/reports" element={<Reports />} />
+          { <Route path="/reports" element={<Reports />} /> }
           <Route path="/admin" element={<Admin />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/roles" element={<Roles />} />

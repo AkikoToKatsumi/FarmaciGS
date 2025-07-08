@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:4002/api',
+  baseURL: 'http://localhost:4003/api',
 });
 
 export const getMedicines = async (token: string) => {

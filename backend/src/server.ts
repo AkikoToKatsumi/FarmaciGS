@@ -43,7 +43,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(err.status || 500).json({ message: err.message || "Error interno del servidor" });
 });
 
-const PORT = process.env.PORT || 4002;
+const PORT = process.env.PORT || 4003;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
 });
