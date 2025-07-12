@@ -39,7 +39,7 @@ export const createProvider = async (req: Request, res: Response) => {
 
   // Insertamos el nuevo proveedor en la base de datos y usamos RETURNING * para obtener el registro creado.
   const result = await pool.query(
-    'INSERT INTO providers (name, email, phone, tax_id) VALUES (, , , ) RETURNING *',
+    'INSERT INTO providers (name, email, phone, tax_id) VALUES ($1, $2, $3, $4) RETURNING *',
     [name, email, phone, taxId]
   );
   // Respondemos con un estado 201 (Creado) y los datos del proveedor nuevo.
@@ -61,7 +61,7 @@ export const updateProvider = async (req: Request, res: Response) => {
 
   // Actualizamos el proveedor en la base de datos usando su ID y devolvemos el registro actualizado.
   const result = await pool.query(
-    'UPDATE providers SET name = , email = , phone = , tax_id =  WHERE id =  RETURNING *',
+    'UPDATE providers SET name = $1, email = $2, phone = $3, tax_id = $4 WHERE id = $5 RETURNING *',
     [name, email, phone, taxId, Number(id)]
   );
   // Si no se actualizó ninguna fila (porque el ID no existe), devolvemos un 404.
@@ -75,7 +75,7 @@ export const deleteProvider = async (req: Request, res: Response) => {
   // Obtenemos el ID de los parámetros de la URL.
   const { id } = req.params;
   // Ejecutamos la consulta para eliminar al proveedor de la base de datos por su ID.
-  await pool.query('DELETE FROM providers WHERE id = ', [Number(id)]);
+  await pool.query('DELETE FROM providers WHERE id = $1', [Number(id)]);
   // Respondemos con un estado 204 (Sin Contenido), indicando que la operación fue exitosa pero no hay nada que devolver.
   res.status(204).send();
 };

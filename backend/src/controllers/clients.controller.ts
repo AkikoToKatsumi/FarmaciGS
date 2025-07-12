@@ -98,7 +98,7 @@ export const getClientPrescriptions = async (req: Request, res: Response) => {
     const result = await pool.query(`
       SELECT p.*, m.name AS medicine_name
       FROM prescriptions p
-      JOIN medicines m ON p.medicine_id = m.id
+      JOIN medicine m ON p.medicine_id = m.id
       WHERE p.client_id = $1
     `, [clientId]);
 

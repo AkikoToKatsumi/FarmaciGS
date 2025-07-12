@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getClients } from '../services/client.service';
-import { getMedicines } from '../services/inventory.service';
+import { getMedicine } from '../services/inventory.service';
 import { createPrescription, getPrescriptions } from '../services/prescription.service';
 import { useUserStore } from '../store/user';
 
@@ -28,7 +28,7 @@ const Prescriptions = () => {
   };
 
   const loadMedicines = async () => {
-    const res = await getMedicines(token!);
+    const res = await getMedicine();
     setMedicines(res);
   };
 

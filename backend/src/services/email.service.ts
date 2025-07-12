@@ -124,10 +124,10 @@ class EmailService {
   /**
    * Enviar alerta de stock bajo
    */
-  async sendLowStockAlert(medicines: Medicine[], adminEmails: string[]): Promise<boolean> {
+  async sendLowStockAlert(medicine: Medicine[], adminEmails: string[]): Promise<boolean> {
     try {
       const template = await this.loadTemplate('low-stock-alert', {
-        medicines: medicines.map(med => ({
+        medicines: medicine.map(med => ({
           name: med.name,
           currentStock: med.stock,
           minimumStock: 10 // Esto podría venir de configuración
@@ -138,7 +138,7 @@ class EmailService {
 
       return await this.sendEmail({
         to: adminEmails,
-        subject: `🚨 Alerta: Medicamentos con Stock Bajo (${medicines.length})`,
+        subject: `🚨 Alerta: Medicamentos con Stock Bajo (${medicine.length})`,
         html: template.html,
         text: template.text
       });

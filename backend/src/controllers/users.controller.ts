@@ -32,7 +32,7 @@ export const createUser = async (req: Request, res: Response) => {
   // Deberíamos hashear la contraseña antes de guardarla, usando una librería como bcrypt.
   // Insertamos el nuevo usuario en la base de datos y usamos RETURNING * para obtener el registro creado.
   const result = await pool.query(
-    'INSERT INTO users (name, email, password, role_id) VALUES (, , , ) RETURNING *',
+    'INSERT INTO users (name, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING *',
     [name, email, password, roleId]
   );
   // Respondemos con un estado 201 (Creado) y los datos del usuario nuevo.
@@ -47,7 +47,7 @@ export const updateUser = async (req: Request, res: Response) => {
   const { name, email, password, roleId } = req.body;
   
   const result = await pool.query(
-    'UPDATE users SET name = , email = , password = , role_id =  WHERE id =  RETURNING *',
+    'UPDATE users SET name = $1, email = $2, password = $3, role_id = $4 WHERE id = $5 RETURNING *',
     [name, email, password, roleId, id]
   );
   // Devolvemos los datos del usuario actualizado.
@@ -59,7 +59,7 @@ export const deleteUser = async (req: Request, res: Response) => {
   // Obtenemos el ID de los parámetros de la URL.
   const { id } = req.params;
   // Ejecutamos la consulta para eliminar al usuario de la base de datos por su ID.
-  await pool.query('DELETE FROM users WHERE id = ', [id]);
+  await pool.query('DELETE FROM users WHERE id = $1', [id]);
   // Respondemos con un estado 204 (Sin Contenido), indicando que la operación fue exitosa pero no hay nada que devolver.
   res.status(204).send();
 };

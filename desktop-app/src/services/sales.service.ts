@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API = axios.create({ baseURL: 'http://localhost:4003/api' });
+import API from './api';
 
 interface SaleItemData {
   productId: number;
@@ -21,19 +19,11 @@ interface CreateSaleData {
   userId: number;
 }
 
-export const getSales = async (token: string) => {
-  const res = await API.get('/sales', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export const getSales = async () => {
+  const res = await API.get('/sales');
   return res.data;
 };
 
-export const getSaleById = async (token: string, id: number) => {
-  const res = await API.get(`/sales/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
 
 export const getSalesByDate = async (token: string, startDate: string, endDate: string) => {
   const res = await API.get(`/sales/date?start=${startDate}&end=${endDate}`, {

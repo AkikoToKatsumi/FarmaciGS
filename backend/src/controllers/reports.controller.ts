@@ -15,7 +15,7 @@ export const getSalesReport = async (req: Request, res: Response) => {
   const { from, to } = req.query;
   // Ejecutamos una consulta para seleccionar las ventas dentro del rango de fechas especificado.
   const result = await pool.query(
-    'SELECT * FROM sales WHERE created_at >= $1 AND created_at <= ',
+    'SELECT * FROM sales WHERE created_at >= $1 AND created_at <= $2',
     [from, to]
   );
   // Devolvemos los resultados en formato JSON.
@@ -25,13 +25,13 @@ export const getSalesReport = async (req: Request, res: Response) => {
 // Exportamos la función para obtener el reporte de medicamentos con bajo stock.
 export const getLowStock = async (_req: Request, res: Response) => {
   // Ejecutamos una consulta para encontrar todos los medicamentos cuyo stock sea menor a 10.
-  const result = await pool.query('SELECT * FROM medicines WHERE stock < 10');
+  const result = await pool.query('SELECT * FROM medicine WHERE stock < 10');
   // Devolvemos los resultados en formato JSON.
   res.json(result.rows);
 };
 
 // Exportamos la función para obtener el reporte de medicamentos próximos a expirar.
-export const getExpiringMedicines = async (_: Request, res: Response) => {
+export const getExpiringMedicine = async (_: Request, res: Response) => {
   // Obtenemos la fecha y hora actual.
   const now = new Date();
   // Calculamos la fecha de "pronto", que será un mes a partir de ahora.
@@ -39,7 +39,7 @@ export const getExpiringMedicines = async (_: Request, res: Response) => {
   soon.setMonth(soon.getMonth() + 1);
   // Ejecutamos una consulta para encontrar los medicamentos que expiran entre hoy y el próximo mes.
   const result = await pool.query(
-    'SELECT * FROM medicines WHERE expiration_date >=  AND expiration_date <= ',
+    'SELECT * FROM medicine WHERE expiration_date >= $1 AND expiration_date <= $2',
     [now, soon]
   );
   // Devolvemos los resultados en formato JSON.

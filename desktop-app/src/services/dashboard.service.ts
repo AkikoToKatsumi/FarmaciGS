@@ -1,25 +1,28 @@
+// src/services/dashboard.service.ts
 import axios from 'axios';
 
-const API = axios.create({ baseURL: 'http://localhost:4003/api' });
+const API_URL = 'http://localhost:4003/api'; // Asegúrate de que esta sea tu URL base del API
 
-export const getDashboardStats = async (token: string) => {
-  const headers = { Authorization: `Bearer ${token}` };
+export interface DashboardStats {
+  dailySales: number;
+  productsSold: number;
+  clientsServed: number;
+  lowStockCount: number;
+  recentActivities: {
+    id: number;
+    action: string;
+    user: {
+      name: string;
+    };
+    created_at: string;
+  }[];
+}
 
-  const [salesToday, salesMonth, lowStock, clientCount, latestSales] =
-    await Promise.all([
-      API.get('/sales/summary?filter=today', { headers }),
-      API.get('/sales/summary?filter=month', { headers }),
-      API.get('/inventory/low-stock', { headers }),
-      API.get('/clients/count', { headers }),
-      API.get('/sales/latest', { headers }),
-      API.get('/admin/latest?limit=5', { headers }),
-    ]);
-
-  return {
-    salesToday: salesToday.data.total,
-    salesMonth: salesMonth.data.total,
-    lowStock: lowStock.data.length,
-    clients: clientCount.data.count,
-    latestSales: latestSales.data,
-  };
+export const getDashboardStats = async (token: string): Promise<DashboardStats> => {
+  const response = await axios.get(`${API_URL}/dashboard/stats`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
 };

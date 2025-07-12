@@ -10,11 +10,10 @@ router.use(verifyToken);
 
 router.get('/sales', reportsController.getSalesReport);
 router.get('/stock', reportsController.getLowStock);
-router.get('/expiring', reportsController.getExpiringMedicines);
+router.get('/expiring', reportsController.getExpiringMedicine);
 router.get('/backup', reportsController.listBackups);
 router.post('/backup', verifyToken, reportsController.backupDatabase as unknown as import('express').RequestHandler);
 router.delete('/backup/:filename', reportsController.deleteBackup);
 
-// Removed duplicate or unnecessary backupDatabase export; use the controller's handler instead.
 
 export default router;

@@ -1,18 +1,5 @@
 // src/services/auth.service.ts
-import axios from 'axios';
-
-const API = axios.create({
-  baseURL: 'http://localhost:4003/api',
-});
-
-// Interceptor para agregar token a las peticiones
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import API from './api';
 
 export const login = async (email: string, password: string) => {
   try {

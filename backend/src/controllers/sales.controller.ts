@@ -29,7 +29,7 @@ export const createSale = async (req: Request, res: Response) => {
     // Ejecutamos una consulta SQL para insertar una nueva venta en la base de datos.
     // Usamos 'RETURNING *' para que la base de datos nos devuelva el registro completo que acabamos de crear.
     const result = await pool.query(
-      'INSERT INTO sales (client_id, total_amount) VALUES ($1, ) RETURNING *',
+      'INSERT INTO sales (client_id, total_amount) VALUES ($1, $2) RETURNING *',
       [client_id, total_amount]
     );
     // Si la creación es exitosa, respondemos con un estado 201 (Created) y los datos de la nueva venta.

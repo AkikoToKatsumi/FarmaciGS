@@ -8,6 +8,7 @@ import rolesRoutes from './routes/roles.routes';
 import providersRoutes from './routes/provider.routes';
 import inventoryRoutes from './routes/inventory.routes'; // Descomentar si tienes rutas de inventario
 import prescriptionRoutes from './routes/prescription.routes'; // Descomentar si tienes rutas de
+import dashboardRoutes from './routes/dashboard.routes';
 // recetas
 import auditRoutes from './routes/audit.routes'; // Descomentar si tienes rutas de auditor
 
@@ -27,6 +28,7 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/providers', providersRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 // Rutas adicionales
  app.use('/api/inventory', inventoryRoutes); // Descomentar si tienes rutas de
 // inventario
