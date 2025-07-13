@@ -1,8 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PrescriptionStatus = void 0;
 // Enum para el estado de la receta
-export var PrescriptionStatus;
+var PrescriptionStatus;
 (function (PrescriptionStatus) {
     PrescriptionStatus["PENDING"] = "pending";
     PrescriptionStatus["FILLED"] = "filled";
     PrescriptionStatus["EXPIRED"] = "expired";
     PrescriptionStatus["CANCELLED"] = "cancelled"; // Cancelada
-})(PrescriptionStatus || (PrescriptionStatus = {}));
+})(PrescriptionStatus || (exports.PrescriptionStatus = PrescriptionStatus = {}));

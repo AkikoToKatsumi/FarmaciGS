@@ -1,22 +1,28 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deletePrescription = exports.getPrescriptionById = exports.getPrescriptions = exports.createPrescription = void 0;
 // Importa el pool de PostgreSQL
-import pool from '../config/db';
+const db_1 = __importDefault(require("../config/db"));
 // Importa la función de validación
-import { validatePrescriptionInput } from '../validators/prescription.validator'; // ✅ Correcto
+const prescription_validator_1 = require("../validators/prescription.validator"); // ✅ Correcto
 // Crear una nueva receta médica
-export const createPrescription = async (req, res) => {
+const createPrescription = async (req, res) => {
     const { clientId, medicines, doctor } = req.body;
     // Validar entrada
-    const validation = await validatePrescriptionInput({ clientId, medicines });
+    const validation = await (0, prescription_validator_1.validatePrescriptionInput)({ clientId, medicines });
     if (!validation.isValid) {
         return res.status(400).json({ message: validation.message });
     }
     try {
         // Insertar receta (prescription)
-        const prescriptionResult = await pool.query('INSERT INTO prescriptions (client_id, doctor, created_at) VALUES ($1, $2, NOW()) RETURNING *', [clientId, doctor]);
+        const prescriptionResult = await db_1.default.query('INSERT INTO prescriptions (client_id, doctor, created_at) VALUES ($1, $2, NOW()) RETURNING *', [clientId, doctor]);
         const prescription = prescriptionResult.rows[0];
         // Insertar medicamentos asociados (prescription_medicines)
         for (const med of medicines) {
-            await pool.query('INSERT INTO prescription_medicines (prescription_id, medicine_id, quantity) VALUES ($1, $2, $3)', [prescription.id, med.id, med.quantity]);
+            await db_1.default.query('INSERT INTO prescription_medicines (prescription_id, medicine_id, quantity) VALUES ($1, $2, $3)', [prescription.id, med.id, med.quantity]);
         }
         return res.status(201).json({ message: 'Receta creada exitosamente', prescription });
     }
@@ -25,10 +31,11 @@ export const createPrescription = async (req, res) => {
         return res.status(500).json({ message: 'Error del servidor' });
     }
 };
+exports.createPrescription = createPrescription;
 // Obtener todas las recetas
-export const getPrescriptions = async (_req, res) => {
+const getPrescriptions = async (_req, res) => {
     try {
-        const result = await pool.query(`
+        const result = await db_1.default.query(`
       SELECT p.*, c.name as client_name
       FROM prescriptions p
       JOIN clients c ON p.client_id = c.id
@@ -41,15 +48,16 @@ export const getPrescriptions = async (_req, res) => {
         return res.status(500).json({ message: 'Error del servidor' });
     }
 };
+exports.getPrescriptions = getPrescriptions;
 // Obtener una receta por ID, incluyendo medicamentos
-export const getPrescriptionById = async (req, res) => {
+const getPrescriptionById = async (req, res) => {
     const { id } = req.params;
     try {
-        const prescriptionResult = await pool.query('SELECT * FROM prescriptions WHERE id = $1', [Number(id)]);
+        const prescriptionResult = await db_1.default.query('SELECT * FROM prescriptions WHERE id = $1', [Number(id)]);
         if (prescriptionResult.rows.length === 0) {
             return res.status(404).json({ message: 'Receta no encontrada' });
         }
-        const medicinesResult = await pool.query(`SELECT pm.*, m.name as medicine_name 
+        const medicinesResult = await db_1.default.query(`SELECT pm.*, m.name as medicine_name 
        FROM prescription_medicines pm 
        JOIN medicines m ON pm.medicine_id = m.id 
        WHERE pm.prescription_id = $1`, [Number(id)]);
@@ -63,14 +71,15 @@ export const getPrescriptionById = async (req, res) => {
         return res.status(500).json({ message: 'Error del servidor' });
     }
 };
+exports.getPrescriptionById = getPrescriptionById;
 // Eliminar una receta
-export const deletePrescription = async (req, res) => {
+const deletePrescription = async (req, res) => {
     const { id } = req.params;
     try {
         // Primero eliminar los medicamentos asociados
-        await pool.query('DELETE FROM prescription_medicines WHERE prescription_id = $1', [Number(id)]);
+        await db_1.default.query('DELETE FROM prescription_medicines WHERE prescription_id = $1', [Number(id)]);
         // Luego eliminar la receta
-        await pool.query('DELETE FROM prescriptions WHERE id = $1', [Number(id)]);
+        await db_1.default.query('DELETE FROM prescriptions WHERE id = $1', [Number(id)]);
         return res.json({ message: 'Receta eliminada correctamente' });
     }
     catch (error) {
@@ -78,3 +87,4 @@ export const deletePrescription = async (req, res) => {
         return res.status(500).json({ message: 'Error del servidor' });
     }
 };
+exports.deletePrescription = deletePrescription;

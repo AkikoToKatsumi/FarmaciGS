@@ -1,5 +1,8 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateProviderInput = exports.validatePrescriptionInput = void 0;
 // src/validators/prescription.validator.ts
-export const validatePrescriptionInput = async (data) => {
+const validatePrescriptionInput = async (data) => {
     const { clientId, medicines } = data;
     if (!clientId || !Array.isArray(medicines) || medicines.length === 0) {
         return {
@@ -9,7 +12,9 @@ export const validatePrescriptionInput = async (data) => {
     }
     return { isValid: true, message: '' };
 };
-export const validateProviderInput = (data) => {
+exports.validatePrescriptionInput = validatePrescriptionInput;
+const validateProviderInput = (data) => {
     // lógica de validación
     return { isValid: true, message: 'OK' };
 };
+exports.validateProviderInput = validateProviderInput;

@@ -1,5 +1,8 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AuditAction = void 0;
 // Enum para las acciones posibles en la bitácora
-export var AuditAction;
+var AuditAction;
 (function (AuditAction) {
     // Usuarios
     AuditAction["USER_LOGIN"] = "user_login";
@@ -31,4 +34,4 @@ export var AuditAction;
     AuditAction["BACKUP_CREATE"] = "backup_create";
     AuditAction["BACKUP_RESTORE"] = "backup_restore";
     AuditAction["SYSTEM_CONFIG_UPDATE"] = "system_config_update";
-})(AuditAction || (AuditAction = {}));
+})(AuditAction || (exports.AuditAction = AuditAction = {}));

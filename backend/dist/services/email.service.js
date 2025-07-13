@@ -1,7 +1,43 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.emailService = void 0;
 // Importa nodemailer para el envío de correos electrónicos
-import * as nodemailer from 'nodemailer';
-import * as path from 'path';
-import * as fs from 'fs';
+const nodemailer = __importStar(require("nodemailer"));
+const path = __importStar(require("path"));
+const fs = __importStar(require("fs"));
 // Servicio de email
 class EmailService {
     constructor() {
@@ -78,10 +114,10 @@ class EmailService {
     /**
      * Enviar alerta de stock bajo
      */
-    async sendLowStockAlert(medicines, adminEmails) {
+    async sendLowStockAlert(medicine, adminEmails) {
         try {
             const template = await this.loadTemplate('low-stock-alert', {
-                medicines: medicines.map(med => ({
+                medicines: medicine.map(med => ({
                     name: med.name,
                     currentStock: med.stock,
                     minimumStock: 10 // Esto podría venir de configuración
@@ -91,7 +127,7 @@ class EmailService {
             });
             return await this.sendEmail({
                 to: adminEmails,
-                subject: `🚨 Alerta: Medicamentos con Stock Bajo (${medicines.length})`,
+                subject: `🚨 Alerta: Medicamentos con Stock Bajo (${medicine.length})`,
                 html: template.html,
                 text: template.text
             });
@@ -394,4 +430,4 @@ ${JSON.stringify(data, null, 2)}
     }
 }
 // Exporta una instancia del servicio de email
-export const emailService = new EmailService();
+exports.emailService = new EmailService();

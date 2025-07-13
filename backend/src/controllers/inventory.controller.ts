@@ -114,7 +114,7 @@ export const createMedicine = async (req: Request, res: Response) => {
 
         // Insertar el nuevo medicamento
         const result = await pool.query(
-            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot_number, category, barcode) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot, category, barcode) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
             [name, description, stock, price, expirationDate, lot, category, barcode]
         );
 
@@ -178,7 +178,7 @@ export const updateMedicine = async (req: Request, res: Response) => {
         if (stock !== undefined) { fields.push(`stock = $${queryIndex++}`); values.push(stock); }
         if (price !== undefined) { fields.push(`price = $${queryIndex++}`); values.push(price); }
         if (expirationDate !== undefined) { fields.push(`expiration_date = $${queryIndex++}`); values.push(expirationDate); }
-        if (lot !== undefined) { fields.push(`lot_number = $${queryIndex++}`); values.push(lot); }
+        if (lot !== undefined) { fields.push(`lot = $${queryIndex++}`); values.push(lot); }
         if (category !== undefined) { fields.push(`category = $${queryIndex++}`); values.push(category); }
         if (barcode !== undefined) { fields.push(`barcode = $${queryIndex++}`); values.push(barcode); }
 

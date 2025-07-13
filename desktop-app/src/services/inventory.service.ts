@@ -1,5 +1,6 @@
 // src/services/inventory.service.ts
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Create axios instance with base configuration
 const API = axios.create({ 
@@ -41,7 +42,9 @@ API.interceptors.response.use(
       sessionStorage.removeItem('token');
       
       // Redirect to login or emit an event
-      window.location.href = '/login';
+      
+const navigate = useNavigate();
+navigate('/login');
     }
     return Promise.reject(error);
   }
@@ -55,7 +58,7 @@ export interface Medicine {
   stock: number;
   price: number;
   expiration_date: string; // snake_case desde la base de datos
-  lot_number: string;
+  lot: string;
   category?: string;
   barcode?: string;
 }

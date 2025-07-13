@@ -1,15 +1,54 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.backupService = void 0;
 // Importa exec para ejecutar comandos de sistema y promisify para usar promesas
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import * as fs from 'fs';
-import * as path from 'path';
-import cron from 'node-cron';
-import { AuditAction } from '../models';
-import { notificationService } from './notification.service';
-import { emailService } from './email.service';
-import { createAuditLog } from './audit.service';
+const child_process_1 = require("child_process");
+const util_1 = require("util");
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+const node_cron_1 = __importDefault(require("node-cron"));
+const models_1 = require("../models");
+const notification_service_1 = require("./notification.service");
+const email_service_1 = require("./email.service");
+const audit_service_1 = require("./audit.service");
 // Convierte exec a una función basada en promesas
-const execAsync = promisify(exec);
+const execAsync = (0, util_1.promisify)(child_process_1.exec);
 // Servicio de respaldos de base de datos
 class BackupService {
     constructor() {
@@ -18,7 +57,7 @@ class BackupService {
         this.config = {
             host: process.env.DB_HOST || 'localhost',
             port: parseInt(process.env.DB_PORT || '5432'),
-            database: process.env.DB_NAME || 'farmacia_db',
+            database: process.env.DB_NAME || 'farmaciadb',
             username: process.env.DB_USER || 'postgres',
             password: process.env.DB_PASSWORD || '',
             backupDir: process.env.BACKUP_DIR || './backups',
@@ -48,9 +87,9 @@ class BackupService {
             const duration = Date.now() - startTime;
             // Registrar en auditoría
             if (userId) {
-                await createAuditLog({
+                await (0, audit_service_1.createAuditLog)({
                     userId,
-                    action: AuditAction.BACKUP_CREATE,
+                    action: models_1.AuditAction.BACKUP_CREATE,
                     details: JSON.stringify({
                         filename,
                         size: stats.size,
@@ -59,7 +98,7 @@ class BackupService {
                 });
             }
             // Notificar éxito
-            await notificationService.create({
+            await notification_service_1.notificationService.create({
                 type: 'info',
                 title: 'Respaldo completado',
                 message: `Respaldo creado exitosamente: ${filename}`,
@@ -77,7 +116,7 @@ class BackupService {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
             // Notificar error
-            await notificationService.create({
+            await notification_service_1.notificationService.create({
                 type: 'error',
                 title: 'Error en respaldo',
                 message: `Error al crear respaldo: ${errorMessage}`,
@@ -113,9 +152,9 @@ class BackupService {
             const duration = Date.now() - startTime;
             // Registrar en auditoría
             if (userId) {
-                await createAuditLog({
+                await (0, audit_service_1.createAuditLog)({
                     userId,
-                    action: AuditAction.BACKUP_RESTORE,
+                    action: models_1.AuditAction.BACKUP_RESTORE,
                     details: JSON.stringify({
                         filename: options.filename,
                         duration,
@@ -124,7 +163,7 @@ class BackupService {
                 });
             }
             // Notificar éxito
-            await notificationService.create({
+            await notification_service_1.notificationService.create({
                 type: 'warning',
                 title: 'Restauración completada',
                 message: `Base de datos restaurada desde: ${options.filename}`,
@@ -139,7 +178,7 @@ class BackupService {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
             // Notificar error
-            await notificationService.create({
+            await notification_service_1.notificationService.create({
                 type: 'error',
                 title: 'Error en restauración',
                 message: `Error al restaurar: ${errorMessage}`,
@@ -184,7 +223,7 @@ class BackupService {
             await fs.promises.unlink(filepath);
             // Registrar en auditoría
             if (userId) {
-                await createAuditLog({
+                await (0, audit_service_1.createAuditLog)({
                     userId,
                     action: 'backup_delete',
                     details: JSON.stringify({
@@ -204,17 +243,17 @@ class BackupService {
      */
     scheduleAutomaticBackups() {
         // Respaldo diario a las 2:00 AM
-        cron.schedule('0 2 * * *', async () => {
+        node_cron_1.default.schedule('0 2 * * *', async () => {
             console.log('Iniciando respaldo automático...');
             await this.createBackup();
         });
         // Respaldo semanal los domingos a las 1:00 AM
-        cron.schedule('0 1 * * 0', async () => {
+        node_cron_1.default.schedule('0 1 * * 0', async () => {
             console.log('Iniciando respaldo semanal...');
             const result = await this.createBackup();
             if (result.success && result.filename) {
                 // Enviar notificación por email del respaldo semanal
-                await emailService.sendSystemNotification(process.env.ADMIN_EMAIL || 'admin@farmacia.com', 'Respaldo Semanal Completado', `El respaldo semanal se ha completado exitosamente.\nArchivo: ${result.filename}\nTamaño: ${this.formatFileSize(result.size || 0)}`);
+                await email_service_1.emailService.sendSystemNotification(process.env.ADMIN_EMAIL || 'admin@farmacia.com', 'Respaldo Semanal Completado', `El respaldo semanal se ha completado exitosamente.\nArchivo: ${result.filename}\nTamaño: ${this.formatFileSize(result.size || 0)}`);
             }
         });
     }
@@ -286,7 +325,7 @@ class BackupService {
     }
 }
 // Exporta una instancia del servicio de respaldos
-export const backupService = new BackupService();
+exports.backupService = new BackupService();
 // Elimina este bloque duplicado al final del archivo:
 // Agendar backup automático diario a las 2:00 AM
 // cron.schedule('0 2 * * *', async () => {

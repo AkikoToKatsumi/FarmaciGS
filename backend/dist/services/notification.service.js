@@ -1,11 +1,47 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.notificationService = void 0;
 // Importa EventEmitter para emitir eventos internos
-import { EventEmitter } from 'events';
+const events_1 = require("events");
 // Importa uuid para generar identificadores únicos
-import { v4 as uuidv4 } from 'uuid';
+const uuid_1 = require("uuid");
 // Importa WebSocket para comunicación en tiempo real
-import * as WebSocket from 'ws';
+const WebSocket = __importStar(require("ws"));
 // Servicio de notificaciones
-class NotificationService extends EventEmitter {
+class NotificationService extends events_1.EventEmitter {
     constructor() {
         super();
         this.clients = new Set();
@@ -19,7 +55,7 @@ class NotificationService extends EventEmitter {
     createNotification(data) {
         const now = new Date();
         const notification = {
-            id: uuidv4(),
+            id: (0, uuid_1.v4)(),
             type: data.type,
             title: data.title,
             message: data.message,
@@ -60,4 +96,4 @@ class NotificationService extends EventEmitter {
     }
 }
 // Exporta una instancia del servicio de notificaciones
-export const notificationService = new NotificationService();
+exports.notificationService = new NotificationService();

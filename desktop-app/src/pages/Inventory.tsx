@@ -661,7 +661,7 @@ const Inventory = () => {
     stock: product.stock ? product.stock.toString() : '',
     category: product.category || '',
     expirationDate: product.expiration_date ? product.expiration_date.split('T')[0] : '',
-    lot: product.lot_number || '',
+    lot: product.lot || '',
     supplier: '', // No tenemos supplier en el tipo Medicine
     barcode: product.barcode || ''
   });
@@ -777,7 +777,7 @@ const Inventory = () => {
               <AlertCard key={product.id}>
                 <AlertProductName>{product.name}</AlertProductName>
                 <AlertText>Stock: {product.stock} unidades</AlertText>
-                <AlertText>Lote: {product.lot_number}</AlertText>
+                <AlertText>Lote: {product.lot}</AlertText>
               </AlertCard>
             ))}
           </AlertGrid>
@@ -1012,7 +1012,7 @@ const Inventory = () => {
                     </StockBadge>
                   </td>
                   <td>
-                    {product.lot_number}
+                    {product.lot}
                   </td>
                   <td>
                     <ExpirationDate isExpiringSoon={isExpiringSoon(product.expiration_date)}>
