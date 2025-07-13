@@ -4,13 +4,14 @@ import { useUserStore } from './store/user';
 import { useEffect } from 'react';
 
 // Importar páginas
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import Clients from './pages/Clients';
 import Reports from './pages/Reports';
 import Admin from './pages/Admin';
-import Login from './pages/Login';
+
 import Employees from './pages/Employees';
 import Roles from './pages/Roles';
 import Prescriptions from './pages/Prescriptions';
