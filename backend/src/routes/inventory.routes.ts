@@ -15,5 +15,8 @@ router.put('/:id', inventoryController.updateMedicine);
 router.delete('/:id', inventoryController.deleteMedicine);
 router.get('/alerts/stock', inventoryController.getAlerts);
 router.get('/stats/all', inventoryController.getInventoryStats);
+router.get('/barcode/:barcode', inventoryController.getMedicineByBarcode);
+
+
 
 export default router;

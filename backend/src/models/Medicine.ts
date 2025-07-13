@@ -6,7 +6,7 @@ export interface Medicine {
   price: number; // Precio
   stock: number; // Stock disponible
   expiration_date?: Date; // Fecha de expiración (opcional)
-  lot_number?: string; // Número de lote (opcional)
+  lot?: string; // Número de lote (opcional)
   created_at: Date; // Fecha de creación
   provider_id?: number; // ID del proveedor (opcional)
   provider?: Provider; // Objeto proveedor (opcional)
@@ -19,7 +19,7 @@ export interface CreateMedicineData {
   price: number; // Precio
   stock: number; // Stock
   expiration_date?: Date; // Fecha de expiración (opcional)
-  lot_number?: string; // Número de lote (opcional)
+  lot?: string; // Número de lote (opcional)
   provider_id?: number; // ID del proveedor (opcional)
 }
 
@@ -30,7 +30,7 @@ export interface UpdateMedicineData {
   price?: number; // Precio (opcional)
   stock?: number; // Stock (opcional)
   expiration_date?: Date; // Fecha de expiración (opcional)
-  lot_number?: string; // Número de lote (opcional)
+  lot?: string; // Número de lote (opcional)
   provider_id?: number; // ID del proveedor (opcional)
 }
 
@@ -42,7 +42,7 @@ export interface MedicineResponse {
   price: number;
   stock: number;
   expiration_date?: Date;
-  lot_number?: string;
+  lot?: string;
   created_at: Date;
   provider?: ProviderResponse; // Respuesta del proveedor (opcional)
 }
@@ -53,7 +53,7 @@ export interface MedicineInventory {
   name: string;
   stock: number;
   expiration_date?: Date;
-  lot_number?: string;
+  lot?: string;
   days_to_expiration?: number; // Días para expirar (opcional)
   is_expired: boolean; // ¿Está expirado?
   is_low_stock: boolean; // ¿Stock bajo?
@@ -74,7 +74,7 @@ export interface ExpirationAlert {
   medicine_name: string; // Nombre del medicamento
   expiration_date: Date; // Fecha de expiración
   days_to_expiration: number; // Días para expirar
-  lot_number?: string; // Número de lote (opcional)
+  lot?: string; // Número de lote (opcional)
   alert_type: 'EXPIRING_SOON' | 'EXPIRED'; // Tipo de alerta
 }
 

@@ -1,97 +1,47 @@
-import API from './api';
+// src/services/sales.service.ts
+import axios from 'axios';
+import { Medicine } from './inventory.service';
 
-interface SaleItemData {
-  productId: number;
+const API = axios.create({
+  baseURL: 'http://localhost:4004/api',
+  headers: { 'Content-Type': 'application/json' }
+});
+export const getMedicineByBarcode = async (barcode: string): Promise<Medicine> => {
+  const response = await API.get(`/inventory/barcode/${barcode}`);
+  return response.data;
+};
+
+
+export interface SaleItemInput {
+  medicineId: number;
   quantity: number;
-  price: number;
-  discount: number;
 }
 
-interface CreateSaleData {
-  items: SaleItemData[];
-  subtotal: number;
-  discount: number;
-  tax: number;
-  total: number;
-  customerName: string;
-  customerDocument: string;
-  paymentMethod: string;
-  userId: number;
+export interface SaleResponse {
+  sale: {
+    id: number;
+    total: number;
+    created_at: string;
+  };
+  items: Array<{
+    name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>;
+  pdf: string; // base64
 }
 
-export const getSales = async () => {
-  const res = await API.get('/sales');
-  return res.data;
-};
-
-
-export const getSalesByDate = async (token: string, startDate: string, endDate: string) => {
-  const res = await API.get(`/sales/date?start=${startDate}&end=${endDate}`, {
-    headers: { Authorization: `Bearer ${token}` },
+export const createSale = async (
+  userId: number,
+  clientId: number | null,
+  items: SaleItemInput[]
+): Promise<SaleResponse> => {
+  const response = await API.post('/sales', {
+    userId,
+    clientId,
+    items
   });
-  return res.data;
-};
 
-export const getSalesByCustomer = async (token: string, customerName: string) => {
-  const res = await API.get(`/sales/customer/${encodeURIComponent(customerName)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
-
-export const getDailySales = async (token: string, date: string) => {
-  const res = await API.get(`/sales/daily?date=${date}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
-
-export const getMonthlySales = async (token: string, year: number, month: number) => {
-  const res = await API.get(`/sales/monthly?year=${year}&month=${month}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
-
-export const getSalesStats = async (token: string) => {
-  const res = await API.get('/sales/stats', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
-
-export const createSale = async (token: string, saleData: CreateSaleData) => {
-  const res = await API.post('/sales', saleData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
-
-export const updateSale = async (token: string, id: number, saleData: Partial<CreateSaleData>) => {
-  const res = await API.put(`/sales/${id}`, saleData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
-
-export const cancelSale = async (token: string, id: number, reason: string) => {
-  const res = await API.patch(`/sales/${id}/cancel`, { reason }, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
-
-export const deleteSale = async (token: string, id: number) => {
-  const res = await API.delete(`/sales/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
-};
-
-export const printSaleReceipt = async (token: string, id: number) => {
-  const res = await API.get(`/sales/${id}/receipt`, {
-    headers: { Authorization: `Bearer ${token}` },
-    responseType: 'blob'
-  });
-  return res.data;
+  return response.data;
 };

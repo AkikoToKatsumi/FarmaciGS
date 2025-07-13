@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:4003/api',
+  baseURL: 'http://localhost:4004/api',
 });
 
 // Interceptor para agregar el token de autorización a todas las peticiones

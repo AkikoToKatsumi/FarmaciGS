@@ -276,3 +276,26 @@ export const getCategories = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 };
+export const getMedicineByBarcode = async (req: Request, res: Response) => {
+  try {
+    const { barcode } = req.params;
+
+    if (!barcode) {
+      return res.status(400).json({ message: 'Código de barras requerido' });
+    }
+
+    const result = await pool.query(
+      'SELECT * FROM medicine WHERE barcode = $1',
+      [barcode]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Medicamento no encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error al buscar medicamento por código de barras:', error);
+    res.status(500).json({ message: 'Error interno del servidor.' });
+  }
+};

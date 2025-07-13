@@ -156,7 +156,7 @@ class EmailService {
       const template = await this.loadTemplate('expiration-alert', {
         medicines: medicines.map(med => ({
           name: med.name,
-          lotNumber: med.lot_number,
+          lotNumber: med.lot,
           expirationDate: med.expiration_date ? new Date(med.expiration_date).toLocaleDateString('es-DO') : 'No especificada',
           daysToExpiration: med.expiration_date ? 
             Math.ceil((new Date(med.expiration_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0,

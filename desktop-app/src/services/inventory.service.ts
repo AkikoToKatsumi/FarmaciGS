@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Create axios instance with base configuration
 const API = axios.create({ 
-  baseURL: 'http://localhost:4003/api',
+  baseURL: 'http://localhost:4004/api',
   headers: {
     'Content-Type': 'application/json',
   }
@@ -385,3 +385,10 @@ export const inventoryUtils = {
   removeAuthToken,
   getAuthToken
 };
+
+
+export const getMedicineByBarcode = async (barcode: string): Promise<Medicine> => {
+  const response = await API.get(`/inventory/barcode/${encodeURIComponent(barcode)}`);
+  return response.data;
+};
+

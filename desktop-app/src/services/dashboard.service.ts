@@ -1,7 +1,7 @@
 // src/services/dashboard.service.ts
 import axios from 'axios';
 
-const API_URL = 'http://localhost:4003/api'; // Asegúrate de que esta sea tu URL base del API
+const API_URL = 'http://localhost:4004/api'; // Asegúrate de que esta sea tu URL base del API
 
 export interface DashboardStats {
   dailySales: number;

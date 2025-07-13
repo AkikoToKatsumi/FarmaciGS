@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+
 import { 
   getMedicine, 
   createMedicine, 
@@ -65,15 +66,6 @@ const AlertButton = styled(BaseButton)<{ hasAlerts: boolean }>`
   }
 `;
 
-const ErrorMessage = styled.div`
-  background-color: #fed7d7;
-  border: 1px solid #f56565;
-  color: #c53030;
-  padding: 0.75rem 1rem;
-  border-radius: 0.25rem;
-  margin-bottom: 1rem;
-`;
-
 const Card = styled.div`
   background-color: white;
   border-radius: 0.5rem;
@@ -95,7 +87,6 @@ const FilterGrid = styled.div`
 const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
-
 `;
 
 const Label = styled.label`
@@ -529,13 +520,156 @@ const LoadingContainer = styled.div`
   color: #6b7280;
 `;
 
+// Componentes de mensajes modernos
+const MessageContainer = styled.div<{ type: 'success' | 'error' }>`
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  ${props => props.type === 'success' ? `
+    background-color: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
+  ` : `
+    background-color: #fef2f2;
+    border-color: #ef4444;
+    color: #dc2626;
+  `}
+  
+  @keyframes slideIn {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+`;
+
+const MessageIcon = styled.div<{ type: 'success' | 'error' }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  margin-right: 1rem;
+  flex-shrink: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  
+  ${props => props.type === 'success' ? `
+    background-color: #22c55e;
+    color: white;
+  ` : `
+    background-color: #ef4444;
+    color: white;
+  `}
+`;
+
+const MessageContent = styled.div`
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+`;
+
+const MessageCloseButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  margin-left: 1rem;
+  cursor: pointer;
+  opacity: 0.7;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  font-size: 1.125rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+  }
+`;
+
+// Contenedor para posicionar notificaciones
+const NotificationContainer = styled.div`
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  max-width: 400px;
+  
+  @media (max-width: 768px) {
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
+  }
+`;
+
+// Componente de notificación reutilizable
+interface NotificationProps {
+  type: 'success' | 'error';
+  message: string;
+  onClose: () => void;
+  autoClose?: boolean;
+  duration?: number;
+}
+
+const Notification: React.FC<NotificationProps> = ({ 
+  type, 
+  message, 
+  onClose, 
+  autoClose = true, 
+  duration = 5000 
+}) => {
+  useEffect(() => {
+    if (autoClose) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, duration);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoClose, duration, onClose]);
+
+  return (
+    <MessageContainer type={type}>
+      <MessageIcon type={type}>
+        {type === 'success' ? '✓' : '✕'}
+      </MessageIcon>
+      <MessageContent>
+        {message}
+      </MessageContent>
+      <MessageCloseButton onClick={onClose}>
+        ✕
+      </MessageCloseButton>
+    </MessageContainer>
+  );
+};
+
 // Component
 const Inventory = () => {
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   // Estados principales
   const [products, setProducts] = useState<MedicineType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<MedicineType | null>(null);
   const [showAlerts, setShowAlerts] = useState(false);
@@ -571,9 +705,9 @@ const Inventory = () => {
       setLoading(true);
       const data = await getMedicine();
       setProducts(data);
-      setError(null);
+      setErrorMessage(null);
     } catch (err) {
-      setError('Error al cargar productos');
+      setErrorMessage('Error al cargar productos. Por favor, intenta de nuevo.');
       console.error('Error fetching products:', err);
     } finally {
       setLoading(false);
@@ -638,36 +772,40 @@ const Inventory = () => {
 
       if (editingProduct) {
         await updateMedicine(editingProduct.id, medicineData);
+        setSuccessMessage('Producto actualizado correctamente.');
       } else {
         await createMedicine(medicineData);
+        setSuccessMessage('Producto agregado correctamente.');
       }
 
       await fetchProducts();
       await fetchStockAlerts();
       resetForm();
-      setError(null);
+      setErrorMessage(null);
     } catch (err) {
-      setError(editingProduct ? 'Error al actualizar producto' : 'Error al crear producto');
+      const errorMsg = editingProduct 
+        ? 'Error al actualizar el producto. Verifica los datos e intenta de nuevo.' 
+        : 'Error al crear el producto. Verifica los datos e intenta de nuevo.';
+      setErrorMessage(errorMsg);
       console.error('Error submitting form:', err);
     }
   };
 
   const handleEdit = (product: MedicineType) => {
-  setEditingProduct(product);
-  setFormData({
-    name: product.name || '',
-    description: product.description || '',
-    price: product.price ? product.price.toString() : '',
-    stock: product.stock ? product.stock.toString() : '',
-    category: product.category || '',
-    expirationDate: product.expiration_date ? product.expiration_date.split('T')[0] : '',
-    lot: product.lot || '',
-    supplier: '', // No tenemos supplier en el tipo Medicine
-    barcode: product.barcode || ''
-  });
-  setShowForm(true);
-};
- 
+    setEditingProduct(product);
+    setFormData({
+      name: product.name || '',
+      description: product.description || '',
+      price: product.price ? product.price.toString() : '',
+      stock: product.stock ? product.stock.toString() : '',
+      category: product.category || '',
+      expirationDate: product.expiration_date ? product.expiration_date.split('T')[0] : '',
+      lot: product.lot || '',
+      supplier: '', // No tenemos supplier en el tipo Medicine
+      barcode: product.barcode || ''
+    });
+    setShowForm(true);
+  };
 
   const handleDelete = async (id: number) => {
     if (window.confirm('¿Está seguro de que desea eliminar este producto?')) {
@@ -675,9 +813,10 @@ const Inventory = () => {
         await deleteMedicine(id);
         await fetchProducts();
         await fetchStockAlerts();
-        setError(null);
+        setSuccessMessage('Producto eliminado correctamente.');
+        setErrorMessage(null);
       } catch (err) {
-        setError('Error al eliminar producto');
+        setErrorMessage('Error al eliminar el producto. Intenta de nuevo.');
         console.error('Error deleting product:', err);
       }
     }
@@ -742,8 +881,30 @@ const Inventory = () => {
 
   return (
     <PageContainer>
+      {/* Contenedor de notificaciones */}
+      <NotificationContainer>
+        {successMessage && (
+          <Notification
+            type="success"
+            message={successMessage}
+            onClose={() => setSuccessMessage(null)}
+            autoClose={true}
+            duration={4000}
+          />
+        )}
+        {errorMessage && (
+          <Notification
+            type="error"
+            message={errorMessage}
+            onClose={() => setErrorMessage(null)}
+            autoClose={true}
+            duration={6000}
+          />
+        )}
+      </NotificationContainer>
+
       <Header>
-               <Title>Gestión de Inventario</Title>
+        <Title>Gestión de Inventario</Title>
         <ButtonContainer>
           <AlertButton
             onClick={() => setShowAlerts(!showAlerts)}
@@ -757,16 +918,10 @@ const Inventory = () => {
             Agregar Producto
           </PrimaryButton>
           <BaseButton onClick={() => navigate('/dashboard')} style={{ backgroundColor: '#f3f4f6', color: '#374151' }}>
-           volver a inicio
+            Volver a inicio
           </BaseButton>
         </ButtonContainer>
       </Header>
-
-      {error && (
-        <ErrorMessage>
-          {error}
-        </ErrorMessage>
-      )}
 
       {/* Alertas de Stock */}
       {showAlerts && stockAlerts.length > 0 && (

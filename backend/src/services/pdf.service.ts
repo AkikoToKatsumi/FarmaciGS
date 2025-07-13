@@ -1,50 +1,98 @@
-// Importa puppeteer para generar PDFs a partir de HTML
+// src/services/pdf.service.ts
 import puppeteer from 'puppeteer';
-import fs from 'fs';
 import path from 'path';
+import fs from 'fs';
+import { Buffer } from 'buffer';
 
-// Opciones para la generación de PDF
-interface GeneratePDFOptions {
-  html: string;         // HTML como string
-  outputPath?: string;  // Ruta donde guardar el PDF (opcional)
-  format?: 'A4' | 'Letter'; // Formato del PDF (opcional, por defecto A4)
+
+interface Sale {
+  id: number;
+  user_id: number;
+  client_id: number | null;
+  total: number;
+  created_at: string;
 }
 
-// Función para generar un PDF a partir de HTML
-export const generatePDF = async ({
-  html,
-  outputPath,
-  format = 'A4'
-}: GeneratePDFOptions): Promise<Buffer> => {
-  // Lanza un navegador headless (sin interfaz gráfica)
+interface SaleItem {
+  medicine_id: number;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
+export const generateSalePDF = async (sale: Sale, items: SaleItem[]): Promise<Buffer> => {
+  // 1. Crear HTML dinámico
+  const html = buildInvoiceHtml(sale, items);
+
+  // 2. Usar Puppeteer para renderizarlo
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
-  // Cargar el HTML en blanco y esperar a que termine de cargar
-  await page.setContent(html, {
-    waitUntil: 'networkidle0'
-  });
+  await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-  // Generar el PDF con las opciones indicadas
   const pdfBuffer = await page.pdf({
-    format,
+    format: 'A4',
     printBackground: true,
-    path: outputPath // Si se indica, guarda el archivo en disco
+    margin: { top: '1cm', bottom: '1cm', left: '1cm', right: '1cm' },
   });
 
-  // Cierra el navegador
   await browser.close();
-  // Devuelve el PDF como buffer
   return Buffer.from(pdfBuffer);
+;
 };
 
-// Uso opcional: guardar directamente el PDF como archivo
-export const savePDFToFile = async (html: string, filename: string) => {
-  // Define la ruta de salida
-  const outputPath = path.join(__dirname, '../../docs/generated', filename);
+function buildInvoiceHtml(sale: Sale, items: SaleItem[]) {
+  const date = new Date(sale.created_at).toLocaleString('es-ES');
+  const rows = items.map(item => `
+    <tr>
+      <td>${item.name}</td>
+      <td style="text-align:center;">${item.quantity}</td>
+      <td style="text-align:right;">$${item.unit_price.toFixed(2)}</td>
+      <td style="text-align:right;">$${item.total_price.toFixed(2)}</td>
+    </tr>
+  `).join('');
 
-  // Genera el PDF y lo guarda en disco
-  const buffer = await generatePDF({ html, outputPath });
-  fs.writeFileSync(outputPath, buffer);
-  return outputPath;
-};
+  return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <title>Factura Venta #${sale.id}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 8px; border-bottom: 1px solid #ccc; }
+        th { background-color: #f5f5f5; }
+        tfoot td { font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h1>Factura de Venta</h1>
+      <p><strong>Venta ID:</strong> ${sale.id}</p>
+      <p><strong>Fecha:</strong> ${date}</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cant.</th>
+            <th>Precio Unit.</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="text-align:right;">Total:</td>
+            <td style="text-align:right;">$${sale.total.toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </body>
+    </html>
+  `;
+}
