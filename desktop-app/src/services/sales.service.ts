@@ -7,29 +7,11 @@ const API = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Interceptor para añadir token
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Interceptor de respuesta - NO redirigir automáticamente
-API.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // NO redirigir automáticamente, solo loguear el error
-    console.error('Error en API:', error.response?.status, error.response?.data);
-    
-    // Dejar que el componente maneje el error
-    return Promise.reject(error);
-  }
-);
-
-export const getMedicineByBarcode = async (barcode: string): Promise<Medicine> => {
-  const response = await API.get(`/inventory/barcode/${barcode}`);
+// ❌ PROBLEMA: No uses localStorage directamente
+// ✅ SOLUCIÓN: Pasar el token como parámetro
+export const getMedicineByBarcode = async (barcode: string, token?: string): Promise<Medicine> => {
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  const response = await API.get(`/inventory/barcode/${barcode}`, config);
   return response.data;
 };
 
@@ -53,18 +35,25 @@ export interface SaleResponse {
   pdf: string;
 }
 
+// ✅ SOLUCIÓN: Recibir token como parámetro
 export const createSale = async (
   userId: number,
   clientId: number | null,
-  items: SaleItemInput[]
+  items: SaleItemInput[],
+  token: string  // 👈 Añadir token como parámetro
 ): Promise<SaleResponse> => {
   try {
     console.log('Creando venta con:', { userId, clientId, items });
+    console.log('Token enviado:', token ? 'Presente' : 'Ausente');
     
     const response = await API.post('/sales', {
       userId,
       clientId,
       items
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`  // 👈 Enviar token en headers
+      }
     });
     
     console.log('Venta creada exitosamente:', response.data);
@@ -73,7 +62,8 @@ export const createSale = async (
     console.error('Error al crear venta:', {
       status: error.response?.status,
       data: error.response?.data,
-      message: error.message
+      message: error.message,
+      token: token ? 'Token presente' : 'Token ausente'
     });
     
     // Re-lanzar el error para que el componente lo maneje

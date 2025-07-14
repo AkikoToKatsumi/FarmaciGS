@@ -57,16 +57,25 @@ export const createSale = async (req: AuthRequest, res: Response) => {
         throw new Error(`Stock insuficiente para "${medicine.name}"`);
       }
 
-      const subtotal = medicine.price * item.quantity;
-      total += subtotal;
+     const unitPrice = Number(medicine.price);
+     const subtotal = unitPrice * item.quantity;
 
-      saleItems.push({
-        medicine_id: medicine.id,
-        name: medicine.name,
-        quantity: item.quantity,
-        unit_price: medicine.price,
-        total_price: subtotal,
-      });
+   total += parseFloat(medicine.price) * item.quantity;
+      if (isNaN(total)) {
+        throw new Error('Error al calcular el total de la venta');
+      }
+
+      // Agregar item a la lista de items de la venta
+
+saleItems.push({
+  medicine_id: medicine.id,
+  name: medicine.name,
+  quantity: item.quantity,
+  unit_price: parseFloat(medicine.price),
+  total_price: subtotal,
+});
+
+      console.log(`Producto procesado: ${medicine.name}, Cantidad: ${item.quantity}, Subtotal: $${subtotal.toFixed(2)}`);
     }
 
     // 2. Insertar venta

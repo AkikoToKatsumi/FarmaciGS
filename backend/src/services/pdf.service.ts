@@ -44,14 +44,21 @@ export const generateSalePDF = async (sale: Sale, items: SaleItem[]): Promise<Bu
 
 function buildInvoiceHtml(sale: Sale, items: SaleItem[]) {
   const date = new Date(sale.created_at).toLocaleString('es-ES');
-  const rows = items.map(item => `
+  const rows = items.map(item => {
+  const unitPrice = Number(item.unit_price);
+  const totalPrice = Number(item.total_price);
+  return `
     <tr>
       <td>${item.name}</td>
       <td style="text-align:center;">${item.quantity}</td>
-      <td style="text-align:right;">$${item.unit_price.toFixed(2)}</td>
-      <td style="text-align:right;">$${item.total_price.toFixed(2)}</td>
+      <td style="text-align:right;">$${unitPrice.toFixed(2)}</td>
+      <td style="text-align:right;">$${totalPrice.toFixed(2)}</td>
+      <td style="text-align:right;">$${Number(sale.total).toFixed(2)}</td>
+
     </tr>
-  `).join('');
+  `;
+}).join('');
+
 
   return `
     <!DOCTYPE html>
@@ -88,7 +95,8 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[]) {
         <tfoot>
           <tr>
             <td colspan="3" style="text-align:right;">Total:</td>
-            <td style="text-align:right;">$${sale.total.toFixed(2)}</td>
+        <td style="text-align:right;">$${Number(sale.total).toFixed(2)}</td>
+
           </tr>
         </tfoot>
       </table>

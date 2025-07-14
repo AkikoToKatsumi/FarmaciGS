@@ -709,30 +709,38 @@ const handleConfirmSale = async () => {
     showNotification('error', 'Carrito vacío', 'No puedes confirmar una venta sin productos');
     return;
   }
+
+  // ✅ Validar token antes de proceder
+  if (!token) {
+    showNotification('error', 'Error de autenticación', 'No se encontró token de autenticación. Por favor inicia sesión.');
+    navigate('/login');
+    return;
+  }
+
   try {
     setLoading(true);
-    if (!token) {
-      showNotification('error', 'Error de autenticación', 'No se encontró token de autenticación. Por favor inicia sesión.');
-      navigate('/login');
-      return;
-    }
     console.log('Iniciando venta con items:', items);
+    console.log('Token disponible:', token ? 'Sí' : 'No');
 
     const saleItems = items.map(item => ({
       medicineId: item.medicineId,
       quantity: item.quantity
     }));
+
     console.log('Datos enviados:', { userId, clientId, saleItems });
-const result = await createSale(userId, clientId, saleItems);
+
+    // ✅ SOLUCIÓN: Pasar el token como parámetro
+    const result = await createSale(userId, clientId, saleItems, token);
+    
     console.log('Resultado de la API:', result);
     
-    console.log('Resultado de venta:', result);
     // Generar PDF
     const blob = new Blob([Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))], {
       type: 'application/pdf',
     });
     const url = URL.createObjectURL(blob);
     window.open(url);
+    
     // Limpiar carrito solo si la venta fue exitosa
     setItems([]);
     showNotification('success', 'Venta confirmada', 'La venta se procesó exitosamente y se generó el PDF');
@@ -760,8 +768,6 @@ const result = await createSale(userId, clientId, saleItems);
     setLoading(false);
   }
 };
-
-
 
   function getTotal() {
     return items.reduce((total, item) => total + item.quantity * item.productInfo.price, 0);
