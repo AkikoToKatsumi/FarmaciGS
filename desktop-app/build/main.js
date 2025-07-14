@@ -107,21 +107,6 @@ class Application {
                     },
                     { type: 'separator' },
                     {
-                        label: 'Exportar Datos',
-                        click: async () => {
-                            const result = await electron_1.dialog.showSaveDialog(this.mainWindow, {
-                                filters: [
-                                    { name: 'JSON', extensions: ['json'] },
-                                    { name: 'CSV', extensions: ['csv'] }
-                                ]
-                            });
-                            if (!result.canceled) {
-                                this.mainWindow?.webContents.send('export-data', result.filePath);
-                            }
-                        }
-                    },
-                    { type: 'separator' },
-                    {
                         label: 'Salir',
                         accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
                         click: () => {
@@ -174,24 +159,7 @@ class Application {
                     }
                 ]
             },
-            {
-                label: 'Clientes',
-                submenu: [
-                    {
-                        label: 'Ver Clientes',
-                        accelerator: 'CmdOrCtrl+C',
-                        click: () => {
-                            this.mainWindow?.webContents.send('navigate-to', '/clients');
-                        }
-                    },
-                    {
-                        label: 'Agregar Cliente',
-                        click: () => {
-                            this.mainWindow?.webContents.send('navigate-to', '/clients/new');
-                        }
-                    }
-                ]
-            },
+            
             {
                 label: 'Ver',
                 submenu: [

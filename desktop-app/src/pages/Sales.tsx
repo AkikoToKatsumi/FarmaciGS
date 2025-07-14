@@ -1,8 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { Search, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCircle } from 'lucide-react';
+import styled, { keyframes } from 'styled-components';
+import { Search, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCircle, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getMedicine, getMedicineByBarcode } from '../services/inventory.service';
-import { createSale } from '../services/sales.service';
+import { createSale } from '../services/sales.service'; 
+import { useNavigate } from 'react-router-dom';
+
+// Animaciones para las notificaciones
+const slideInRight = keyframes`
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+`;
+
+const slideOutRight = keyframes`
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+`;
+
 // Styled Components
 const Container = styled.div`
   min-height: 100vh;
@@ -100,7 +125,7 @@ const SearchIcon = styled(Search)`
 `;
 
 const SearchInput = styled.input`
-  width: 100%;
+  width: 80%;
   padding: 0.5rem 1rem 0.5rem 2.5rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
@@ -114,23 +139,23 @@ const SearchInput = styled.input`
 `;
 
 const SearchButton = styled.button`
-  padding: 0.5rem 1.5rem;
-  background-color: #2563eb;
+  padding: 0.2rem 1.5rem;
+  background-color: #2592ebff;
   color: white;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  display: flex;
+  display:flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 500;
+  font-weight: 300;
   
   &:hover {
     background-color: #1d4ed8;
   }
   
   &:disabled {
-    background-color: #9ca3af;
+    background-color: #404347ff;
     cursor: not-allowed;
   }
 `;
@@ -331,7 +356,7 @@ const CartItem = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  background-color: #f9fafb;
+  background-color: #5696d6ff;
   border-radius: 0.5rem;
 `;
 
@@ -402,7 +427,7 @@ const TotalAmount = styled.span`
 `;
 
 const ConfirmButton = styled.button`
-  width: 100%;
+  width: 90%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -418,12 +443,86 @@ const ConfirmButton = styled.button`
   &:hover {
     background-color: #1d4ed8;
   }
+  
+  &:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+  }
 `;
 
+const BaseButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 0.875rem;
+`;
 
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+`;
 
-// Styled Components
-// ... (todo tu bloque de styled components queda igual, sin cambios)
+// Componentes de Notificación
+const NotificationContainer = styled.div`
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 24rem;
+`;
+
+const Notification = styled.div<{ type: 'success' | 'error'; isVisible: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  animation: ${props => props.isVisible ? slideInRight : slideOutRight} 0.3s ease-out;
+  background-color: ${props => props.type === 'success' ? '#f0f9ff' : '#fef2f2'};
+  border-left: 4px solid ${props => props.type === 'success' ? '#16a34a' : '#ef4444'};
+`;
+
+const NotificationIcon = styled.div<{ type: 'success' | 'error' }>`
+  color: ${props => props.type === 'success' ? '#16a34a' : '#ef4444'};
+  flex-shrink: 0;
+`;
+
+const NotificationContent = styled.div`
+  flex: 1;
+`;
+
+const NotificationTitle = styled.h4<{ type: 'success' | 'error' }>`
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: ${props => props.type === 'success' ? '#065f46' : '#991b1b'};
+  margin: 0 0 0.25rem 0;
+`;
+
+const NotificationMessage = styled.p<{ type: 'success' | 'error' }>`
+  font-size: 0.875rem;
+  color: ${props => props.type === 'success' ? '#047857' : '#dc2626'};
+  margin: 0;
+`;
+
+const NotificationCloseButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  
+  &:hover {
+    color: #374151;
+  }
+`;
 
 // Función para búsqueda por nombre (usa API real)
 async function searchMedicineByName(name: string) {
@@ -445,7 +544,16 @@ interface Medicine {
   description: string;
 }
 
+interface NotificationState {
+  id: number;
+  type: 'success' | 'error';
+  title: string;
+  message: string;
+  isVisible: boolean;
+}
+
 const SalesPOS: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'barcode' | 'name'>('barcode');
   const [product, setProduct] = useState<Medicine | null>(null);
@@ -455,6 +563,46 @@ const SalesPOS: React.FC = () => {
   const [userId] = useState(1);
   const [clientId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationState[]>([]);
+
+  // Función para mostrar notificaciones
+  const showNotification = (type: 'success' | 'error', title: string, message: string) => {
+    const id = Date.now();
+    const newNotification: NotificationState = {
+      id,
+      type,
+      title,
+      message,
+      isVisible: true
+    };
+
+    setNotifications(prev => [...prev, newNotification]);
+
+    // Auto-remove notification after 5 seconds
+    setTimeout(() => {
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === id ? { ...notif, isVisible: false } : notif
+        )
+      );
+      // Remove from array after animation completes
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(notif => notif.id !== id));
+      }, 300);
+    }, 5000);
+  };
+
+  // Función para cerrar notificación manualmente
+  const closeNotification = (id: number) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === id ? { ...notif, isVisible: false } : notif
+      )
+    );
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+    }, 300);
+  };
 
   // ✅ Búsqueda reactiva por nombre
   useEffect(() => {
@@ -467,7 +615,10 @@ const SalesPOS: React.FC = () => {
   }, [searchTerm, searchType]);
 
   const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
+    if (!searchTerm.trim()) {
+      showNotification('error', 'Error de búsqueda', 'Por favor ingresa un término de búsqueda');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -475,13 +626,19 @@ const SalesPOS: React.FC = () => {
         const result = await getMedicineByBarcode(searchTerm);
         setProduct(result);
         setSearchResults([]);
+        showNotification('success', 'Producto encontrado', `Se encontró: ${result.name}`);
       } else {
         const results = await searchMedicineByName(searchTerm);
+        if (results.length === 0) {
+          showNotification('error', 'Sin resultados', 'No se encontraron productos con ese nombre');
+        } else {
+          showNotification('success', 'Búsqueda exitosa', `Se encontraron ${results.length} producto(s)`);
+        }
         setSearchResults(results);
         setProduct(null);
       }
     } catch (error) {
-      alert('Producto no encontrado');
+      showNotification('error', 'Producto no encontrado', 'No se pudo encontrar el producto solicitado');
       setProduct(null);
       setSearchResults([]);
     } finally {
@@ -492,23 +649,47 @@ const SalesPOS: React.FC = () => {
   const handleSelectFromResults = (selectedProduct: Medicine) => {
     setProduct(selectedProduct);
     setSearchResults([]);
+    showNotification('success', 'Producto seleccionado', `Seleccionaste: ${selectedProduct.name}`);
   };
 
   const handleAddItem = () => {
-    if (!product || quantity < 1 || quantity > product.stock) return;
+    if (!product) {
+      showNotification('error', 'Error', 'No hay producto seleccionado');
+      return;
+    }
+
+    if (quantity < 1) {
+      showNotification('error', 'Cantidad inválida', 'La cantidad debe ser mayor a 0');
+      return;
+    }
+
+    if (quantity > product.stock) {
+      showNotification('error', 'Stock insuficiente', `Solo hay ${product.stock} unidades disponibles`);
+      return;
+    }
 
     const existingItemIndex = items.findIndex(item => item.medicineId === product.id);
 
     if (existingItemIndex > -1) {
+      const existingQuantity = items[existingItemIndex].quantity;
+      const newTotalQuantity = existingQuantity + quantity;
+      
+      if (newTotalQuantity > product.stock) {
+        showNotification('error', 'Stock insuficiente', `Ya tienes ${existingQuantity} unidades en el carrito. No puedes agregar ${quantity} más.`);
+        return;
+      }
+
       const updatedItems = [...items];
-      updatedItems[existingItemIndex].quantity += quantity;
+      updatedItems[existingItemIndex].quantity = newTotalQuantity;
       setItems(updatedItems);
+      showNotification('success', 'Producto actualizado', `Se actualizó la cantidad de ${product.name} a ${newTotalQuantity} unidades`);
     } else {
       setItems([...items, {
         medicineId: product.id,
         quantity,
         productInfo: product
       }]);
+      showNotification('success', 'Producto agregado', `Se agregó ${quantity} unidad(es) de ${product.name} al carrito`);
     }
 
     setProduct(null);
@@ -517,28 +698,43 @@ const SalesPOS: React.FC = () => {
   };
 
   const handleRemoveItem = (index: number) => {
+    const removedItem = items[index];
     setItems(items.filter((_, i) => i !== index));
+    showNotification('success', 'Producto removido', `Se removió ${removedItem.productInfo.name} del carrito`);
   };
 
   const handleConfirmSale = async () => {
-    const saleItems = items.map(item => ({
-      medicineId: item.medicineId,
-      quantity: item.quantity
-    }));
+    if (items.length === 0) {
+      showNotification('error', 'Carrito vacío', 'No puedes confirmar una venta sin productos');
+      return;
+    }
 
-    const result = await createSale(userId, clientId, saleItems);
-    const blob = new Blob([Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))], {
-      type: 'application/pdf',
-    });
+    try {
+      setLoading(true);
+      const saleItems = items.map(item => ({
+        medicineId: item.medicineId,
+        quantity: item.quantity
+      }));
 
-    const url = URL.createObjectURL(blob);
-    window.open(url);
+      const result = await createSale(userId, clientId, saleItems);
+      const blob = new Blob([Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))], {
+        type: 'application/pdf',
+      });
 
-    setItems([]);
+      const url = URL.createObjectURL(blob);
+      window.open(url);
+
+      setItems([]);
+      showNotification('success', 'Venta confirmada', 'La venta se procesó exitosamente y se generó el PDF');
+    } catch (error) {
+      showNotification('error', 'Error en la venta', 'No se pudo procesar la venta. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getTotal = () => {
-    return items.reduce((total, item) => total + (item.productInfo.price * item.quantity), 0);
+    return items.reduce((total, item) => total + (Number(item.productInfo.price) * item.quantity), 0);
   };
 
   return (
@@ -549,6 +745,11 @@ const SalesPOS: React.FC = () => {
             <ShoppingCart color="#2563eb" />
             POS - Sistema de Ventas
           </Title>
+           <ButtonContainer>
+          <BaseButton onClick={() => navigate('/dashboard')} style={{ backgroundColor: '#bbbdc0ff', color: '#1e1f22ff',  }}>
+            Volver a inicio
+          </BaseButton>
+           </ButtonContainer>
         </Header>
 
         <GridContainer>
@@ -616,7 +817,7 @@ const SalesPOS: React.FC = () => {
                           <ResultItemDescription>{medicine.description}</ResultItemDescription>
                         </ResultItemInfo>
                         <ResultItemPrice>
-                          <Price>${medicine.price.toFixed(2)}</Price>
+                          <Price>${Number(medicine.price).toFixed(2)}</Price>
                           <Stock>Stock: {medicine.stock}</Stock>
                         </ResultItemPrice>
                       </ResultItemContent>
@@ -653,7 +854,7 @@ const SalesPOS: React.FC = () => {
                       <DollarSign size={20} color="#16a34a" />
                       <div>
                         <ProductInfoLabel>Precio</ProductInfoLabel>
-                        <ProductPriceValue>${product.price.toFixed(2)}</ProductPriceValue>
+                        <ProductPriceValue>${Number(product.price).toFixed(2)}</ProductPriceValue>
                       </div>
                     </ProductInfoItem>
                     <div>
@@ -709,12 +910,12 @@ const SalesPOS: React.FC = () => {
                       <CartItemInfo>
                         <CartItemName>{item.productInfo.name}</CartItemName>
                         <CartItemDetails>
-                          {item.quantity} × ${item.productInfo.price.toFixed(2)}
+                          {item.quantity} × ${Number(item.productInfo.price).toFixed(2)}
                         </CartItemDetails>
                       </CartItemInfo>
                       <CartItemActions>
                         <CartItemPrice>
-                          ${(item.quantity * item.productInfo.price).toFixed(2)}
+                          ${(item.quantity * Number(item.productInfo.price)).toFixed(2)}
                         </CartItemPrice>
                         <RemoveButton onClick={() => handleRemoveItem(index)}>
                           <Trash2 size={16} />
@@ -730,9 +931,12 @@ const SalesPOS: React.FC = () => {
                     <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
                   </TotalRow>
 
-                  <ConfirmButton onClick={handleConfirmSale}>
+                  <ConfirmButton 
+                    onClick={handleConfirmSale}
+                    disabled={loading || items.length === 0}
+                  >
                     <CheckCircle size={20} />
-                    Confirmar Venta
+                    {loading ? 'Procesando...' : 'Confirmar Venta'}
                   </ConfirmButton>
                 </CartTotal>
               </>
@@ -740,6 +944,38 @@ const SalesPOS: React.FC = () => {
           </CartCard>
         </GridContainer>
       </MaxWidthContainer>
+
+      {/* Sistema de Notificaciones */}
+      <NotificationContainer>
+        {notifications.map((notification) => (
+          <Notification
+            key={notification.id}
+            type={notification.type}
+            isVisible={notification.isVisible}
+          >
+            <NotificationIcon type={notification.type}>
+              {notification.type === 'success' ? (
+                <CheckCircle2 size={20} />
+              ) : (
+                <AlertCircle size={20} />
+              )}
+            </NotificationIcon>
+            <NotificationContent>
+              <NotificationTitle type={notification.type}>
+                {notification.title}
+              </NotificationTitle>
+              <NotificationMessage type={notification.type}>
+                {notification.message}
+              </NotificationMessage>
+            </NotificationContent>
+            <NotificationCloseButton
+              onClick={() => closeNotification(notification.id)}
+            >
+              <X size={16} />
+            </NotificationCloseButton>
+          </Notification>
+        ))}
+      </NotificationContainer>
     </Container>
   );
 };
