@@ -1,39 +1,45 @@
 // src/controllers/sales.controller.ts
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import pool from '../config/db';
 import { generateSalePDF } from '../services/pdf.service'; // asegúrate que esto exista
+import { AuthRequest } from '../middleware/auth.middleware';
 
 interface SaleItem {
   medicineId: number;
   quantity: number;
 }
-export const getSales = async (req: Request, res: Response) => {
+export const getSales = async (req: AuthRequest, res: Response) => {
   res.json({ message: 'Listado de ventas (a implementar)' });
 };
 
-export const getSaleById = async (req: Request, res: Response) => {
+export const getSaleById = async (req: AuthRequest, res: Response) => {
   res.json({ message: 'Detalle de venta por ID (a implementar)' });
 };
 
-export const updateSale = async (req: Request, res: Response) => {
+export const updateSale = async (req: AuthRequest, res: Response) => {
   res.json({ message: 'Actualizar venta (a implementar)' });
 };
 
-export const deleteSale = async (req: Request, res: Response) => {
+export const deleteSale = async (req: AuthRequest, res: Response) => {
   res.json({ message: 'Eliminar venta (a implementar)' });
 };
 
-export const createSale = async (req: Request, res: Response) => {
+export const createSale = async (req: AuthRequest, res: Response) => {
+  console.log('=== INICIO CREATE SALE ===');
+  console.log('Usuario del token:', req.user);
+  console.log('Body recibido:', req.body);
   const client = await pool.connect();
   try {
     const { userId, clientId, items }: { userId: number; clientId: number | null; items: SaleItem[] } = req.body;
-
+   console.log('Datos procesados:', { userId, clientId, items });
     if (!items || items.length === 0) {
+        console.log('Error: No hay items');
       return res.status(400).json({ message: 'No hay productos en la venta.' });
     }
 
     await client.query('BEGIN');
+       console.log('Transacción iniciada');
 
     // 1. Calcular total
     let total = 0;

@@ -4,6 +4,7 @@ import { Search, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCir
 import { getMedicine, getMedicineByBarcode } from '../services/inventory.service';
 import { createSale } from '../services/sales.service'; 
 import { useNavigate } from 'react-router-dom';
+import { useUserStore } from '../store/user';
 
 // Animaciones para las notificaciones
 const slideInRight = keyframes`
@@ -564,6 +565,7 @@ const SalesPOS: React.FC = () => {
   const [clientId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
+  const { token, clearUser } = useUserStore();
 
   // Función para mostrar notificaciones
   const showNotification = (type: 'success' | 'error', title: string, message: string) => {
@@ -702,40 +704,67 @@ const SalesPOS: React.FC = () => {
     setItems(items.filter((_, i) => i !== index));
     showNotification('success', 'Producto removido', `Se removió ${removedItem.productInfo.name} del carrito`);
   };
-
-  const handleConfirmSale = async () => {
-    if (items.length === 0) {
-      showNotification('error', 'Carrito vacío', 'No puedes confirmar una venta sin productos');
+const handleConfirmSale = async () => {
+  if (items.length === 0) {
+    showNotification('error', 'Carrito vacío', 'No puedes confirmar una venta sin productos');
+    return;
+  }
+  try {
+    setLoading(true);
+    if (!token) {
+      showNotification('error', 'Error de autenticación', 'No se encontró token de autenticación. Por favor inicia sesión.');
+      navigate('/login');
       return;
     }
+    console.log('Iniciando venta con items:', items);
 
-    try {
-      setLoading(true);
-      const saleItems = items.map(item => ({
-        medicineId: item.medicineId,
-        quantity: item.quantity
-      }));
-
-      const result = await createSale(userId, clientId, saleItems);
-      const blob = new Blob([Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))], {
-        type: 'application/pdf',
-      });
-
-      const url = URL.createObjectURL(blob);
-      window.open(url);
-
-      setItems([]);
-      showNotification('success', 'Venta confirmada', 'La venta se procesó exitosamente y se generó el PDF');
-    } catch (error) {
-      showNotification('error', 'Error en la venta', 'No se pudo procesar la venta. Intenta nuevamente.');
-    } finally {
-      setLoading(false);
+    const saleItems = items.map(item => ({
+      medicineId: item.medicineId,
+      quantity: item.quantity
+    }));
+    console.log('Datos enviados:', { userId, clientId, saleItems });
+    const result = await createSale({ userId, clientId, items: saleItems }, token);
+    
+    console.log('Resultado de venta:', result);
+    // Generar PDF
+    const blob = new Blob([Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))], {
+      type: 'application/pdf',
+    });
+    const url = URL.createObjectURL(blob);
+    window.open(url);
+    // Limpiar carrito solo si la venta fue exitosa
+    setItems([]);
+    showNotification('success', 'Venta confirmada', 'La venta se procesó exitosamente y se generó el PDF');
+    
+  } catch (error: any) {
+    console.error('Error completo:', error);
+    console.error('Error response:', error.response);
+    
+    // Manejar diferentes tipos de errores
+    if (error.response?.status === 401) {
+      showNotification('error', 'Error de autenticación', 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+      clearUser();
+      navigate('/login');
+    } else if (error.response?.status === 400) {
+      const errorMessage = error.response?.data?.message || 'Error en los datos enviados';
+      showNotification('error', 'Error de validación', errorMessage);
+    } else if (error.response?.status === 500) {
+      const errorMessage = error.response?.data?.message || 'Error interno del servidor';
+      showNotification('error', 'Error del servidor', errorMessage);
+    } else {
+      const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
+      showNotification('error', 'Error en la venta', `No se pudo procesar la venta: ${errorMessage}`);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const getTotal = () => {
-    return items.reduce((total, item) => total + (Number(item.productInfo.price) * item.quantity), 0);
-  };
+
+
+  function getTotal() {
+    return items.reduce((total, item) => total + item.quantity * item.productInfo.price, 0);
+  }
 
   return (
     <Container>
