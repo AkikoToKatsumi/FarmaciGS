@@ -723,7 +723,8 @@ const handleConfirmSale = async () => {
       quantity: item.quantity
     }));
     console.log('Datos enviados:', { userId, clientId, saleItems });
-    const result = await createSale({ userId, clientId, items: saleItems }, token);
+const result = await createSale(userId, clientId, saleItems);
+    console.log('Resultado de la API:', result);
     
     console.log('Resultado de venta:', result);
     // Generar PDF
