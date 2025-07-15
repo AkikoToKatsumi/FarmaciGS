@@ -15,7 +15,7 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.js'),
       webSecurity: true
     },
-    icon: path.join(__dirname, '../imagenes/logo.png'),
+    icon: path.join(__dirname, 'imagenes/logob.ico'),
     titleBarStyle: 'default',
     show: false
   });

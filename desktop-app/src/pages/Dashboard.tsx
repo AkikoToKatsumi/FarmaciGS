@@ -14,6 +14,8 @@ const DashboardContainer = styled.div`
 `;
 
 const Header = styled.header`
+img { url: 'imagenes/logo.png'; }
+   
   background: #1964aaff;
   color: white;
   padding: 1rem 2rem;
@@ -281,7 +283,7 @@ const Dashboard = () => {
       <Header>
         <Title>Dashboard Farmacia GS</Title>
         <img
-          src="/imagenes/logo.png"
+          src="imagenes/logo.png"
           alt="Logo Farmacia GS"
           style={{
             height: '130px',
