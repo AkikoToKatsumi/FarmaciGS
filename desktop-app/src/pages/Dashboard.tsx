@@ -4,16 +4,17 @@ import styled from 'styled-components';
 import { useUserStore } from '../store/user';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardStats, DashboardStats } from '../services/dashboard.service';
+import { User } from 'lucide-react';
 
 // Styled Components
 const DashboardContainer = styled.div`
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #f5f7fa07;
   font-family: 'Arial', sans-serif;
 `;
 
 const Header = styled.header`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #1964aaff;
   color: white;
   padding: 1rem 2rem;
   display: flex;
@@ -64,9 +65,9 @@ const Role = styled.span`
 `;
 
 const LogoutButton = styled.button`
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(146, 130, 130, 0.42);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(54, 46, 46, 0.44);
   padding: 0.5rem 1rem;
   border-radius: 25px;
   cursor: pointer;
@@ -74,7 +75,7 @@ const LogoutButton = styled.button`
   font-weight: 500;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(238, 11, 11, 0.87);
     transform: translateY(-2px);
   }
 
@@ -98,7 +99,7 @@ const Navigation = styled.nav`
 `;
 
 const NavButton = styled.button`
-  background: linear-gradient(135deg, #6c5ce7 0%, #74b9ff 100%);
+  background: #506ce7ff;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -192,7 +193,7 @@ const DashboardStat = styled.p`
   margin: 0;
   font-size: 2.5rem;
   font-weight: 700;
-  color: #667eea;
+  color: #516ef0ff;
   text-align: center;
 
   @media (max-width: 768px) {
@@ -209,10 +210,10 @@ const RecentActivities = styled.div`
 
   h3 {
     margin: 0 0 1rem 0;
-    color: #2d3748;
+    color: #4e81d8ff;
     font-size: 1.2rem;
     font-weight: 600;
-    border-bottom: 2px solid #667eea;
+    border-bottom: 2px solid #4561e2ff;
     padding-bottom: 0.5rem;
   }
 
@@ -256,7 +257,9 @@ const Dashboard = () => {
       if (!token) return;
       try {
         const data = await getDashboardStats(token);
+
         setStats(data);
+
       } catch (err) {
         setError('No se pudieron cargar las estadísticas del dashboard.');
         console.error(err);
@@ -276,10 +279,28 @@ const Dashboard = () => {
   return (
     <DashboardContainer>
       <Header>
-        <Title>Panel de Control - Farmacia</Title>
+        <Title>Dashboard Farmacia GS</Title>
+        <img
+          src="/imagenes/logo.png"
+          alt="Logo Farmacia GS"
+          style={{
+            height: '130px',
+            width: '130px',
+            objectFit: 'contain',
+            borderRadius: '80%',
+            marginRight: '3rem',
+            marginLeft: '1rem',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            transition: 'transform 0.3s ease'
+          }}
+        />
+
+
         <UserInfo>
+          <User size={30} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
           <UserName>Bienvenido, {user?.name}</UserName>
-          <Role>({user?.role_name})</Role>
+          {user?.role_name && <Role>({user.role_name})</Role>}
+
           <LogoutButton onClick={handleLogout}>
             Cerrar Sesión
           </LogoutButton>
@@ -334,7 +355,8 @@ const Dashboard = () => {
               <ul>
                 {stats.recentActivities.map((activity) => (
                   <li key={activity.id}>
-                    {activity.action} - por {activity.user.name} - {new Date(activity.created_at).toLocaleString()}
+                    <span style={{ fontWeight: 'bold' }}>{activity.action}</span> — por <em>{activity.user?.name || 'Sistema'}</em><br />
+                    <small style={{ color: '#666' }}>{new Date(activity.created_at).toLocaleString()}</small>
                   </li>
                 ))}
               </ul>

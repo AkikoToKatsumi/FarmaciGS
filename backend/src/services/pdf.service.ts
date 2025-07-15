@@ -1,6 +1,6 @@
 // src/services/pdf.service.ts
 import puppeteer from 'puppeteer';
-import path from 'path';
+import path, { extname } from 'path';
 import fs from 'fs';
 import { Buffer } from 'buffer';
 
@@ -22,23 +22,47 @@ interface SaleItem {
 
 export const generateSalePDF = async (sale: Sale, items: SaleItem[]): Promise<Buffer> => {
   // Leer el logo desde una imagen local y convertirlo a base64
-  const logoPath = path.join(__dirname, '../../imagenes/logo-farmacia.png');
-  const logoBase64 = fs.existsSync(logoPath)
-    ? fs.readFileSync(logoPath, 'base64')
-    : '';
+  const logoPath = path.join(__dirname, '../..', '/desktop-app/public/imagenes/logo.ico');
+
+  let logoBase64 = '';
+  let mimeType = 'image/x-icon';
+
+  try {
+    if (fs.existsSync(logoPath)) {
+      logoBase64 = fs.readFileSync(logoPath, 'base64');
+      const ext = path.extname(logoPath).substring(1); // e.g., 'gif'
+      mimeType = `image/${ext}`;
+      console.log('Logo loaded successfully');
+    } else {
+      console.log('Logo file not found at:', logoPath);
+    }
+  } catch (error) {
+    console.error('Error loading logo:', error);
+  }
 
   // 1. Crear HTML dinámico
-  const html = buildInvoiceHtml(sale, items, logoBase64);
-
+  const html = buildInvoiceHtml(sale, items, logoBase64, mimeType);
+  
   // 2. Usar Puppeteer para renderizarlo
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
   await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
+  // Solo esperar por el logo si existe
+  if (logoBase64) {
+    try {
+      await page.waitForSelector('.logo img', { timeout: 3000 });
+      console.log('Logo rendered successfully');
+    } catch (error) {
+      console.warn('Logo failed to render, continuing without it:', error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  // 3. Generar PDF
+  // Ajustar el tamaño del PDF para que sea más compacto
   const pdfBuffer = await page.pdf({
     width: '80mm',
-    height: 'auto',
     printBackground: true,
     margin: { top: '0.5cm', bottom: '0.5cm', left: '0.5cm', right: '0.5cm' }
   });
@@ -47,7 +71,7 @@ export const generateSalePDF = async (sale: Sale, items: SaleItem[]): Promise<Bu
   return Buffer.from(pdfBuffer);
 };
 
-function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string) {
+function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mimeType: string) {
   const date = new Date(sale.created_at).toLocaleString('es-ES');
 
   const rows = items.map(item => {
@@ -80,11 +104,12 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string) {
         tfoot td { font-weight: bold; }
         .footer { margin-top: 20px; font-size: 10px; color: #555; text-align: center; }
         .logo { text-align: center; margin-bottom: 10px; }
+        .logo img { height: 60px; width: auto; }
       </style>
     </head>
     <body>
       <div class="logo">
-        ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" alt="Logo" style="height: 60px;" />` : ''}
+        ${logoBase64 ? `<img src="data:${mimeType};base64,${logoBase64}" alt="Logo" onload="console.log('Logo loaded')" onerror="console.error('Logo failed to load')" />` : '<h2>Farmacia GS</h2>'}
       </div>
 
       <h1>Factura de Venta</h1>
@@ -119,7 +144,6 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string) {
         <p><strong>Política de Devoluciones:</strong></p>
         <p><strong>Devoluciones:</strong> dentro de 24 horas con empaque intacto.</p>
         <p>No se aceptan devoluciones de productos abiertos o sin receta.</p>
-
       </div>
     </body>
     </html>

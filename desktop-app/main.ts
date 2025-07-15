@@ -15,7 +15,7 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.js'),
       webSecurity: true
     },
-    icon: path.join(__dirname, '../imagenes/Logo-Farmacia-Sencillo-Azul.gif'),
+    icon: path.join(__dirname, '../imagenes/logo.png'),
     titleBarStyle: 'default',
     show: false
   });

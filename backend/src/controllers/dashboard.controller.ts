@@ -3,11 +3,25 @@ import { Request, Response } from 'express';
 import pool from '../config/db';
 import { logger } from '../config/logger';
 
+// Función helper para obtener la fecha actual en zona horaria de República Dominicana
+const getTodayInDominicanRepublic = (): string => {
+  const now = new Date();
+  // Convertir a zona horaria de República Dominicana (America/Santo_Domingo)
+  const dominicanTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Santo_Domingo"}));
+  
+  const year = dominicanTime.getFullYear();
+  const month = String(dominicanTime.getMonth() + 1).padStart(2, '0');
+  const day = String(dominicanTime.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
 export const getDashboardStats = async (_req: Request, res: Response) => {
   try {
-    const today = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
-    
-    logger.info(`Obteniendo estadísticas del dashboard para la fecha: ${today}`);
+    // Obtener la fecha actual en la zona horaria de República Dominicana
+    const todayString = getTodayInDominicanRepublic();
+
+    logger.info(`Obteniendo estadísticas del dashboard para la fecha (RD): ${todayString}`);
 
     // 1. Ventas del día - usando la columna correcta 'total'
     const salesTodayResult = await pool.query(
@@ -16,8 +30,8 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
         COUNT(*) as sales_count,
         COUNT(DISTINCT client_id) as clients_served
        FROM sales 
-       WHERE DATE(created_at) = $1`,
-      [today]
+       WHERE DATE(created_at AT TIME ZONE 'America/Santo_Domingo') = $1`,
+      [todayString]
     );
     
     const salesData = salesTodayResult.rows[0] || { daily_sales: 0, sales_count: 0, clients_served: 0 };
@@ -31,7 +45,7 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
     );
     const lowStockCount = parseInt(lowStockResult.rows[0].count, 10) || 0;
 
-    // 3. Actividades recientes del audit_log
+    // 3. Actividades recientes del audit_log - priorizar las de hoy
     const recentActivitiesResult = await pool.query(
       `SELECT 
         a.id, 
@@ -40,8 +54,11 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
         u.name as user_name
        FROM audit_log a
        LEFT JOIN users u ON a.user_id = u.id
-       ORDER BY a.created_at DESC
-       LIMIT 5`
+       ORDER BY 
+         CASE WHEN DATE(a.created_at AT TIME ZONE 'America/Santo_Domingo') = $1 THEN 1 ELSE 2 END,
+         a.created_at DESC
+       LIMIT 10`,
+      [todayString]
     );
     
     const recentActivities = recentActivitiesResult.rows.map(row => ({
@@ -50,6 +67,7 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
       user: { name: row.user_name || 'Sistema' },
       created_at: row.created_at,
     }));
+    console.log('DB recent activities rows:', recentActivitiesResult.rows);
 
     // 4. Productos vendidos - intentar con sale_items primero, luego fallback
     let productsSold = salesCount; // Fallback por defecto
@@ -60,8 +78,8 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
         `SELECT COALESCE(SUM(si.quantity), 0) as products_sold
          FROM sale_items si
          INNER JOIN sales s ON si.sale_id = s.id
-         WHERE DATE(s.created_at) = $1`,
-        [today]
+         WHERE DATE(s.created_at AT TIME ZONE 'America/Santo_Domingo') = $1`,
+        [todayString]
       );
       productsSold = parseInt(productsSoldResult.rows[0].products_sold, 10) || salesCount;
     } catch (saleItemsError) {
@@ -71,8 +89,8 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
           `SELECT COALESCE(SUM(pm.quantity), 0) as products_sold
            FROM prescription_medicines pm
            INNER JOIN prescriptions p ON pm.prescription_id = p.id
-           WHERE DATE(p.issued_at) = $1`,
-          [today]
+           WHERE DATE(p.issued_at AT TIME ZONE 'America/Santo_Domingo') = $1`,
+          [todayString]
         );
         productsSold = parseInt(productsSoldResult.rows[0].products_sold, 10) || salesCount;
       } catch (prescriptionError) {
@@ -106,6 +124,47 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
     
     res.status(500).json({ 
       message: 'Error interno del servidor al obtener estadísticas.',
+      ...(process.env.NODE_ENV === 'development' && { error: errorMessage })
+    });
+  }
+};
+
+// Función adicional para obtener solo las actividades de hoy
+export const getTodayActivities = async (_req: Request, res: Response) => {
+  try {
+    const todayString = getTodayInDominicanRepublic();
+
+    logger.info(`Obteniendo actividades de hoy (RD): ${todayString}`);
+
+    const todayActivitiesResult = await pool.query(
+      `SELECT 
+        a.id, 
+        a.action, 
+        a.created_at, 
+        u.name as user_name
+       FROM audit_log a
+       LEFT JOIN users u ON a.user_id = u.id
+       WHERE DATE(a.created_at AT TIME ZONE 'America/Santo_Domingo') = $1
+       ORDER BY a.created_at DESC
+       LIMIT 10`,
+      [todayString]
+    );
+
+    const todayActivities = todayActivitiesResult.rows.map(row => ({
+      id: row.id,
+      action: row.action,
+      user: { name: row.user_name || 'Sistema' },
+      created_at: row.created_at,
+    }));
+
+    logger.info(`Actividades de hoy encontradas: ${todayActivities.length}`);
+    res.json(todayActivities);
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    logger.error(`Error en getTodayActivities: ${errorMessage}`);
+    res.status(500).json({ 
+      message: 'Error interno del servidor al obtener actividades de hoy.',
       ...(process.env.NODE_ENV === 'development' && { error: errorMessage })
     });
   }

@@ -55,9 +55,10 @@ const Login = () => {
       <div className="login-card">
         <div className="login-image-section">
           <img
-            src="imagenes/Logo-Farmacia-Sencillo-Azul.gif"
+            src="imagenes/logo.ico"
             alt="login"
             className="login-image"
+            style={{ height: '300px', objectFit: 'contain', width: '300px',  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}
           />
         </div>
         <div className="login-form-section">
