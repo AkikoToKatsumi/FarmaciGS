@@ -693,6 +693,52 @@ const Inventory = () => {
   const [filterCategory, setFilterCategory] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'stock' | 'expiration_date'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // Items per page
+
+    // Funciones de filtrado y ordenamiento
+  const sortedProducts = useMemo(() => {
+    return products
+      .filter(product => {
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        const matchesSearch = product.name.toLowerCase().includes(lowerSearchTerm) ||
+                             product.description.toLowerCase().includes(lowerSearchTerm) ||
+                             (product.barcode && product.barcode.toLowerCase().includes(lowerSearchTerm));
+        
+        const matchesCategory = !filterCategory || product.category === filterCategory;
+        
+        return matchesSearch && matchesCategory;
+      })
+      .sort((a, b) => {
+        let aValue: any = a[sortBy];
+        let bValue: any = b[sortBy];
+        
+        if (sortBy === 'price' || sortBy === 'stock') {
+          aValue = Number(aValue);
+          bValue = Number(bValue);
+        }
+        
+        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [products, searchTerm, filterCategory, sortBy, sortOrder]);
+
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPageSize(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when page size changes
+  };
+
+  // Calculate total pages
+  const totalPages = useMemo(() => Math.ceil(sortedProducts.length / pageSize), [sortedProducts.length, pageSize]);
+
+  // Get current page items
+  const currentProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return sortedProducts.slice(startIndex, endIndex);
+  }, [sortedProducts, currentPage, pageSize]);
+
 
   useEffect(() => {
     fetchProducts();
@@ -821,34 +867,6 @@ const Inventory = () => {
       }
     }
   };
-
-  // Funciones de filtrado y ordenamiento
-  const sortedProducts = useMemo(() => {
-    return products
-      .filter(product => {
-        const lowerSearchTerm = searchTerm.toLowerCase();
-        const matchesSearch = product.name.toLowerCase().includes(lowerSearchTerm) ||
-                             product.description.toLowerCase().includes(lowerSearchTerm) ||
-                             (product.barcode && product.barcode.toLowerCase().includes(lowerSearchTerm));
-        
-        const matchesCategory = !filterCategory || product.category === filterCategory;
-        
-        return matchesSearch && matchesCategory;
-      })
-      .sort((a, b) => {
-        let aValue: any = a[sortBy];
-        let bValue: any = b[sortBy];
-        
-        if (sortBy === 'price' || sortBy === 'stock') {
-          aValue = Number(aValue);
-          bValue = Number(bValue);
-        }
-        
-        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
-        return 0;
-      });
-  }, [products, searchTerm, filterCategory, sortBy, sortOrder]);
 
   // Obtener categorías únicas para el filtro
   const categories = useMemo(() => [...new Set(products.map(p => p.category).filter(Boolean))], [products]);
@@ -1145,7 +1163,7 @@ const Inventory = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedProducts.map((product) => (
+              {currentProducts.map((product) => (
                 <tr key={product.id}>
                   <td>
                     <div>
@@ -1199,6 +1217,32 @@ const Inventory = () => {
           </EmptyState>
         )}
       </TableContainer>
+
+      {/* Pagination Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', background: '#f9fafb', padding: '12px 16px', borderRadius: '8px' }}>
+        <div>
+          <Label htmlFor="pageSize">Productos por página:</Label>
+          <Select id="pageSize" value={pageSize} onChange={handlePageSizeChange}>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </Select>
+        </div>
+
+        {sortedProducts.length > pageSize && (
+          <div>
+            <BaseButton onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>
+              Anterior
+            </BaseButton>
+            <span style={{ margin: '0 1rem' }}>Página {currentPage} de {totalPages}</span>
+            <BaseButton onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}>
+              Siguiente
+            </BaseButton>
+          </div>
+        )}
+      </div>
+
       
       {/* Resumen */}
       <SummaryGrid>

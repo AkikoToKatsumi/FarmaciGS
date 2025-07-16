@@ -21,10 +21,10 @@ export const getClients = async (_: Request, res: Response) => {
 
 // Agrega un cliente (sin validación, función auxiliar)
 export const addClient = async (req: Request, res: Response) => {
-  const { name, email, phone } = req.body;
+  const { name, email, phone, rnc, cedula, address } = req.body;
   const result = await pool.query(
-    'INSERT INTO clients (name, email, phone) VALUES ($1, $2, $3) RETURNING *',
-    [name, email, phone]
+    'INSERT INTO clients (name, email, phone, rnc, cedula, address) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+    [name, email, phone, rnc, cedula, address]
   );
   return res.status(201).json(result.rows[0]);
 };
@@ -33,17 +33,17 @@ export const addClient = async (req: Request, res: Response) => {
 export const createClient = async (req: Request, res: Response) => {
   try {
     // Extrae los datos del cuerpo de la petición
-    const { name, email, phone } = req.body;
+    const { name, email, phone, rnc, cedula, address } = req.body;
     // Valida los datos del cliente
-    const validation = await validateClientInput({ name, email, phone });
+    const validation = await validateClientInput({ name, email, phone, rnc, cedula, address });
     if (!validation.isValid) {
       // Si la validación falla, responde con error 400
       return res.status(400).json({ message: validation.message });
     }
     // Crea el cliente en la base de datos
     const result = await pool.query(
-      'INSERT INTO clients (name, email, phone) VALUES ($1, $2, $3) RETURNING *',
-      [name, email, phone]
+      'INSERT INTO clients (name, email, phone, rnc, cedula, address) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [name, email, phone, rnc, cedula, address]
     );
     // Devuelve el cliente creado
     res.status(201).json(result.rows[0]);
@@ -57,17 +57,17 @@ export const createClient = async (req: Request, res: Response) => {
 export const updateClient = async (req: Request, res: Response) => {
   try {
     const clientId = Number(req.params.id);
-    const { name, email, phone } = req.body;
+    const { name, email, phone, rnc, cedula, address } = req.body;
     // Valida los datos antes de actualizar
-    const validation = await validateClientInput({ name, email, phone, id: clientId });
+    const validation = await validateClientInput({ name, email, phone, rnc, cedula, address, id: clientId });
     if (!validation.isValid) {
       // Si la validación falla, responde con error 400
       return res.status(400).json({ message: validation.message });
     }
     // Actualiza el cliente en la base de datos
     const result = await pool.query(
-      'UPDATE clients SET name = $1, email = $2, phone = $3 WHERE id = $4 RETURNING *',
-      [name, email, phone, clientId]
+      'UPDATE clients SET name = $1, email = $2, phone = $3, rnc = $4, cedula = $5, address = $6 WHERE id = $7 RETURNING *',
+      [name, email, phone, rnc, cedula, address, clientId]
     );
     // Devuelve el cliente actualizado
     res.json(result.rows[0]);
