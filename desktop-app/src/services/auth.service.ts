@@ -10,6 +10,7 @@ export const login = async (email: string, password: string) => {
     console.error('Error en login:', error.response?.data || error.message);
     throw error;
   }
+  
 };
 
 export const logout = async () => {
@@ -20,6 +21,7 @@ export const logout = async () => {
     console.error('Error en logout:', error);
     throw error;
   }
+
 };
 
 export const refreshToken = async () => {
@@ -30,4 +32,5 @@ export const refreshToken = async () => {
     console.error('Error en refresh token:', error);
     throw error;
   }
+
 };

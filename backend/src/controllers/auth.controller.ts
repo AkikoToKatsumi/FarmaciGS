@@ -33,7 +33,14 @@ export const login = async (req: Request, res: Response) => {
     console.log('Parámetros:', [email]);
 
     // Ejecutamos una consulta a la base de datos para encontrar un usuario con el email proporcionado.
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+const result = await pool.query(
+  `SELECT u.*, r.name AS role_name 
+   FROM users u
+   LEFT JOIN roles r ON u.role_id = r.id
+   WHERE u.email = $1`,
+  [email]
+);
+
     
     // Logs para ver el resultado de la consulta.
     console.log('🔍 Resultado de la consulta:');
@@ -75,7 +82,7 @@ export const login = async (req: Request, res: Response) => {
     // Si todo es correcto, generamos un token JWT.
     console.log('🔍 Generando token...');
     // Firmamos el token con el ID y el rol del usuario, y le damos una expiración de 1 hora.
-    const token = jwt.sign({ id: user.id, role: user.role_id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.id, role_id: user.role_id, role_name: user.role_name }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
 

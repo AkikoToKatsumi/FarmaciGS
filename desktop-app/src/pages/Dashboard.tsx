@@ -9,7 +9,7 @@ import { User } from 'lucide-react';
 // Styled Components
 const DashboardContainer = styled.div`
   min-height: 100vh;
-  background-color: #f5f7fa07;
+  background-color: #f5f7fa7c;
   font-family: 'Arial', sans-serif;
 `;
 
@@ -250,6 +250,7 @@ const Dashboard = () => {
   const { user, clearUser } = useUserStore();
   const token = useUserStore((s) => s.token);
   const navigate = useNavigate();
+  console.log('Rol del usuario:', user?.role_name);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -308,23 +309,31 @@ const Dashboard = () => {
           </LogoutButton>
         </UserInfo>
       </Header>
+     
 
-      <Navigation>
-        <NavButton onClick={() => navigate('/inventory')}>Inventario</NavButton>
-        <NavButton onClick={() => navigate('/sales')}>Ventas</NavButton>
-        <NavButton onClick={() => navigate('/clients')}>Clientes</NavButton>
-        <NavButton onClick={() => navigate('/prescriptions')}>Prescripciones</NavButton>
-        <NavButton onClick={() => navigate('/employees')}>Empleados</NavButton>
-        <NavButton onClick={() => navigate('/reports')}>Reportes</NavButton>
-        {user?.role_name === 'admin' && (
-          <>
-            <AdminNavButton onClick={() => navigate('/admin')}>Administración</AdminNavButton>
-            <AdminNavButton onClick={() => navigate('/roles')}>Roles</AdminNavButton>
-            <AdminNavButton onClick={() => navigate('/backups')}>Respaldos</AdminNavButton>
-            <AdminNavButton onClick={() => navigate('/audit')}>Auditoría</AdminNavButton>
-          </>
-        )}
-      </Navigation>
+      
+  <Navigation>
+  {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+    <NavButton onClick={() => navigate('/inventory')}>Inventario</NavButton>
+  )}
+  {(user?.role_name === 'admin' || user?.role_name === 'cashier') && (
+    <NavButton onClick={() => navigate('/sales')}>Ventas</NavButton>
+    
+  )}
+  {user?.role_name === 'admin' && (
+    <>
+      <NavButton onClick={() => navigate('/clients')}>Clientes</NavButton>
+      <NavButton onClick={() => navigate('/prescriptions')}>Prescripciones</NavButton>
+      <NavButton onClick={() => navigate('/employees')}>Empleados</NavButton>
+      <NavButton onClick={() => navigate('/reports')}>Reportes</NavButton>
+      <AdminNavButton onClick={() => navigate('/admin')}>Administración</AdminNavButton>
+      <AdminNavButton onClick={() => navigate('/roles')}>Roles</AdminNavButton>
+      <AdminNavButton onClick={() => navigate('/backups')}>Respaldos</AdminNavButton>
+      <AdminNavButton onClick={() => navigate('/audit')}>Auditoría</AdminNavButton>
+    </>
+  )}
+</Navigation>
+
 
       <MainContent>
         {loading ? (
