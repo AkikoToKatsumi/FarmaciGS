@@ -314,16 +314,20 @@ const Dashboard = () => {
       
   <Navigation>
   {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+    <>
     <NavButton onClick={() => navigate('/inventory')}>Inventario</NavButton>
+     <NavButton onClick={() => navigate('/prescriptions')}>Prescripciones</NavButton>
+    </>
   )}
   {(user?.role_name === 'admin' || user?.role_name === 'cashier') && (
+    <>
     <NavButton onClick={() => navigate('/sales')}>Ventas</NavButton>
-    
+    <NavButton onClick={() => navigate('/clients')}>Clientes</NavButton>
+     </>
   )}
   {user?.role_name === 'admin' && (
     <>
-      <NavButton onClick={() => navigate('/clients')}>Clientes</NavButton>
-      <NavButton onClick={() => navigate('/prescriptions')}>Prescripciones</NavButton>
+    
       <NavButton onClick={() => navigate('/employees')}>Empleados</NavButton>
       <NavButton onClick={() => navigate('/reports')}>Reportes</NavButton>
       <AdminNavButton onClick={() => navigate('/admin')}>Administración</AdminNavButton>
