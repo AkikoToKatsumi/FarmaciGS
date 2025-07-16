@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import styled, { keyframes } from 'styled-components';
 import { Search, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCircle, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getMedicine, getMedicineByBarcode } from '../services/inventory.service';
@@ -6,8 +7,19 @@ import { createSale } from '../services/sales.service';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user';
 
-// Animaciones para las notificaciones
-const slideInRight = keyframes`
+// Animaciones suaves y minimalistas
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideIn = keyframes`
   from {
     transform: translateX(100%);
     opacity: 0;
@@ -18,7 +30,7 @@ const slideInRight = keyframes`
   }
 `;
 
-const slideOutRight = keyframes`
+const slideOut = keyframes`
   from {
     transform: translateX(0);
     opacity: 1;
@@ -29,39 +41,70 @@ const slideOutRight = keyframes`
   }
 `;
 
-// Styled Components
+const pulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+`;
+
+// Contenedor principal
 const Container = styled.div`
   min-height: 100vh;
-  background-color: #f9fafb;
-  padding: 1.5rem;
+  background: #fafafa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1a1a1a;
 `;
 
 const MaxWidthContainer = styled.div`
-  max-width: 72rem;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 24px;
 `;
 
+// Header minimalista
 const Header = styled.div`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 `;
 
 const Title = styled.h1`
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 12px;
+  margin: 0;
 `;
 
+const BackButton = styled.button`
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  
+  &:hover {
+    background: #eee;
+    border-color: #ddd;
+  }
+`;
+
+// Grid layout
 const GridContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: 24px;
 
   @media (min-width: 1024px) {
     grid-template-columns: 2fr 1fr;
@@ -74,41 +117,115 @@ const SearchSection = styled.div`
   }
 `;
 
+// Cards minimalistas
 const Card = styled.div`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  padding: 24px;
+  margin-bottom: 24px;
+  animation: ${fadeIn} 0.3s ease;
+  
+  &:hover {
+    border-color: #d0d0d0;
+  }
 `;
 
 const CardTitle = styled.h2`
-  font-size: 1.25rem;
+  font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
+  color: #1a1a1a;
+  margin: 0 0 20px 0;
 `;
 
+// Controles de forma
+const FormGroup = styled.div`
+  margin-bottom: 16px;
+`;
+
+const Label = styled.label`
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+`;
+
+const Select = styled.select`
+  width: 85%;
+  padding: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  color: #1a1a1a;
+  transition: border-color 0.15s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #0066cc;
+  }
+`;
+
+const Input = styled.input`
+  width: 85%;
+  padding: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  color: #1a1a1a;
+  transition: border-color 0.15s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #0066cc;
+  }
+  
+  &::placeholder {
+    color: #999;
+  }
+`;
+
+// Radio buttons minimalistas
 const RadioGroup = styled.div`
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
 `;
 
 const RadioLabel = styled.label`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.15s ease;
+  
+  &:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
 `;
 
 const RadioInput = styled.input`
-  accent-color: #2563eb;
+  width: 16px;
+  height: 16px;
+  accent-color: #0066cc;
 `;
 
+// Búsqueda
 const SearchContainer = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: 12px;
+  margin-bottom: 16px;
 `;
 
 const SearchInputContainer = styled.div`
@@ -118,65 +235,73 @@ const SearchInputContainer = styled.div`
 
 const SearchIcon = styled(Search)`
   position: absolute;
-  left: 0.75rem;
-  top: 0.75rem;
-  width: 1rem;
-  height: 1rem;
-  color: #9ca3af;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #999;
 `;
 
 const SearchInput = styled.input`
-  width: 80%;
-  padding: 0.5rem 1rem 0.5rem 2.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 1rem;
+  width: 85%;
+  padding: 12px 12px 12px 40px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  color: #1a1a1a;
+  transition: border-color 0.15s ease;
   
   &:focus {
     outline: none;
-    ring: 2px solid #2563eb;
-    border-color: transparent;
+    border-color: #0066cc;
+  }
+  
+  &::placeholder {
+    color: #999;
   }
 `;
 
 const SearchButton = styled.button`
-  padding: 0.2rem 1.5rem;
-  background-color: #2592ebff;
+  padding: 12px 24px;
+  background: #0066cc;
   color: white;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  display:flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 300;
+  transition: background 0.15s ease;
   
   &:hover {
-    background-color: #1d4ed8;
+    background: #0052a3;
   }
   
   &:disabled {
-    background-color: #404347ff;
+    background: #ccc;
     cursor: not-allowed;
   }
 `;
 
+// Resultados de búsqueda
 const ResultsContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 `;
 
 const ResultItem = styled.div`
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  background: white;
   
   &:hover {
-    background-color: #eff6ff;
-    border-color: #93c5fd;
+    background: #f9f9f9;
+    border-color: #0066cc;
   }
 `;
 
@@ -191,15 +316,16 @@ const ResultItemInfo = styled.div`
 `;
 
 const ResultItemName = styled.h4`
+  font-size: 15px;
   font-weight: 500;
-  color: #1f2937;
-  margin: 0;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
 `;
 
 const ResultItemDescription = styled.p`
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0.25rem 0 0 0;
+  font-size: 13px;
+  color: #666;
+  margin: 0;
 `;
 
 const ResultItemPrice = styled.div`
@@ -207,21 +333,23 @@ const ResultItemPrice = styled.div`
 `;
 
 const Price = styled.p`
+  font-size: 16px;
   font-weight: 600;
-  color: #16a34a;
+  color: #0066cc;
   margin: 0;
 `;
 
 const Stock = styled.p`
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0.25rem 0 0 0;
+  font-size: 12px;
+  color: #666;
+  margin: 4px 0 0 0;
 `;
 
+// Producto seleccionado
 const ProductGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 16px;
   
   @media (min-width: 768px) {
     grid-template-columns: 1fr 1fr;
@@ -231,96 +359,112 @@ const ProductGrid = styled.div`
 const ProductInfoSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 12px;
 `;
 
 const ProductInfoItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
 `;
 
 const ProductInfoLabel = styled.p`
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0;
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 2px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const ProductInfoValue = styled.p`
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
   margin: 0;
 `;
 
 const ProductPriceValue = styled.p`
+  font-size: 20px;
   font-weight: 600;
-  color: #16a34a;
-  font-size: 1.125rem;
+  color: #0066cc;
   margin: 0;
 `;
 
 const ProductStockValue = styled.p<{ low?: boolean }>`
-  font-weight: 600;
-  color: ${props => props.low ? '#dc2626' : '#1f2937'};
+  font-size: 14px;
+  font-weight: 500;
+  color: ${props => props.low ? '#cc0000' : '#1a1a1a'};
   margin: 0;
 `;
 
 const ProductDescription = styled.div`
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
+  margin-top: 16px;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
 `;
 
 const QuantityContainer = styled.div`
-  margin-top: 1rem;
+  margin-top: 16px;
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  align-items: end;
+  gap: 16px;
 `;
 
 const QuantityInput = styled.input`
-  width: 5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  width: 80px;
+  padding: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  background: white;
   
   &:focus {
     outline: none;
-    ring: 2px solid #2563eb;
-    border-color: transparent;
+    border-color: #0066cc;
   }
 `;
 
 const AddButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #16a34a;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #00cc66;
   color: white;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 1.25rem;
+  transition: background 0.15s ease;
   
   &:hover {
-    background-color: #15803d;
+    background: #00b359;
   }
   
   &:disabled {
-    background-color: #9ca3af;
+    background: #ccc;
     cursor: not-allowed;
   }
 `;
 
+// Carrito
 const CartCard = styled.div`
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  padding: 24px;
   position: sticky;
-  top: 1.5rem;
+  top: 24px;
+  height: fit-content;
   
   @media (min-width: 1024px) {
     grid-column: span 1 / span 1;
@@ -328,37 +472,55 @@ const CartCard = styled.div`
 `;
 
 const CartTitle = styled.h3`
-  font-size: 1.125rem;
+  font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
+  color: #1a1a1a;
+  margin: 0 0 20px 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 `;
 
 const EmptyCart = styled.p`
-  color: #6b7280;
+  color: #999;
   text-align: center;
-  padding: 2rem 0;
+  padding: 40px 0;
   margin: 0;
+  font-size: 14px;
 `;
 
 const CartItems = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  max-height: 16rem;
+  gap: 8px;
+  max-height: 300px;
   overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 16px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 2px;
+  }
 `;
 
 const CartItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem;
-  background-color: #5696d6ff;
-  border-radius: 0.5rem;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
 `;
 
 const CartItemInfo = styled.div`
@@ -366,132 +528,124 @@ const CartItemInfo = styled.div`
 `;
 
 const CartItemName = styled.h4`
+  font-size: 14px;
   font-weight: 500;
-  color: #1f2937;
-  font-size: 0.875rem;
-  margin: 0;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
 `;
 
 const CartItemDetails = styled.p`
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin: 0.25rem 0 0 0;
+  font-size: 12px;
+  color: #666;
+  margin: 0;
 `;
 
 const CartItemActions = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 12px;
 `;
 
 const CartItemPrice = styled.span`
+  font-size: 14px;
   font-weight: 600;
-  color: #16a34a;
+  color: #0066cc;
 `;
 
 const RemoveButton = styled.button`
-  color: #ef4444;
+  color: #cc0000;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
   
   &:hover {
-    color: #dc2626;
+    background: #ffe6e6;
   }
 `;
 
 const CartTotal = styled.div`
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e5e5;
 `;
 
 const TotalRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 8px;
+  padding: 4px 0;
 `;
 
 const TotalLabel = styled.span`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
 `;
 
 const TotalAmount = styled.span`
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #16a34a;
+  font-size: 16px;
+  font-weight: 600;
+  color: #0066cc;
 `;
 
 const ConfirmButton = styled.button`
-  width: 90%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background-color: #2563eb;
+  gap: 8px;
+  padding: 16px;
+  background: #0066cc;
   color: white;
   border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s ease;
+  margin-top: 16px;
   
   &:hover {
-    background-color: #1d4ed8;
+    background: #0052a3;
   }
   
   &:disabled {
-    background-color: #9ca3af;
+    background: #ccc;
     cursor: not-allowed;
   }
 `;
 
-const BaseButton = styled.button`
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-size: 0.875rem;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-`;
-
-// Componentes de Notificación
+// Notificaciones minimalistas
 const NotificationContainer = styled.div`
   position: fixed;
-  top: 1rem;
-  right: 1rem;
+  top: 24px;
+  right: 24px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-width: 24rem;
+  gap: 8px;
+  max-width: 320px;
 `;
 
 const Notification = styled.div<{ type: 'success' | 'error'; isVisible: boolean }>`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  animation: ${props => props.isVisible ? slideInRight : slideOutRight} 0.3s ease-out;
-  background-color: ${props => props.type === 'success' ? '#f0f9ff' : '#fef2f2'};
-  border-left: 4px solid ${props => props.type === 'success' ? '#16a34a' : '#ef4444'};
+  gap: 12px;
+  padding: 16px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid ${props => props.type === 'success' ? '#00cc66' : '#cc0000'};
+  border-left: 4px solid ${props => props.type === 'success' ? '#00cc66' : '#cc0000'};
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: ${props => props.isVisible ? slideIn : slideOut} 0.3s ease;
 `;
 
 const NotificationIcon = styled.div<{ type: 'success' | 'error' }>`
-  color: ${props => props.type === 'success' ? '#16a34a' : '#ef4444'};
+  color: ${props => props.type === 'success' ? '#00cc66' : '#cc0000'};
   flex-shrink: 0;
 `;
 
@@ -500,28 +654,31 @@ const NotificationContent = styled.div`
 `;
 
 const NotificationTitle = styled.h4<{ type: 'success' | 'error' }>`
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: ${props => props.type === 'success' ? '#065f46' : '#991b1b'};
-  margin: 0 0 0.25rem 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: ${props => props.type === 'success' ? '#15803d' : '#b91c1c'};
+  margin: 0 0 2px 0;
 `;
 
 const NotificationMessage = styled.p<{ type: 'success' | 'error' }>`
-  font-size: 0.875rem;
-  color: ${props => props.type === 'success' ? '#047857' : '#dc2626'};
+  font-size: 12px;
+  color: #666;
   margin: 0;
+  line-height: 1.4;
 `;
 
 const NotificationCloseButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
+  color: #999;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
   
   &:hover {
-    color: #374151;
+    color: #666;
+    background: #f5f5f5;
   }
 `;
 
@@ -554,6 +711,11 @@ interface NotificationState {
 }
 
 const SalesPOS: React.FC = () => {
+  const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
+  const [rnc, setRnc] = useState('');
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [clients, setClients] = useState<{ id: number; name: string }[]>([]);
+  const [searchTermClient, setSearchTermClient] = useState('');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'barcode' | 'name'>('barcode');
@@ -566,6 +728,32 @@ const SalesPOS: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
   const { token, clearUser } = useUserStore();
+
+  // Cargar lista de clientes al inicio
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await axios.get('http://localhost:4004/api/clients', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setClients(response.data);
+      } catch (error) {
+        console.error('Error al cargar clientes:', error);
+      }
+    };
+
+    fetchClients();
+  }, [token]);
+
+  // Filtrar clientes basados en el término de búsqueda
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchTermClient.toLowerCase())
+  );
+
+  const handleClientSelect = (clientId: number) => {
+    setSelectedClientId(clientId);
+    setSearchTermClient('');
+  };
 
   // Función para mostrar notificaciones
   const showNotification = (type: 'success' | 'error', title: string, message: string) => {
@@ -580,21 +768,18 @@ const SalesPOS: React.FC = () => {
 
     setNotifications(prev => [...prev, newNotification]);
 
-    // Auto-remove notification after 5 seconds
     setTimeout(() => {
       setNotifications(prev => 
         prev.map(notif => 
           notif.id === id ? { ...notif, isVisible: false } : notif
         )
       );
-      // Remove from array after animation completes
       setTimeout(() => {
         setNotifications(prev => prev.filter(notif => notif.id !== id));
       }, 300);
     }, 5000);
   };
 
-  // Función para cerrar notificación manualmente
   const closeNotification = (id: number) => {
     setNotifications(prev => 
       prev.map(notif => 
@@ -606,7 +791,7 @@ const SalesPOS: React.FC = () => {
     }, 300);
   };
 
-  // ✅ Búsqueda reactiva por nombre
+  // Búsqueda reactiva por nombre
   useEffect(() => {
     if (searchType === 'name' && searchTerm.trim().length > 1) {
       const delayDebounce = setTimeout(() => {
@@ -704,95 +889,131 @@ const SalesPOS: React.FC = () => {
     setItems(items.filter((_, i) => i !== index));
     showNotification('success', 'Producto removido', `Se removió ${removedItem.productInfo.name} del carrito`);
   };
-const handleConfirmSale = async () => {
-  if (items.length === 0) {
-    showNotification('error', 'Carrito vacío', 'No puedes confirmar una venta sin productos');
-    return;
-  }
 
-  // ✅ Validar token antes de proceder
-  if (!token) {
-    showNotification('error', 'Error de autenticación', 'No se encontró token de autenticación. Por favor inicia sesión.');
-    navigate('/login');
-    return;
-  }
-
-  try {
-    setLoading(true);
-    console.log('Iniciando venta con items:', items);
-    console.log('Token disponible:', token ? 'Sí' : 'No');
-
-    const saleItems = items.map(item => ({
-      medicineId: item.medicineId,
-      quantity: item.quantity
-    }));
-
-    console.log('Datos enviados:', { userId, clientId, saleItems });
-
-    // ✅ SOLUCIÓN: Pasar el token como parámetro
-    const result = await createSale(userId, clientId, saleItems, token);
-    
-    console.log('Resultado de la API:', result);
-    
-    // Generar PDF
-    const blob = new Blob([Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))], {
-      type: 'application/pdf',
-    });
-    const url = URL.createObjectURL(blob);
-    window.open(url);
-    
-    // Limpiar carrito solo si la venta fue exitosa
-    setItems([]);
-    showNotification('success', 'Venta confirmada', 'La venta se procesó exitosamente y se generó el PDF');
-    
-  } catch (error: any) {
-    console.error('Error completo:', error);
-    console.error('Error response:', error.response);
-    
-    // Manejar diferentes tipos de errores
-    if (error.response?.status === 401) {
-      showNotification('error', 'Error de autenticación', 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
-      clearUser();
-      navigate('/login');
-    } else if (error.response?.status === 400) {
-      const errorMessage = error.response?.data?.message || 'Error en los datos enviados';
-      showNotification('error', 'Error de validación', errorMessage);
-    } else if (error.response?.status === 500) {
-      const errorMessage = error.response?.data?.message || 'Error interno del servidor';
-      showNotification('error', 'Error del servidor', errorMessage);
-    } else {
-      const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
-      showNotification('error', 'Error en la venta', `No se pudo procesar la venta: ${errorMessage}`);
+  const handleConfirmSale = async () => {
+    if (items.length === 0) {
+      showNotification('error', 'Carrito vacío', 'No puedes confirmar una venta sin productos');
+      return;
     }
-  } finally {
-    setLoading(false);
-  }
-};
 
-  function getTotal() {
-    return items.reduce((total, item) => total + item.quantity * item.productInfo.price, 0);
-  }
+    if (!token) {
+      showNotification('error', 'Error de autenticación', 'No se encontró token de autenticación. Por favor inicia sesión.');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('Iniciando venta con items:', items);
+      console.log('Token disponible:', token ? 'Sí' : 'No');
+
+      const saleItems = items.map(item => ({
+        medicineId: item.medicineId,
+        quantity: item.quantity
+      }));
+
+      console.log('Datos enviados:', { userId, clientId, saleItems });
+
+     const result = await createSale(
+  userId,
+  selectedClientId,
+  saleItems,
+  token,
+  paymentMethod,
+  rnc
+);
+
+      
+      console.log('Resultado de la API:', result);
+      
+      if(result?.pdf) {
+        const blob = new Blob([Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))], {
+          type: 'application/pdf',
+        });
+        const url = URL.createObjectURL(blob);
+        window.open(url);
+        
+        setItems([]);
+        showNotification('success', 'Venta confirmada', 'La venta se procesó exitosamente y se generó el PDF');
+      }
+    } catch (error: any) {
+      console.error('Error completo:', error);
+      console.error('Error response:', error.response);
+
+      if (error.response?.status === 401) {
+        showNotification('error', 'Error de autenticación', 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+        clearUser();
+        navigate('/login');
+      } else if (error.response?.status === 400) {
+        const errorMessage = error.response?.data?.message || 'Error en los datos enviados';
+        showNotification('error', 'Error de validación', errorMessage);
+      } else if (error.response?.status === 500) {
+        const errorMessage = error.response?.data?.message || 'Error interno del servidor';
+        showNotification('error', 'Error del servidor', errorMessage);
+      } else {
+        const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
+        showNotification('error', 'Error en la venta', `No se pudo procesar la venta: ${errorMessage}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSubtotal = () => {
+    return items.reduce((sum, item) => sum + item.productInfo.price * item.quantity, 0);
+  };
+
+  const getItbis = () => {
+    const subtotal = getSubtotal();
+    return subtotal * 0.18;
+  };
+
+  const getTotal = () => {
+    return getSubtotal() + getItbis();
+  };
 
   return (
     <Container>
       <MaxWidthContainer>
         <Header>
           <Title>
-            <ShoppingCart color="#2563eb" />
+            <ShoppingCart color="#0066cc" size={24} />
             POS - Sistema de Ventas
           </Title>
-           <ButtonContainer>
-          <BaseButton onClick={() => navigate('/dashboard')} style={{ backgroundColor: '#bbbdc0ff', color: '#1e1f22ff',  }}>
-            Volver a inicio
-          </BaseButton>
-           </ButtonContainer>
+          <BackButton onClick={() => navigate('/dashboard')}>
+            Volver al inicio
+          </BackButton>
         </Header>
 
         <GridContainer>
           <SearchSection>
             <Card>
-              <CardTitle>Buscar Producto</CardTitle>
+              <CardTitle>Información del cliente</CardTitle>
 
+              <FormGroup>
+                <Label>Método de Pago</Label>
+                <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)}>
+                  <option value="efectivo">Efectivo</option>
+                  <option value="tarjeta">Tarjeta</option>
+                  <option value="transferencia">Transferencia</option>
+                </Select>
+              </FormGroup>
+
+              <FormGroup>
+                <Label>Cliente existente (opcional)</Label>
+                <Select value={selectedClientId ?? ''} onChange={(e) => setSelectedClientId(Number(e.target.value) || null)}>
+                  <option value="">-- Ninguno --</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>{client.name}</option>
+                  ))}
+                </Select>
+              </FormGroup>
+
+              <FormGroup>
+                <Label>RNC (opcional)</Label>
+                <Input type="text" value={rnc} onChange={(e) => setRnc(e.target.value)} placeholder="RNC del cliente" />
+              </FormGroup>
+              <CardTitle>Buscar Producto</CardTitle>
               <RadioGroup>
                 <RadioLabel>
                   <RadioInput
@@ -961,20 +1182,29 @@ const handleConfirmSale = async () => {
                   ))}
                 </CartItems>
 
-                <CartTotal>
-                  <TotalRow>
-                    <TotalLabel>Total:</TotalLabel>
-                    <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
-                  </TotalRow>
+               <CartTotal>
+  <TotalRow>
+    <TotalLabel>Subtotal:</TotalLabel>
+    <TotalAmount>${getSubtotal().toFixed(2)}</TotalAmount>
+  </TotalRow>
+  <TotalRow>
+    <TotalLabel>ITBIS (18%):</TotalLabel>
+    <TotalAmount>${getItbis().toFixed(2)}</TotalAmount>
+  </TotalRow>
+  <TotalRow>
+    <TotalLabel>Total a pagar:</TotalLabel>
+    <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
+  </TotalRow>
 
-                  <ConfirmButton 
-                    onClick={handleConfirmSale}
-                    disabled={loading || items.length === 0}
-                  >
-                    <CheckCircle size={20} />
-                    {loading ? 'Procesando...' : 'Confirmar Venta'}
-                  </ConfirmButton>
-                </CartTotal>
+  <ConfirmButton 
+    onClick={handleConfirmSale}
+    disabled={loading || items.length === 0}
+  >
+    <CheckCircle size={20} />
+    {loading ? 'Procesando...' : 'Confirmar Venta'}
+  </ConfirmButton>
+</CartTotal>
+
               </>
             )}
           </CartCard>

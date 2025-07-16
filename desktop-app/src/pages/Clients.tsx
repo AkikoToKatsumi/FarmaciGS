@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getClients, createClient, updateClient, deleteClient } from '../services/client.service';
+import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user';
 
 const Clients = () => {
@@ -8,6 +9,7 @@ const Clients = () => {
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadClients();
@@ -137,7 +139,26 @@ const Clients = () => {
   };
 
   return (
-    <div style={styles.card}>
+    <div style={{ padding: '20px' }}>
+      <button 
+        onClick={() => navigate('/dashboard')} 
+        style={{ 
+          
+          marginBottom: '20px', 
+          padding: '8px 16px', 
+          backgroundColor: '#ffffffff', 
+          color: 'black', 
+          border: 'none', 
+          borderRadius: '4px' 
+        }}
+      >
+        ← Volver
+      </button>
+
+
+      <div
+        
+      style={styles.card}>
       <h1 className="text-xl font-bold mb-4" style={{marginBottom: 24}}>Clientes</h1>
       <div style={styles.formRow}>
         <div style={{flex: 1}}>
@@ -212,6 +233,7 @@ const Clients = () => {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 };

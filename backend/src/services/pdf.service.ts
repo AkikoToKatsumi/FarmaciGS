@@ -10,6 +10,11 @@ interface Sale {
   client_id: number | null;
   total: number;
   created_at: string;
+  // Nuevos campos para facturación RD
+  rnc_cliente?: string;
+  cedula_cliente?: string;
+  nombre_cliente?: string;
+  direccion_cliente?: string;
 }
 
 interface SaleItem {
@@ -20,21 +25,55 @@ interface SaleItem {
   total_price: number;
 }
 
+// Configuración de la empresa (deberías moverlo a un archivo de configuración)
+const EMPRESA_CONFIG = {
+  nombre: 'Farmacia GS',
+  rnc: '1-01-12345-6', // RNC de la empresa
+  direccion: 'Calle Duarte #12, Ciudad',
+  telefono: '123-456-7890',
+  email: 'info@farmaciags.com'
+};
+
 export const generateSalePDF = async (sale: Sale, items: SaleItem[]): Promise<Buffer> => {
   // Leer el logo desde una imagen local y convertirlo a base64
-  const logoPath = path.join(__dirname, '../..', '/desktop-app/public/imagenes/logo.ico');
+  const logoPath = path.join(__dirname,'desktop-app/public/imagenes/logo.gif');
+ 
+ 
+  
 
   let logoBase64 = '';
-  let mimeType = 'image/x-icon';
+  let mimeType = 'image/gif';
 
   try {
     if (fs.existsSync(logoPath)) {
       logoBase64 = fs.readFileSync(logoPath, 'base64');
-      const ext = path.extname(logoPath).substring(1); // e.g., 'gif'
-      mimeType = `image/${ext}`;
-      console.log('Logo loaded successfully');
+      const ext = path.extname(logoPath).substring(1).toLowerCase();
+      
+      // Determinar el tipo MIME correcto
+      switch (ext) {
+        case 'gif':
+          mimeType = 'image/gif';
+          break;
+        case 'png':
+          mimeType = 'image/png';
+          break;
+        case 'jpg':
+        case 'jpeg':
+          mimeType = 'image/jpeg';
+          break;
+        case 'ico':
+          mimeType = 'image/x-icon';
+          break;
+        default:
+          mimeType = 'image/png';
+      }
+      
+      console.log('Logo loaded successfully from:', logoPath);
+      console.log('Logo file size:', fs.statSync(logoPath).size, 'bytes');
     } else {
       console.log('Logo file not found at:', logoPath);
+      console.log('Current directory:', __dirname);
+      console.log('Computed path:', logoPath);
     }
   } catch (error) {
     console.error('Error loading logo:', error);
@@ -52,8 +91,20 @@ export const generateSalePDF = async (sale: Sale, items: SaleItem[]): Promise<Bu
   // Solo esperar por el logo si existe
   if (logoBase64) {
     try {
-      await page.waitForSelector('.logo img', { timeout: 3000 });
+      await page.waitForSelector('.logo img', { timeout: 5000 });
       console.log('Logo rendered successfully');
+      
+      // Verificar que la imagen se haya cargado correctamente
+      const imageLoaded = await page.evaluate(() => {
+        const img = document.querySelector('.logo img') as HTMLImageElement;
+        return img && img.complete && img.naturalWidth > 0;
+      });
+      
+      if (imageLoaded) {
+        console.log('Logo image loaded and ready');
+      } else {
+        console.warn('Logo image failed to load properly');
+      }
     } catch (error) {
       console.warn('Logo failed to render, continuing without it:', error instanceof Error ? error.message : String(error));
     }
@@ -73,21 +124,32 @@ export const generateSalePDF = async (sale: Sale, items: SaleItem[]): Promise<Bu
 
 function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mimeType: string) {
   const date = new Date(sale.created_at).toLocaleString('es-ES');
+  
+  // Cálculos para facturación RD
+  const total = Number(sale.total);
+  const itbisRate = 0.18; // 18% ITBIS
+  const subtotal = total / (1 + itbisRate);
+  const itbis = total - subtotal;
 
   const rows = items.map(item => {
     const unitPrice = Number(item.unit_price);
     const totalPrice = Number(item.total_price);
+    // Calcular precio sin ITBIS para cada item
+    const unitPriceWithoutTax = unitPrice / (1 + itbisRate);
+    const totalPriceWithoutTax = totalPrice / (1 + itbisRate);
+    
     return `
       <tr>
         <td>${item.name}</td>
         <td style="text-align:center;">${item.quantity}</td>
-        <td style="text-align:right;">$${unitPrice.toFixed(2)}</td>
-        <td style="text-align:right;">$${totalPrice.toFixed(2)}</td>
+        <td style="text-align:right;">$${unitPriceWithoutTax.toFixed(2)}</td>
+        <td style="text-align:right;">$${totalPriceWithoutTax.toFixed(2)}</td>
       </tr>
     `;
   }).join('');
 
-  const totalFormatted = Number(sale.total).toFixed(2);
+  // Generar número de comprobante fiscal (NCF) - esto debería venir de tu sistema
+  const ncf = `B0100000${String(sale.id).padStart(8, '0')}`;
 
   return `
     <!DOCTYPE html>
@@ -96,54 +158,107 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mim
       <meta charset="UTF-8">
       <title>Factura Venta #${sale.id}</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 10px; font-size: 12px; }
-        h1 { text-align: center; font-size: 16px; }
+        body { font-family: Arial, sans-serif; padding: 8px; font-size: 11px; }
+        h1 { text-align: center; font-size: 14px; margin: 5px 0; }
+        .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
+        .company-info { text-align: center; margin-bottom: 10px; }
+        .invoice-info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .client-info { margin-bottom: 10px; border: 1px solid #ccc; padding: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 6px; border-bottom: 1px solid #ccc; }
-        th { background-color: #f5f5f5; font-size: 12px; }
-        tfoot td { font-weight: bold; }
-        .footer { margin-top: 20px; font-size: 10px; color: #555; text-align: center; }
-        .logo { text-align: center; margin-bottom: 10px; }
-        .logo img { height: 60px; width: auto; }
+        th, td { padding: 4px; border-bottom: 1px solid #ccc; font-size: 10px; }
+        th { background-color: #f5f5f5; text-align: center; font-weight: bold; }
+        .totals { margin-top: 10px; border-top: 2px solid #000; padding-top: 5px; }
+        .totals table { margin-top: 5px; }
+        .totals td { border: none; padding: 2px 5px; }
+        .footer { margin-top: 15px; font-size: 9px; color: #555; text-align: center; }
+        .logo { text-align: center; margin-bottom: 8px; }
+        .logo img { height: 50px; width: auto; }
+        .fiscal-info { font-size: 10px; text-align: center; margin: 5px 0; }
+        .row-totals { display: flex; justify-content: space-between; }
+        .bold { font-weight: bold; }
       </style>
     </head>
     <body>
-      <div class="logo">
-        ${logoBase64 ? `<img src="data:${mimeType};base64,${logoBase64}" alt="Logo" onload="console.log('Logo loaded')" onerror="console.error('Logo failed to load')" />` : '<h2>Farmacia GS</h2>'}
+      <div class="header">
+        <div class="logo">
+          ${logoBase64 ? `<img src="data:${mimeType};base64,${logoBase64}" alt="Logo" style="max-width: 100%; height: auto;" onload="console.log('Logo loaded successfully')" onerror="console.error('Logo failed to load in browser')" />` : '<h2>Farmacia GS</h2>'}
+        </div>
+        
+        <div class="company-info">
+          <div class="bold">${EMPRESA_CONFIG.nombre}</div>
+          <div>RNC: ${EMPRESA_CONFIG.rnc}</div>
+          <div>${EMPRESA_CONFIG.direccion}</div>
+          <div>Tel: ${EMPRESA_CONFIG.telefono}</div>
+          <div>${EMPRESA_CONFIG.email}</div>
+        </div>
+        
+        <div class="fiscal-info">
+          <div class="bold">FACTURA DE VENTA</div>
+          <div>NCF: ${ncf}</div>
+          <div>Válido hasta: ${new Date(new Date().getFullYear() + 1, 11, 31).toLocaleDateString('es-ES')}</div>
+        </div>
       </div>
 
-      <h1>Factura de Venta</h1>
-      <p><strong>Venta ID:</strong> ${sale.id}</p>
-      <p><strong>Fecha:</strong> ${date}</p>
+      <div class="invoice-info">
+        <div>
+          <div class="bold">Factura No: ${sale.id}</div>
+          <div>Fecha: ${date}</div>
+        </div>
+        <div>
+          <div>Página: 1 de 1</div>
+        </div>
+      </div>
+
+      <div class="client-info">
+        <div class="bold">DATOS DEL CLIENTE:</div>
+        <div>Nombre: ${sale.nombre_cliente || 'Cliente General'}</div>
+        <div>RNC/Cédula: ${sale.rnc_cliente || sale.cedula_cliente || 'N/A'}</div>
+        <div>Dirección: ${sale.direccion_cliente || 'N/A'}</div>
+      </div>
 
       <table>
         <thead>
           <tr>
-            <th>Producto</th>
-            <th>Cant.</th>
-            <th>Precio</th>
-            <th>Total</th>
+            <th>DESCRIPCIÓN</th>
+            <th>CANT.</th>
+            <th>PRECIO</th>
+            <th>VALOR</th>
           </tr>
         </thead>
         <tbody>
           ${rows}
         </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="3" style="text-align:right;">Total:</td>
-            <td style="text-align:right;">$${totalFormatted}</td>
-          </tr>
-        </tfoot>
       </table>
 
+      <div class="totals">
+        <table style="width: 100%;">
+          <tr>
+            <td style="text-align: right; width: 70%;">SUBTOTAL:</td>
+            <td style="text-align: right; width: 30%;">$${subtotal.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td style="text-align: right;">ITBIS (18%):</td>
+            <td style="text-align: right;">$${itbis.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td style="text-align: right;">PROPINA:</td>
+            <td style="text-align: right;">$0.00</td>
+          </tr>
+          <tr style="border-top: 1px solid #000; font-weight: bold;">
+            <td style="text-align: right;">TOTAL A PAGAR:</td>
+            <td style="text-align: right;">$${total.toFixed(2)}</td>
+          </tr>
+        </table>
+      </div>
+
       <div class="footer">
-        <p><strong>Farmacia GS</strong> - Gracias por su compra</p>
-        <p><strong>Teléfono:</strong> 123-456-7890</p>
-        <p><strong>Dirección:</strong> Calle Duarte #12, Ciudad</p>
-        <p><strong>Horario:</strong> Lunes a Sábado, 9:00 - 18:00</p>
-        <p><strong>Política de Devoluciones:</strong></p>
-        <p><strong>Devoluciones:</strong> dentro de 24 horas con empaque intacto.</p>
-        <p>No se aceptan devoluciones de productos abiertos o sin receta.</p>
+        <p><strong>POLÍTICA DE DEVOLUCIONES:</strong></p>
+        <p>Las devoluciones se aceptan dentro de las 24 horas posteriores a la compra,</p>
+        <p>con el empaque intacto y presentando esta factura.</p>
+        <p>No se aceptan devoluciones de productos abiertos o medicamentos controlados.</p>
+        <br>
+        <p><strong>¡Gracias por su compra!</strong></p>
+        <p>Horario: Lunes a Sábado, 9:00 AM - 6:00 PM</p>
       </div>
     </body>
     </html>

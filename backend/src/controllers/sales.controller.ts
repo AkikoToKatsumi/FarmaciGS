@@ -97,8 +97,8 @@ export const createSale = async (req: AuthRequest, res: Response) => {
   
   const client = await pool.connect();
   try {
-    const { userId, clientId, items }: { userId: number; clientId: number | null; items: SaleItem[] } = req.body;
-    console.log('Datos procesados:', { userId, clientId, items });
+    const { userId, clientId, items, paymentMethod, rnc }: { userId: number; clientId: number | null; items: SaleItem[]; paymentMethod: string; rnc?: string } = req.body;
+    console.log('Datos procesados:', { userId, clientId, items, paymentMethod, rnc });
     
     if (!items || items.length === 0) {
       console.log('Error: No hay items');
@@ -145,8 +145,8 @@ export const createSale = async (req: AuthRequest, res: Response) => {
 
     // 2. Insertar venta
     const saleResult = await client.query(
-      'INSERT INTO sales (user_id, client_id, total, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *',
-      [userId, clientId, total]
+      'INSERT INTO sales (user_id, client_id, total, payment_method, rnc, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *',
+      [userId, clientId, total, paymentMethod, rnc || null]
     );
     const sale = saleResult.rows[0];
     console.log('Venta creada:', sale);
@@ -186,11 +186,33 @@ export const createSale = async (req: AuthRequest, res: Response) => {
       console.error('Error al registrar auditoría:', auditError);
       // No interrumpir la transacción por error de auditoría
     }
+    // Después de insertar items y antes de generar PDF
+let clienteInfo = {
+  nombre_cliente: undefined,
+  rnc_cliente: undefined,
+  cedula_cliente: undefined,
+  direccion_cliente: undefined
+};
+if (clientId) {
+  const cliRes = await client.query(
+    'SELECT name, rnc, cedula, address FROM clients WHERE id = $1',
+    [clientId]
+  );
+  const cli = cliRes.rows[0];
+  clienteInfo = {
+    nombre_cliente: cli.name,
+    rnc_cliente: cli.rnc,
+    cedula_cliente: cli.cedula,
+    direccion_cliente: cli.address
+  };
+}
+    console.log('Información del cliente obtenida:', clienteInfo);
 
     // 5. Generar PDF
     let pdfBuffer = null;
     try {
-      pdfBuffer = await generateSalePDF(sale, saleItems);
+      const saleForPDF: any = { ...sale, ...clienteInfo };
+      pdfBuffer = await generateSalePDF(saleForPDF, saleItems);
       console.log('PDF generado exitosamente');
     } catch (pdfError) {
       console.error('Error al generar PDF:', pdfError);

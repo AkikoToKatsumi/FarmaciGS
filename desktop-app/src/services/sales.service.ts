@@ -40,7 +40,9 @@ export const createSale = async (
   userId: number,
   clientId: number | null,
   items: SaleItemInput[],
-  token: string  // 👈 Añadir token como parámetro
+  token: string,
+  paymentMethod: string,
+  rnc?: string // 👈 Añadir token como parámetro
 ): Promise<SaleResponse> => {
   try {
     console.log('Creando venta con:', { userId, clientId, items });
@@ -49,7 +51,9 @@ export const createSale = async (
     const response = await API.post('/sales', {
       userId,
       clientId,
-      items
+      items,
+      paymentMethod,
+      rnc
     }, {
       headers: {
         Authorization: `Bearer ${token}`  // 👈 Enviar token en headers
