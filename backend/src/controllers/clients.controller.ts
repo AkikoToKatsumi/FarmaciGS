@@ -111,7 +111,7 @@ export const addPrescription = async (req: Request, res: Response) => {
   const clientId = Number(req.params.id);
   const { medicineIds } = req.body;
 
-  const validation = await validatePrescriptionInput({ clientId, medicineIds });
+  const validation = await validatePrescriptionInput({ clientId,medicines: medicineIds });
   if (!validation.isValid) {
     return res.status(400).json({ message: validation.message });
   }

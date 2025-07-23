@@ -2,10 +2,11 @@
 import { Router } from 'express';
 import * as auditController from '../controllers/audit.controller';
 import { verifyToken } from '../middleware/auth.middleware';
-import { authorizeRoles } from '../middleware/roles.middleware';
+import { authorizeRolesById } from '../middleware/roles.middleware';
+
 
 const router = Router();
 
-router.get('/', verifyToken, authorizeRoles('admin'), auditController.getAuditLogs);
+router.get('/', verifyToken, authorizeRolesById(1,3), auditController.getAuditLogs);
 
 export default router;

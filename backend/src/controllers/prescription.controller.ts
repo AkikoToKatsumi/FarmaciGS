@@ -1,105 +1,69 @@
-// Importa los tipos de Express
 import { Request, Response } from 'express';
-// Importa el pool de PostgreSQL
 import pool from '../config/db';
-// Importa la función de validación
-import { validatePrescriptionInput } from '../validators/prescription.validator'; // ✅ Correcto
+import { AuthRequest } from '../middleware/auth.middleware';
 
-// Crear una nueva receta médica
-export const createPrescription = async (req: Request, res: Response) => {
-  const { clientId, medicines, doctor } = req.body;
+export const createPrescription = async (req: AuthRequest, res: Response) => {
+  const { clientId, medicines } = req.body;
+  const userId = req.user?.id;
+  const roleId = req.user?.role_id;
 
-  // Validar entrada
-  const validation = await validatePrescriptionInput({ clientId, medicines });
-  if (!validation.isValid) {
-    return res.status(400).json({ message: validation.message });
+  if (!medicines || medicines.length === 0) {
+    return res.status(400).json({ message: 'Debe incluir al menos un medicamento.' });
+  }
+
+  if (![1, 3].includes(roleId)) {
+    return res.status(403).json({ message: 'Acceso denegado.' });
   }
 
   try {
-    // Insertar receta (prescription)
-    const prescriptionResult = await pool.query(
-      'INSERT INTO prescriptions (client_id, doctor, created_at) VALUES ($1, $2, NOW()) RETURNING *',
-      [clientId, doctor]
-    );
-    const prescription = prescriptionResult.rows[0];
+    const client = await pool.connect();
+    await client.query('BEGIN');
 
-    // Insertar medicamentos asociados (prescription_medicines)
+    const result = await client.query(
+      `INSERT INTO prescriptions (client_id, issued_at) VALUES ($1, NOW()) RETURNING id`,
+      [clientId]
+    );
+    const prescriptionId = result.rows[0].id;
+
     for (const med of medicines) {
-      await pool.query(
-        'INSERT INTO prescription_medicines (prescription_id, medicine_id, quantity) VALUES ($1, $2, $3)',
-        [prescription.id, med.id, med.quantity]
+      await client.query(
+        `INSERT INTO prescription_medicines (prescription_id, medicine_id, quantity) VALUES ($1, $2, $3)`,
+        [prescriptionId, med.medicineId, med.quantity]
       );
     }
 
-    return res.status(201).json({ message: 'Receta creada exitosamente', prescription });
-  } catch (error) {
-    console.error('Error al crear receta:', error);
-    return res.status(500).json({ message: 'Error del servidor' });
+    await client.query('COMMIT');
+    res.status(201).json({ message: 'Receta creada exitosamente.' });
+  } catch (err) {
+    console.error('Error creando receta:', err);
+    res.status(500).json({ message: 'Error interno al crear receta' });
   }
 };
-
-// Obtener todas las recetas
-export const getPrescriptions = async (_req: Request, res: Response) => {
+export const getPrescriptionsByClient = async (req: Request, res: Response) => {
+  const clientId = parseInt(req.params.id);
   try {
-    const result = await pool.query(`
-      SELECT p.*, c.name as client_name
-      FROM prescriptions p
-      JOIN clients c ON p.client_id = c.id
-      ORDER BY p.created_at DESC
-    `);
-    return res.json(result.rows);
-  } catch (error) {
-    console.error('Error al obtener recetas:', error);
-    return res.status(500).json({ message: 'Error del servidor' });
-  }
-};
-
-// Obtener una receta por ID, incluyendo medicamentos
-export const getPrescriptionById = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  try {
-    const prescriptionResult = await pool.query(
-      'SELECT * FROM prescriptions WHERE id = $1',
-      [Number(id)]
+    const prescriptions = await pool.query(
+      `SELECT 
+         p.*, 
+         json_agg(
+           json_build_object(
+             'id', m.id,
+             'name', m.name,
+             'quantity', pm.quantity
+           )
+         ) AS medicine
+       FROM prescriptions p
+       LEFT JOIN prescription_medicines pm ON p.id = pm.prescription_id
+       LEFT JOIN medicine m ON m.id = pm.medicine_id
+       WHERE p.client_id = $1
+       GROUP BY p.id
+       ORDER BY p.issued_at DESC`,
+      [clientId]
     );
-    if (prescriptionResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Receta no encontrada' });
-    }
-
-    const medicinesResult = await pool.query(
-      `SELECT pm.*, m.name as medicine_name 
-       FROM prescription_medicines pm 
-       JOIN medicines m ON pm.medicine_id = m.id 
-       WHERE pm.prescription_id = $1`,
-      [Number(id)]
-    );
-
-    return res.json({
-      prescription: prescriptionResult.rows[0],
-      medicines: medicinesResult.rows,
-    });
+    res.json(prescriptions.rows);
   } catch (error) {
-    console.error('Error al obtener receta:', error);
-    return res.status(500).json({ message: 'Error del servidor' });
-  }
-};
-
-// Eliminar una receta
-export const deletePrescription = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  try {
-    // Primero eliminar los medicamentos asociados
-    await pool.query('DELETE FROM prescription_medicines WHERE prescription_id = $1', [Number(id)]);
-
-    // Luego eliminar la receta
-    await pool.query('DELETE FROM prescriptions WHERE id = $1', [Number(id)]);
-
-    return res.json({ message: 'Receta eliminada correctamente' });
-  } catch (error) {
-    console.error('Error al eliminar receta:', error);
-    return res.status(500).json({ message: 'Error del servidor' });
+    console.error(error);
+    res.status(500).json({ message: 'Error al obtener recetas' });
   }
 };
 
