@@ -1,29 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user';
-import { getDashboardStats, DashboardStats } from '../services/dashboard.service';
-
-
-// Interfaces
-interface Role {
-  id: number;
-  name: string;
-}
-
-interface User {
-  name: string;
-  email: string;
-  password: string;
-  role_id: number;
-}
-
-interface FormErrors {
-  name?: string;
-  email?: string;
-  password?: string;
-  role_id?: string;
-}
+import { getRoles } from '../services/role.service';
+import bcrypt from 'bcryptjs'; // Instala con: npm install bcryptjs
+import { useNavigate } from 'react-router-dom';
 
 // Styled Components
 const Container = styled.div`
@@ -174,6 +154,26 @@ const SuccessMessage = styled.div`
   text-align: center;
 `;
 
+// Interfaces
+interface Role {
+  id: number;
+  name: string;
+}
+
+interface User {
+  name: string;
+  email: string;
+  password: string;
+  role_id: number;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  role_id?: string;
+}
+
 // Main Component
 const UserRegistration: React.FC = () => {
   const [formData, setFormData] = useState<User>({
@@ -188,6 +188,8 @@ const UserRegistration: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const { token } = useUserStore();
+  const navigate = useNavigate();
 
   // Fetch roles from backend
   useEffect(() => {
@@ -196,18 +198,12 @@ const UserRegistration: React.FC = () => {
 
   const fetchRoles = async () => {
     try {
-      // Reemplaza con tu endpoint real
-      const response = await fetch('/api/roles');
-      const data = await response.json();
+      if (!token) return;
+      const data = await getRoles(token);
       setRoles(data);
     } catch (error) {
       console.error('Error fetching roles:', error);
-      // Datos de ejemplo si falla la conexión
-      setRoles([
-        { id: 1, name: 'Admin' },
-        { id: 2, name: 'User' },
-        { id: 3, name: 'Moderator' }
-      ]);
+      setRoles([]);
     }
   };
 
@@ -270,18 +266,15 @@ const UserRegistration: React.FC = () => {
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
     setFormData(prev => ({
       ...prev,
       [name]: name === 'role_id' ? parseInt(value) : value
     }));
 
-    // Update password strength in real time
     if (name === 'password') {
       setPasswordStrength(calculatePasswordStrength(value));
     }
 
-    // Clear error when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({
         ...prev,
@@ -293,20 +286,26 @@ const UserRegistration: React.FC = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
     setLoading(true);
     setSuccess(false);
 
     try {
-      // Enviar al backend (reemplaza con tu endpoint)
-      const response = await fetch('/api/users', {
+      // Hashea la contraseña antes de enviar
+      const hashedPassword = await bcrypt.hash(formData.password, 10);
+
+      // Enviar al backend
+      const response = await fetch('http://localhost:4004/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          password: hashedPassword,
+        })
       });
 
       if (!response.ok) {
@@ -332,8 +331,14 @@ const UserRegistration: React.FC = () => {
 
   return (
     <Container>
-      <Title>Registro de Usuario</Title>
-      
+      <Button
+        type="button"
+        style={{ marginBottom: '1rem', background: '#bcbfc2ff', width: '100%' }}
+        onClick={() => navigate('/dashboard')}
+      >
+        Volver al Dashboard
+      </Button>
+      <Title>Registro de Empleado</Title>
       <Form onSubmit={handleSubmit}>
         <InputGroup>
           <Label htmlFor="name">Nombre</Label>
@@ -343,7 +348,7 @@ const UserRegistration: React.FC = () => {
             type="text"
             value={formData.name}
             onChange={handleInputChange}
-            placeholder="Ingresa tu nombre completo"
+            placeholder="Ingresa el nombre completo"
             hasError={!!errors.name}
             maxLength={100}
           />
@@ -409,12 +414,12 @@ const UserRegistration: React.FC = () => {
 
         <Button type="submit" disabled={loading}>
           {loading && <LoadingSpinner />}
-          {loading ? 'Creando usuario...' : 'Registrar Usuario'}
+          {loading ? 'Creando empleado...' : 'Registrar Empleado'}
         </Button>
 
         {success && (
           <SuccessMessage>
-            ¡Usuario registrado exitosamente!
+            ¡Empleado registrado exitosamente!
           </SuccessMessage>
         )}
       </Form>

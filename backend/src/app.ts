@@ -10,6 +10,8 @@ import reportsRoutes from './routes/reports.routes';
 import rolesRoutes from './routes/roles.routes';
 import providersRoutes from './routes/provider.routes';
 import prescriptionRoutes from './routes/prescription.routes';
+import employeesRoutes from './routes/employees.routes';
+import usersRoutes from './routes/users.routes';
 import { verifyToken } from './middleware/auth.middleware'; // ✅ Importa el middleware correcto
 
 dotenv.config();
@@ -30,6 +32,8 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/provider', providersRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/employees', employeesRoutes);
+app.use('/api/users', usersRoutes);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);

@@ -3,6 +3,8 @@
 import { Request, Response } from 'express';
 // Importamos nuestro pool de conexiones a la base de datos.
 import pool from '../config/db';
+// Importamos bcrypt para el hashing de contraseñas.
+import bcrypt from 'bcryptjs';
 
 // Exportamos la función asíncrona para obtener todos los usuarios.
 export const getUsers = async (_req: Request, res: Response) => {
@@ -26,17 +28,31 @@ export const getUserById = async (req: Request, res: Response) => {
 
 // Exportamos la función asíncrona para crear un nuevo usuario.
 export const createUser = async (req: Request, res: Response) => {
-  // Extraemos los datos del usuario del cuerpo de la solicitud.
-  const { name, email, password, roleId } = req.body;
-  // **Nota de Seguridad:** Estamos guardando la contraseña en texto plano. Esto es una vulnerabilidad de seguridad grave.
-  // Deberíamos hashear la contraseña antes de guardarla, usando una librería como bcrypt.
-  // Insertamos el nuevo usuario en la base de datos y usamos RETURNING * para obtener el registro creado.
-  const result = await pool.query(
-    'INSERT INTO users (name, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING *',
-    [name, email, password, roleId]
-  );
-  // Respondemos con un estado 201 (Creado) y los datos del usuario nuevo.
-  res.status(201).json(result.rows[0]);
+  try {
+    // Extraemos los datos del usuario del cuerpo de la solicitud.
+    const { name, email, password, role_id, roleId } = req.body;
+    const role = role_id || roleId; // Soporta ambos nombres de campo
+
+    // Verifica si el email ya existe
+    const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ message: 'Ya existe un usuario con ese correo electrónico.' });
+    }
+
+    // Hashea la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Inserta el usuario
+    const result = await pool.query(
+      'INSERT INTO users (name, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, email, hashedPassword, role]
+    );
+    // Respondemos con un estado 201 (Creado) y los datos del usuario nuevo.
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creando usuario:', error);
+    res.status(500).json({ message: 'Error al crear el usuario' });
+  }
 };
 
 // Exportamos la función asíncrona para actualizar un usuario existente.

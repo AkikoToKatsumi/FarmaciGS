@@ -7,15 +7,22 @@ import { validateRoleInput } from '../validators/role.validator';
 export const getRoles = async (_: Request, res: Response) => {
   try {
     const rolesResult = await pool.query('SELECT * FROM roles');
+    console.log('Roles result:', rolesResult.rows);
+
+    if (!rolesResult.rows || rolesResult.rows.length === 0) {
+      return res.json([]);
+    }
+
     const permissionsResult = await pool.query('SELECT * FROM permissions');
-    // Une roles y permisos en JS
     const roles = rolesResult.rows.map((role: any) => ({
       ...role,
       permissions: permissionsResult.rows.filter((p: any) => p.role_id === role.id),
     }));
     return res.json(roles);
-  } catch (error) {
-    return res.status(500).json({ message: 'Error al obtener roles', error });
+  } catch (error: any) {
+    // Log the error stack for debugging
+    console.error('Error al obtener roles:', error.stack || error);
+    return res.status(500).json({ message: 'Error al obtener roles', error: error.message || error });
   }
 };
 

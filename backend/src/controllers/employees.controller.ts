@@ -10,10 +10,14 @@ import { validateEmployeeInput } from '../validators/employee.validator';
 
 // Exportamos la función asíncrona para crear un nuevo empleado.
 export const createEmployee = async (req: Request, res: Response) => {
+  console.log('createEmployee called with body:', req.body);
   // Primero, validamos los datos de entrada que vienen en el cuerpo de la solicitud.
   const validation = await validateEmployeeInput(req.body);
   // Si la validación no es exitosa, devolvemos un error 400 (Bad Request) con el mensaje de error.
-  if (!validation.isValid) return res.status(400).json({ message: validation.message });
+  if (!validation.isValid) {
+    console.log('Validation failed:', validation.message);
+    return res.status(400).json({ message: validation.message });
+  }
 
   // Extraemos los datos del empleado del cuerpo de la solicitud.
   const { name, email, password, roleId } = req.body;
@@ -21,18 +25,25 @@ export const createEmployee = async (req: Request, res: Response) => {
   const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
   // Si encontramos un usuario, devolvemos un error 400 indicando que el correo ya está en uso.
   if (existingUser.rows.length > 0) {
+    console.log('Email already exists:', email);
     return res.status(400).json({ message: 'Ya existe un empleado con ese correo electrónico.' });
   }
 
-  // Hasheamos la contraseña proporcionada para almacenarla de forma segura. El '10' es el costo del hasheo.
-  const hashedPassword = await bcrypt.hash(password, 10);
-  // Insertamos el nuevo usuario (empleado) en la tabla 'users' con la contraseña hasheada y devolvemos el registro creado.
-  const result = await pool.query(
-    'INSERT INTO users (name, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING *',
-    [name, email, hashedPassword, roleId]
-  );
-  // Respondemos con un estado 201 (Created) y los datos del empleado creado.
-  res.status(201).json(result.rows[0]);
+  try {
+    // Hasheamos la contraseña proporcionada para almacenarla de forma segura. El '10' es el costo del hasheo.
+    const hashedPassword = await bcrypt.hash(password, 10);
+    // Insertamos el nuevo usuario (empleado) en la tabla 'users' con la contraseña hasheada y devolvemos el registro creado.
+    const result = await pool.query(
+      'INSERT INTO users (name, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, email, hashedPassword, roleId]
+    );
+    console.log('Empleado creado:', result.rows[0]);
+    // Respondemos con un estado 201 (Created) y los datos del empleado creado.
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creando empleado:', error);
+    res.status(500).json({ message: 'Error al crear el usuario' });
+  }
 };
 
 // Exportamos la función asíncrona para obtener todos los empleados.
@@ -97,4 +108,22 @@ export const deleteUser = async (req: Request, res: Response) => {
   await pool.query('DELETE FROM users WHERE id = $1', [Number(req.params.id)]);
   // Respondemos con un mensaje de éxito.
   res.json({ message: 'Usuario eliminado correctamente' });
+};
+
+// Exportamos la función asíncrona para registrar información administrativa de un empleado.
+export const registerEmployeeInfo = async (req: Request, res: Response) => {
+  try {
+    const { userId, hireDate, salary, status } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO employees (user_id, hire_date, salary, status)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [userId, hireDate, salary, status]
+    );
+
+    res.status(201).json({ message: 'Empleado registrado', employee: result.rows[0] });
+  } catch (err) {
+    console.error('Error al registrar empleado:', err);
+    res.status(500).json({ message: 'Error al registrar el empleado' });
+  }
 };

@@ -317,9 +317,11 @@ const Dashboard = () => {
     <>
     <NavButton onClick={() => navigate('/inventory')}>Inventario</NavButton>
      <NavButton onClick={() => navigate('/prescriptions')}>Prescripciones</NavButton>
+     
+
     </>
   )}
-  {(user?.role_name === 'admin' || user?.role_name === 'cashier') && (
+  {(user?.role_name === 'admin' || user?.role_name === 'cashier')  && (
     <>
     <NavButton onClick={() => navigate('/sales')}>Ventas</NavButton>
     <NavButton onClick={() => navigate('/clients')}>Clientes</NavButton>
