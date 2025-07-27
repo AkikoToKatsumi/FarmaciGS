@@ -2,7 +2,7 @@
 export interface Prescription {
   id: number; // Identificador único de la receta
   client_id?: number; // ID del cliente asociado (opcional)
-  doctor_name?: string; // Nombre del doctor que emitió la receta (opcional)
+ 
   description?: string; // Descripción o notas de la receta (opcional)
   issued_date?: Date; // Fecha de emisión de la receta (opcional)
   created_at: Date; // Fecha de creación del registro
@@ -12,7 +12,7 @@ export interface Prescription {
 // Datos requeridos para crear una receta
 export interface CreatePrescriptionData {
   client_id: number; // ID del cliente
-  doctor_name: string; // Nombre del doctor
+  
   description?: string; // Descripción (opcional)
   issued_date?: Date; // Fecha de emisión (opcional)
 }
@@ -20,7 +20,7 @@ export interface CreatePrescriptionData {
 // Datos permitidos para actualizar una receta
 export interface UpdatePrescriptionData {
   client_id?: number; // ID del cliente (opcional)
-  doctor_name?: string; // Nombre del doctor (opcional)
+ 
   description?: string; // Descripción (opcional)
   issued_date?: Date; // Fecha de emisión (opcional)
 }
@@ -29,7 +29,7 @@ export interface UpdatePrescriptionData {
 export interface PrescriptionResponse {
   id: number;
   client_id?: number;
-  doctor_name?: string;
+
   description?: string;
   issued_date?: Date;
   created_at: Date;
@@ -44,7 +44,7 @@ export interface PrescriptionResponse {
 // Receta con información completa del cliente
 export interface PrescriptionWithClient {
   id: number;
-  doctor_name?: string;
+ 
   description?: string;
   issued_date?: Date;
   created_at: Date;
@@ -60,12 +60,12 @@ export interface PrescriptionWithClient {
 export interface PrescriptionStats {
   total_prescriptions: number; // Total de recetas
   prescriptions_this_month: number; // Recetas emitidas este mes
-  top_doctors: Array<{
-    doctor_name: string; // Nombre del doctor
+  
     prescriptions_count: number; // Cantidad de recetas emitidas
-  }>;
-  recent_prescriptions: PrescriptionResponse[]; // Recetas recientes
-}
+  };
+  const responses: PrescriptionResponse[] = []; // ✅ correcto
+ // Recetas recientes
+
 
 // Enum para el estado de la receta
 export enum PrescriptionStatus {

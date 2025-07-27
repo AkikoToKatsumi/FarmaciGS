@@ -333,7 +333,7 @@ const Dashboard = () => {
       <AdminNavButton onClick={() => navigate('/admin')}>Administración</AdminNavButton>
       <AdminNavButton onClick={() => navigate('/roles')}>Roles</AdminNavButton>
       <AdminNavButton onClick={() => navigate('/backups')}>Respaldos</AdminNavButton>
-      <AdminNavButton onClick={() => navigate('/audit')}>Auditoría</AdminNavButton>
+      {/* <AdminNavButton onClick={() => navigate('/audit')}>Auditoría</AdminNavButton> */}
     </>
   )}
 </Navigation>

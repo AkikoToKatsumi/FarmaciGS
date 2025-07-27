@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export const createPrescription = async (
   clientId: number,
-  medicines: { medicineId: number; quantity: number }[],
+  medicines: { medicineId: number; quantity: number }[], // Ya recibe el formato correcto
   token: string
 ) => {
   const response = await axios.post('http://localhost:4004/api/prescriptions', {
@@ -13,19 +13,26 @@ export const createPrescription = async (
       Authorization: `Bearer ${token}`
     }
   });
-  
-
-
+       
   return response.data;
 };
 
-export const getPrescriptionsByClient = async (clientId: number, token: string) => {
+export const getPrescriptionsByClient = async (clientId: number, token: string, ) => {
   const res = await axios.get(`${'http://localhost:4004/api/prescriptions'}/client/${clientId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
   return res.data;
+};
+
+export const getLatestPrescriptionByClient = async (clientId: number, token: string) => {
+  const response = await axios.get(`http://localhost:4004/api/prescriptions/latest/${clientId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
 };
 
 export default createPrescription;

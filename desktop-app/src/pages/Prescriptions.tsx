@@ -15,12 +15,14 @@ const Container = styled.div`
 `;
 
 const BackButton = styled.button`
+position: top-right;
+
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #6c757d, #495057);
-  color: white;
+  background: color: #007bff;
+  color: black;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -30,7 +32,7 @@ const BackButton = styled.button`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    background: linear-gradient(135deg, #495057, #343a40);
+    background: #0056b3;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
@@ -347,9 +349,17 @@ const PrescriptionDate = styled.span`
   font-size: 0.9rem;
 `;
 
-const DoctorInfo = styled.strong`
-  color: #28a745;
-  font-size: 0.95rem;
+const MedicineList = styled.ul`
+  list-style-type: disc;
+  padding-left: 20px;
+  margin-top: 0.75rem;
+  color: #495057;
+  width: 100%;
+`;
+
+const MedicineListItem = styled.li`
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
 `;
 
 const Prescriptions = () => {
@@ -359,7 +369,6 @@ const Prescriptions = () => {
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const [selectedMedicines, setSelectedMedicines] = useState<{ id: number; quantity: number }[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
-  const [doctor, setDoctor] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -387,7 +396,7 @@ const Prescriptions = () => {
 
   const loadPrescriptions = async (clientId: number) => {
     try {
-      const res = await getPrescriptionsByClient(clientId, token!);
+      const res = await getPrescriptionsByClient(clientId, token!, );
       setPrescriptions(res);
     } catch (error) {
       console.error('Error loading prescriptions:', error);
@@ -419,19 +428,23 @@ const Prescriptions = () => {
     try {
       setLoading(true);
       setError('');
-      const token = localStorage.getItem('token');
 
-      const medicines = selectedMedicines.map((m) => ({
-        medicineId: m.id,
-        quantity: m.quantity,
+      // Mapear selectedMedicines al formato correcto que espera el backend
+      const medicinesForBackend = selectedMedicines.map(med => ({
+        medicineId: med.id,
+        quantity: med.quantity
       }));
 
-      const res = await createPrescription(selectedClient, medicines, token!);
+      const res = await createPrescription(selectedClient, medicinesForBackend, token!);
       alert(res.message);
+      
+      // Recargar las recetas después de crear una nueva
       loadPrescriptions(selectedClient);
-
+      
+      // Limpiar la selección de medicamentos
       setSelectedMedicines([]);
-      setDoctor('');
+      setError('');
+      
     } catch (err: any) {
       console.error(err);
       alert(err.response?.data?.message || 'Error al crear receta');
@@ -469,16 +482,6 @@ const Prescriptions = () => {
               </option>
             ))}
           </Select>
-        </FormGroup>
-
-        <FormGroup>
-          <Label>Doctor Responsable:</Label>
-          <Input
-            type="text"
-            value={doctor}
-            onChange={(e) => setDoctor(e.target.value)}
-            placeholder="Nombre completo del doctor"
-          />
         </FormGroup>
 
         <FormGroup>
@@ -522,31 +525,29 @@ const Prescriptions = () => {
         <HistorySection>
           <HistoryTitle>Historial de Recetas</HistoryTitle>
           <HistoryList>
-           {prescriptions.map((p) => (
-  <HistoryItem key={p.id}>
-    <PrescriptionInfo>
-      <PrescriptionId>Receta #{p.id}</PrescriptionId>
-      <PrescriptionDate>
-        {new Date(p.issued_at).toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })}
-      </PrescriptionDate>
-      <DoctorInfo>Doctor: {p.doctor || 'N/A'}</DoctorInfo>
-      <ul>
-        {p.medicines?.map((med: any) => (
-          <li key={med.id}>
-            {med.name} - {med.quantity} unidad(es)
-          </li>
-        ))}
-      </ul>
-    </PrescriptionInfo>
-  </HistoryItem>
-
-
+            {prescriptions.map((p) => (
+              <HistoryItem key={p.id}>
+                <PrescriptionInfo>
+                  <PrescriptionId>Receta #{p.id}</PrescriptionId>
+                  <PrescriptionDate>
+                    {new Date(p.issued_at).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </PrescriptionDate>
+                </PrescriptionInfo>
+                <MedicineList>
+                  {/* Cambiar 'medicines' por 'medicine' para coincidir con el backend */}
+                  {p.medicine?.map((med: any) => (
+                    <MedicineListItem key={med.id}>
+                      {med.name} - {med.quantity} unidad(es)
+                    </MedicineListItem>
+                  ))}
+                </MedicineList>
+              </HistoryItem>
             ))}
           </HistoryList>
         </HistorySection>

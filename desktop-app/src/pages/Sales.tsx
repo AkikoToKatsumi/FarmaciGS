@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import styled, { keyframes } from 'styled-components';
-import { Search, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCircle, X, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { getMedicine, getMedicineByBarcode } from '../services/inventory.service';
-import { createSale } from '../services/sales.service'; 
+import { Search, Info, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCircle, X, AlertCircle, CheckCircle2, User, Phone, Mail } from 'lucide-react';
+import { getMedicine, getMedicineByBarcode, Medicine as MedicineType } from '../services/inventory.service';
+import { createSale, getClientById, getPrescriptionsByClientId } from '../services/sales.service';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user';
 
@@ -304,10 +304,15 @@ const ResultItem = styled.div`
     border-color: #0066cc;
   }
 `;
+const ResultItemHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
 
 const ResultItemContent = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; 
   align-items: flex-start;
 `;
 
@@ -619,33 +624,220 @@ const ConfirmButton = styled.button`
   }
 `;
 
-// Notificaciones minimalistas
-const NotificationContainer = styled.div`
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  z-index: 1000;
+// Componentes de prescripción corregidos
+const PrescriptionSection = styled.div`
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e5e5;
+`;
+
+const PrescriptionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const PrescriptionList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 320px;
+  margin-bottom: 16px;
 `;
 
-const Notification = styled.div<{ type: 'success' | 'error'; isVisible: boolean }>`
+const PrescriptionItem = styled.div`
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 6px;
+  border: 1px solid #bbf7d0;
+`;
+
+const PrescriptionItemInfo = styled.div`
+  flex: 1;
+`;
+
+const PrescriptionItemName = styled.h4`
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+`;
+
+const PrescriptionItemDetails = styled.p`
+  font-size: 12px;
+  color: #16a34a;
+  margin: 0;
+`;
+
+const PrescriptionItemActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const PrescriptionItemPrice = styled.div`
+  text-align: right;
+`;
+
+const PrescriptionPrice = styled.span`
+  font-size: 14px;
+  font-weight: 600;
+  color: #16a34a;
+`;
+
+const PrescriptionTotalSection = styled.div`
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const PrescriptionTotal = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const PrescriptionTotalLabel = styled.span`
+  font-size: 14px;
+  font-weight: 600;
+  color: #16a34a;
+`;
+
+const AddPrescriptionButton = styled.button`
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #15803d;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const AddAllPrescriptionButton = styled.button`
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #15803d;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const ClientInfoSection = styled.div`
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e5e5;
+`;
+
+const ClientInfoTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+`;
+
+const ClientInfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+`;
+
+const ClientInfoItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+`;
+
+const ClientInfoLabel = styled.p`
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 2px 0;
+  text-transform: uppercase;
+`;
+
+const ClientInfoValue = styled.p`
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+`;
+
+// Componentes de notificación corregidos
+const NotificationsContainer = styled.div`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+`;
+
+const Notification = styled.div<{ type: 'success' | 'error' | 'info'; isVisible: boolean }>`
+  display: flex;
+  align-items: flex-start;
   gap: 12px;
   padding: 16px;
   border-radius: 6px;
   background: white;
-  border: 1px solid ${props => props.type === 'success' ? '#00cc66' : '#cc0000'};
-  border-left: 4px solid ${props => props.type === 'success' ? '#00cc66' : '#cc0000'};
+  border: 1px solid ${props =>
+    props.type === 'success' ? '#00cc66' :
+      props.type === 'error' ? '#cc0000' : '#0066cc'
+  };
+  border-left: 4px solid ${props =>
+    props.type === 'success' ? '#00cc66' :
+      props.type === 'error' ? '#cc0000' : '#0066cc'
+  };
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   animation: ${props => props.isVisible ? slideIn : slideOut} 0.3s ease;
 `;
 
-const NotificationIcon = styled.div<{ type: 'success' | 'error' }>`
-  color: ${props => props.type === 'success' ? '#00cc66' : '#cc0000'};
+const NotificationIcon = styled.div<{ type: 'success' | 'error' | 'info' }>`
+  color: ${props => {
+    switch (props.type) {
+      case 'success': return '#00cc66';
+      case 'error': return '#cc0000';
+      case 'info': return '#0066cc';
+      default: return '#6b7280';
+    }
+  }};
   flex-shrink: 0;
 `;
 
@@ -653,14 +845,21 @@ const NotificationContent = styled.div`
   flex: 1;
 `;
 
-const NotificationTitle = styled.h4<{ type: 'success' | 'error' }>`
+const NotificationTitle = styled.h4<{ type: 'success' | 'error' | 'info' }>`
   font-size: 14px;
   font-weight: 500;
-  color: ${props => props.type === 'success' ? '#15803d' : '#b91c1c'};
+  color: ${props => {
+    switch (props.type) {
+      case 'success': return '#15803d';
+      case 'error': return '#b91c1c';
+      case 'info': return '#1d4ed8';
+      default: return '#374151';
+    }
+  }};
   margin: 0 0 2px 0;
 `;
 
-const NotificationMessage = styled.p<{ type: 'success' | 'error' }>`
+const NotificationMessage = styled.p<{ type: 'success' | 'error' | 'info' }>`
   font-size: 12px;
   color: #666;
   margin: 0;
@@ -670,15 +869,15 @@ const NotificationMessage = styled.p<{ type: 'success' | 'error' }>`
 const NotificationCloseButton = styled.button`
   background: none;
   border: none;
-  cursor: pointer;
   color: #999;
+  cursor: pointer;
   padding: 4px;
   border-radius: 4px;
   transition: all 0.15s ease;
   
   &:hover {
-    color: #666;
     background: #f5f5f5;
+    color: #666;
   }
 `;
 
@@ -687,51 +886,85 @@ async function searchMedicineByName(name: string) {
   const medicines = await getMedicine();
   return medicines.filter(med => med.name.toLowerCase().includes(name.toLowerCase()));
 }
+// src/types/sales.types.ts
 
-interface SaleItemInput {
-  medicineId: number;
-  quantity: number;
-}
-
-interface Medicine {
+export interface PrescriptionInfo {
   id: number;
   name: string;
+  quantity: number;
   price: number;
-  stock: number;
-  barcode?: string;
-  description: string;
+  medicine_id: number;
 }
 
-interface NotificationState {
+export interface ClientWithDetails {
   id: number;
-  type: 'success' | 'error';
+  name: string;
+  phone?: string;
+  email?: string;
+  rnc?: string;
+  address?: string;
+}
+
+export interface PrescriptionWithMedicines {
+  id: number;
+  issued_at: string;
+  medicines: PrescriptionInfo[];
+}
+
+export interface NotificationState {
+  id: number;
+  type: 'success' | 'error' | 'info';
   title: string;
   message: string;
   isVisible: boolean;
 }
 
+export interface SaleItemInput {
+  medicineId: number;
+  quantity: number;
+}
+
+export interface SaleResponse {
+  sale: {
+    id: number;
+    total: number;
+    created_at: string;
+  };
+  items: Array<{
+    name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>;
+  pdf: string;
+}
+
 const SalesPOS: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
   const [rnc, setRnc] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState<PrescriptionInfo[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [selectedClient, setSelectedClient] = useState<ClientWithDetails | null>(null);
   const [clients, setClients] = useState<{ id: number; name: string }[]>([]);
-  const [searchTermClient, setSearchTermClient] = useState('');
+  const [clientPrescriptions, setClientPrescriptions] = useState<PrescriptionWithMedicines[]>([]);
+  const [selectedPrescriptionId, setSelectedPrescriptionId] = useState<number | null>(null);
+
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'barcode' | 'name'>('barcode');
-  const [product, setProduct] = useState<Medicine | null>(null);
-  const [searchResults, setSearchResults] = useState<Medicine[]>([]);
+  const [product, setProduct] = useState<MedicineType | null>(null);
+  const [searchResults, setSearchResults] = useState<MedicineType[]>([]);
   const [quantity, setQuantity] = useState(1);
-  const [items, setItems] = useState<(SaleItemInput & { productInfo: Medicine })[]>([]);
-  const [userId] = useState(1);
-  const [clientId] = useState<number | null>(null);
+  const [items, setItems] = useState<(SaleItemInput & { productInfo: MedicineType })[]>([]);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
-  const { token, clearUser } = useUserStore();
+  const { user, token, clearUser } = useUserStore();
 
   // Cargar lista de clientes al inicio
   useEffect(() => {
     const fetchClients = async () => {
+      setLoading(true);
+      
       try {
         const response = await axios.get('http://localhost:4004/api/clients', {
           headers: { Authorization: `Bearer ${token}` },
@@ -739,24 +972,125 @@ const SalesPOS: React.FC = () => {
         setClients(response.data);
       } catch (error) {
         console.error('Error al cargar clientes:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchClients();
   }, [token]);
 
-  // Filtrar clientes basados en el término de búsqueda
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTermClient.toLowerCase())
-  );
+  // Cuando se selecciona un cliente, cargar su información completa y recetas
+  useEffect(() => {
+    const loadClientData = async () => {
+      if (!selectedClientId) {
+        setSelectedClient(null);
+        setClientPrescriptions([]);
+        setSelectedProducts([]);
+        setRnc('');
+        return;
+      }
 
-  const handleClientSelect = (clientId: number) => {
-    setSelectedClientId(clientId);
-    setSearchTermClient('');
+      try {
+        setLoading(true);
+        
+        // Cargar información completa del cliente
+        const clientData = await getClientById(selectedClientId, token!);
+        setSelectedClient(clientData);
+        
+        // Llenar automáticamente el RNC si el cliente lo tiene
+        if (clientData.rnc) {
+          setRnc(clientData.rnc);
+        }
+
+        // Cargar todas las recetas del cliente
+        const prescriptions = await getPrescriptionsByClientId(selectedClientId, token!);
+        setClientPrescriptions(prescriptions);
+
+        // Si hay recetas, seleccionar la más reciente por defecto
+        // if (prescriptions.length > 0) {
+        //   const latestPrescription = prescriptions[0]; // Ya están ordenadas por fecha DESC
+        //   setSelectedPrescriptionId(latestPrescription.id); 
+        //   setSelectedProducts(latestPrescription.medicines || []);
+        // }
+        setSelectedPrescriptionId(null);
+        setSelectedProducts([]);
+        
+        showNotification('success', 'Cliente seleccionado', 
+          `Se cargó la información de ${clientData.name}${prescriptions.length > 0 ? ` con ${prescriptions.length} receta(s)` : ''}`);
+        
+      } catch (error) {
+        console.error('Error al cargar datos del cliente:', error);
+        showNotification('error', 'Error', 'No se pudo cargar la información del cliente');
+        setSelectedClient(null);
+        setClientPrescriptions([]);
+        setSelectedProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadClientData();
+  }, [selectedClientId, token]);
+
+  // Cuando se selecciona una receta específica
+  const handlePrescriptionSelect = (prescriptionId: number) => {
+    const prescription = clientPrescriptions.find(p => p.id === prescriptionId);
+    if (prescription) {
+      setSelectedPrescriptionId(prescriptionId); 
+      setSelectedProducts(prescription.medicines || []);
+      showNotification('info', 'Receta seleccionada',
+        `Se cargaron ${prescription.medicines?.length || 0} medicamentos de la receta #${prescriptionId}`);
+    }
+  };
+
+  const handleAddPrescriptionItem = async (prescriptionItem: PrescriptionInfo) => {
+    try {
+      const medicines = await getMedicine();
+      const fullMedicine = medicines.find(med => med.id === prescriptionItem.medicine_id);
+
+      if (!fullMedicine) {
+        showNotification('error', 'Error', 'No se encontró información completa del medicamento');
+        return;
+      }
+
+      if (prescriptionItem.quantity > fullMedicine.stock) {
+        showNotification('error', 'Stock insuficiente', `Solo hay ${fullMedicine.stock} unidades disponibles de ${prescriptionItem.name}`);
+        return;
+      } 
+
+      const existingItemIndex = items.findIndex(item => item.medicineId === prescriptionItem.medicine_id);
+
+      if (existingItemIndex > -1) {
+        const existingQuantity = items[existingItemIndex].quantity;
+        const newTotalQuantity = existingQuantity + prescriptionItem.quantity;
+
+        if (newTotalQuantity > fullMedicine.stock) {
+          showNotification('error', 'Stock insuficiente', `Ya tienes ${existingQuantity} unidades en el carrito. No puedes agregar ${prescriptionItem.quantity} más.`);
+          return;
+        }
+
+        const updatedItems = [...items];
+        updatedItems[existingItemIndex].quantity = newTotalQuantity;
+        setItems(updatedItems);
+      } else {
+        setItems([...items, {
+          medicineId: prescriptionItem.medicine_id,
+          quantity: prescriptionItem.quantity,
+          productInfo: fullMedicine
+        }]);
+      }
+
+      showNotification('success', 'Medicamento agregado', `Se agregó ${prescriptionItem.name} de la receta al carrito`);
+
+    } catch (error) {
+      console.error('Error al agregar medicamento de receta:', error);
+      showNotification('error', 'Error', 'No se pudo agregar el medicamento al carrito');
+    }
   };
 
   // Función para mostrar notificaciones
-  const showNotification = (type: 'success' | 'error', title: string, message: string) => {
+  const showNotification = (type: 'success' | 'error' | 'info', title: string, message: string) => {
     const id = Date.now();
     const newNotification: NotificationState = {
       id,
@@ -769,8 +1103,8 @@ const SalesPOS: React.FC = () => {
     setNotifications(prev => [...prev, newNotification]);
 
     setTimeout(() => {
-      setNotifications(prev => 
-        prev.map(notif => 
+      setNotifications(prev =>
+        prev.map(notif =>
           notif.id === id ? { ...notif, isVisible: false } : notif
         )
       );
@@ -781,8 +1115,8 @@ const SalesPOS: React.FC = () => {
   };
 
   const closeNotification = (id: number) => {
-    setNotifications(prev => 
-      prev.map(notif => 
+    setNotifications(prev =>
+      prev.map(notif =>
         notif.id === id ? { ...notif, isVisible: false } : notif
       )
     );
@@ -833,7 +1167,7 @@ const SalesPOS: React.FC = () => {
     }
   };
 
-  const handleSelectFromResults = (selectedProduct: Medicine) => {
+  const handleSelectFromResults = (selectedProduct: MedicineType) => {
     setProduct(selectedProduct);
     setSearchResults([]);
     showNotification('success', 'Producto seleccionado', `Seleccionaste: ${selectedProduct.name}`);
@@ -860,7 +1194,7 @@ const SalesPOS: React.FC = () => {
     if (existingItemIndex > -1) {
       const existingQuantity = items[existingItemIndex].quantity;
       const newTotalQuantity = existingQuantity + quantity;
-      
+
       if (newTotalQuantity > product.stock) {
         showNotification('error', 'Stock insuficiente', `Ya tienes ${existingQuantity} unidades en el carrito. No puedes agregar ${quantity} más.`);
         return;
@@ -902,6 +1236,11 @@ const SalesPOS: React.FC = () => {
       return;
     }
 
+    if (!user || !user.id) {
+      showNotification('error', 'Error de usuario', 'No se pudo identificar al usuario. Por favor, reinicia sesión.');
+      return;
+    }
+
     try {
       setLoading(true);
       console.log('Iniciando venta con items:', items);
@@ -912,27 +1251,26 @@ const SalesPOS: React.FC = () => {
         quantity: item.quantity
       }));
 
-      console.log('Datos enviados:', { userId, clientId, saleItems });
+      console.log('Datos enviados:', { userId: user.id, clientId: selectedClientId, saleItems });
 
-     const result = await createSale(
-  userId,
-  selectedClientId,
-  saleItems,
-  token,
-  paymentMethod,
-  rnc
-);
+      const result = await createSale(
+        user.id,
+        selectedClientId,
+        saleItems,
+        token,
+        paymentMethod,
+        rnc
+      );
 
-      
       console.log('Resultado de la API:', result);
-      
-      if(result?.pdf) {
+
+      if (result?.pdf) {
         const blob = new Blob([Uint8Array.from(atob(result.pdf), c => c.charCodeAt(0))], {
           type: 'application/pdf',
         });
         const url = URL.createObjectURL(blob);
         window.open(url);
-        
+
         setItems([]);
         showNotification('success', 'Venta confirmada', 'La venta se procesó exitosamente y se generó el PDF');
       }
@@ -963,7 +1301,7 @@ const SalesPOS: React.FC = () => {
     return items.reduce((sum, item) => sum + item.productInfo.price * item.quantity, 0);
   };
 
-  const getItbis = () => {
+  const getItbis = () => { 
     const subtotal = getSubtotal();
     return subtotal * 0.18;
   };
@@ -978,7 +1316,7 @@ const SalesPOS: React.FC = () => {
         <Header>
           <Title>
             <ShoppingCart color="#0066cc" size={24} />
-            POS - Sistema de Ventas
+            Ventas
           </Title>
           <BackButton onClick={() => navigate('/dashboard')}>
             Volver al inicio
@@ -1009,10 +1347,114 @@ const SalesPOS: React.FC = () => {
                 </Select>
               </FormGroup>
 
+              {selectedClient && (
+                <ClientInfoSection>
+                  <ClientInfoTitle>Información del Cliente</ClientInfoTitle>
+                  <ClientInfoGrid>
+                    <ClientInfoItem>
+                      <User size={16} color="#2563eb" />
+                      <div>
+                        <ClientInfoLabel>Nombre</ClientInfoLabel>
+                        <ClientInfoValue>{selectedClient.name}</ClientInfoValue>
+                      </div>
+                    </ClientInfoItem>
+                    {selectedClient.phone && (
+                      <ClientInfoItem>
+                        <Phone size={16} color="#2563eb" />
+                        <div>
+                          <ClientInfoLabel>Teléfono</ClientInfoLabel>
+                          <ClientInfoValue>{selectedClient.phone}</ClientInfoValue>
+                        </div>
+                      </ClientInfoItem>
+                    )}
+                    {selectedClient.email && (
+                      <ClientInfoItem>
+                        <Mail size={16} color="#2563eb" />
+                        <div>
+                          <ClientInfoLabel>Email</ClientInfoLabel>
+                          <ClientInfoValue>{selectedClient.email}</ClientInfoValue>
+                        </div>
+                      </ClientInfoItem>
+                    )}
+                  </ClientInfoGrid>
+                </ClientInfoSection>
+              )}
+
               <FormGroup>
                 <Label>RNC (opcional)</Label>
                 <Input type="text" value={rnc} onChange={(e) => setRnc(e.target.value)} placeholder="RNC del cliente" />
               </FormGroup>
+
+              {/* Selector de recetas si el cliente tiene múltiples */}
+              {clientPrescriptions.length > 1 && (
+                <FormGroup>
+                  <Label>Seleccionar Receta</Label>
+                  <Select 
+                    value={selectedPrescriptionId ?? ''} 
+                    onChange={(e) => handlePrescriptionSelect(Number(e.target.value))}
+                  >
+                    <option value="">-- Selecciona una receta --</option>
+                    {clientPrescriptions.map(prescription => (
+                      <option key={prescription.id} value={prescription.id}>
+                        Receta #{prescription.id} - {new Date(prescription.issued_at).toLocaleDateString('es-ES')} 
+                        ({prescription.medicines?.length || 0} medicamentos)
+                      </option>
+                    ))}
+                  </Select>
+                </FormGroup>
+              )}
+
+              {selectedProducts.length > 0 && (
+                <PrescriptionSection>
+                  <PrescriptionTitle>
+                    <Package size={18} color="#16a34a" />
+                    Medicamentos Recetados - Receta #{selectedPrescriptionId} ({selectedProducts.length})
+                  </PrescriptionTitle>
+
+                  <PrescriptionList>
+                    {selectedProducts.map((prod, index) => (
+                      <PrescriptionItem key={index}>
+                        <PrescriptionItemInfo>
+                          <PrescriptionItemName>{prod.name}</PrescriptionItemName>
+                          <PrescriptionItemDetails>
+                            Cantidad: {prod.quantity} × RD${prod.price.toFixed(2)}
+                          </PrescriptionItemDetails>
+                        </PrescriptionItemInfo>
+                        <PrescriptionItemActions>
+                          <PrescriptionItemPrice>
+                            <PrescriptionPrice>
+                              RD${(prod.quantity * prod.price).toFixed(2)}
+                            </PrescriptionPrice>
+                          </PrescriptionItemPrice>
+                          <AddPrescriptionButton
+                            onClick={() => handleAddPrescriptionItem(prod)}
+                            title="Agregar al carrito"
+                          >
+                            <Plus size={16} />
+                          </AddPrescriptionButton>
+                        </PrescriptionItemActions>
+                      </PrescriptionItem>
+                    ))}
+                  </PrescriptionList>
+
+                  <PrescriptionTotalSection>
+                    <PrescriptionTotal>
+                      <PrescriptionTotalLabel>
+                        Total receta: RD${selectedProducts.reduce((sum, prod) => sum + (prod.quantity * prod.price), 0).toFixed(2)}
+                      </PrescriptionTotalLabel>
+                    </PrescriptionTotal>
+                    <AddAllPrescriptionButton
+                      onClick={() => {
+                        selectedProducts.forEach(prod => handleAddPrescriptionItem(prod));
+                      }}
+                    >
+                      <ShoppingCart size={16} />
+                      Agregar todos al carrito
+                    </AddAllPrescriptionButton>
+                  </PrescriptionTotalSection>
+                </PrescriptionSection>
+              )}
+
               <CardTitle>Buscar Producto</CardTitle>
               <RadioGroup>
                 <RadioLabel>
@@ -1101,7 +1543,7 @@ const SalesPOS: React.FC = () => {
                       <div>
                         <ProductInfoLabel>Código de barras</ProductInfoLabel>
                         <ProductInfoValue style={{ fontFamily: 'monospace' }}>
-                          {product.barcode}
+                          {product.barcode || 'N/A'}
                         </ProductInfoValue>
                       </div>
                     </ProductInfoItem>
@@ -1182,29 +1624,28 @@ const SalesPOS: React.FC = () => {
                   ))}
                 </CartItems>
 
-               <CartTotal>
-  <TotalRow>
-    <TotalLabel>Subtotal:</TotalLabel>
-    <TotalAmount>${getSubtotal().toFixed(2)}</TotalAmount>
-  </TotalRow>
-  <TotalRow>
-    <TotalLabel>ITBIS (18%):</TotalLabel>
-    <TotalAmount>${getItbis().toFixed(2)}</TotalAmount>
-  </TotalRow>
-  <TotalRow>
-    <TotalLabel>Total a pagar:</TotalLabel>
-    <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
-  </TotalRow>
+                <CartTotal>
+                  <TotalRow>
+                    <TotalLabel>Subtotal:</TotalLabel>
+                    <TotalAmount>${getSubtotal().toFixed(2)}</TotalAmount>
+                  </TotalRow>
+                  <TotalRow>
+                    <TotalLabel>ITBIS (18%):</TotalLabel>
+                    <TotalAmount>${getItbis().toFixed(2)}</TotalAmount>
+                  </TotalRow>
+                  <TotalRow>
+                    <TotalLabel>Total a pagar:</TotalLabel>
+                    <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
+                  </TotalRow>
 
-  <ConfirmButton 
-    onClick={handleConfirmSale}
-    disabled={loading || items.length === 0}
-  >
-    <CheckCircle size={20} />
-    {loading ? 'Procesando...' : 'Confirmar Venta'}
-  </ConfirmButton>
-</CartTotal>
-
+                  <ConfirmButton
+                    onClick={handleConfirmSale}
+                    disabled={loading || items.length === 0}
+                  >
+                    <CheckCircle size={20} />
+                    {loading ? 'Procesando...' : 'Confirmar Venta'}
+                  </ConfirmButton>
+                </CartTotal>
               </>
             )}
           </CartCard>
@@ -1212,7 +1653,7 @@ const SalesPOS: React.FC = () => {
       </MaxWidthContainer>
 
       {/* Sistema de Notificaciones */}
-      <NotificationContainer>
+      <NotificationsContainer>
         {notifications.map((notification) => (
           <Notification
             key={notification.id}
@@ -1222,8 +1663,10 @@ const SalesPOS: React.FC = () => {
             <NotificationIcon type={notification.type}>
               {notification.type === 'success' ? (
                 <CheckCircle2 size={20} />
-              ) : (
+              ) : notification.type === 'error' ? (
                 <AlertCircle size={20} />
+              ) : (
+                <Info size={20} />
               )}
             </NotificationIcon>
             <NotificationContent>
@@ -1241,7 +1684,7 @@ const SalesPOS: React.FC = () => {
             </NotificationCloseButton>
           </Notification>
         ))}
-      </NotificationContainer>
+      </NotificationsContainer>
     </Container>
   );
 };

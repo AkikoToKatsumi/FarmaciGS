@@ -16,7 +16,7 @@ import Employees from './pages/Employees';
 import Roles from './pages/Roles';
 import Prescriptions from './pages/Prescriptions';
 import Backups from './pages/Backups';
-import Audit from './pages/Audit';
+
 
 export default function App() {
   const { user, setUser } = useUserStore();
@@ -56,7 +56,7 @@ export default function App() {
           <Route path="/roles" element={<Roles />} />
           <Route path="/prescriptions" element={<Prescriptions />} />
           <Route path="/backups" element={<Backups />} />
-          <Route path="/audit" element={<Audit />} />
+        
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </>
       ) : (

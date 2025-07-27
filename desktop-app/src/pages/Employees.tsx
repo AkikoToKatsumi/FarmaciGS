@@ -1,156 +1,425 @@
-import React, { useEffect, useState } from 'react';
-// Suponiendo que tienes estos servicios:
-import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '../services/employees.service';
-import { getRoles } from '../services/role.service';
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user';
+import { getDashboardStats, DashboardStats } from '../services/dashboard.service';
 
-const Employees = () => {
-  const token = useUserStore((s) => s.token);
-  const [employees, setEmployees] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({
+
+// Interfaces
+interface Role {
+  id: number;
+  name: string;
+}
+
+interface User {
+  name: string;
+  email: string;
+  password: string;
+  role_id: number;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  role_id?: string;
+}
+
+// Styled Components
+const Container = styled.div`
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+`;
+
+const Title = styled.h2`
+  text-align: center;
+  color: #333;
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+`;
+
+const InputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+  color: #555;
+  font-size: 0.9rem;
+`;
+
+const Input = styled.input<{ hasError?: boolean }>`
+  padding: 0.75rem;
+  border: 2px solid ${props => props.hasError ? '#e74c3c' : '#e1e8ed'};
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.hasError ? '#e74c3c' : '#3498db'};
+    box-shadow: 0 0 0 3px ${props => props.hasError ? 'rgba(231, 76, 60, 0.1)' : 'rgba(52, 152, 219, 0.1)'};
+  }
+
+  &::placeholder {
+    color: #aaa;
+  }
+`;
+
+const Select = styled.select<{ hasError?: boolean }>`
+  padding: 0.75rem;
+  border: 2px solid ${props => props.hasError ? '#e74c3c' : '#e1e8ed'};
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.hasError ? '#e74c3c' : '#3498db'};
+    box-shadow: 0 0 0 3px ${props => props.hasError ? 'rgba(231, 76, 60, 0.1)' : 'rgba(52, 152, 219, 0.1)'};
+  }
+`;
+
+const ErrorMessage = styled.span`
+  color: #e74c3c;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+`;
+
+const PasswordStrength = styled.div<{ strength: number }>`
+  height: 4px;
+  border-radius: 2px;
+  margin-top: 0.5rem;
+  background: ${props => {
+    if (props.strength < 2) return '#e74c3c';
+    if (props.strength < 3) return '#f39c12';
+    if (props.strength < 4) return '#f1c40f';
+    return '#27ae60';
+  }};
+  width: ${props => (props.strength / 4) * 100}%;
+  transition: all 0.3s ease;
+`;
+
+const PasswordStrengthText = styled.span<{ strength: number }>`
+  font-size: 0.8rem;
+  color: ${props => {
+    if (props.strength < 2) return '#e74c3c';
+    if (props.strength < 3) return '#f39c12';
+    if (props.strength < 4) return '#f1c40f';
+    return '#27ae60';
+  }};
+  margin-top: 0.25rem;
+`;
+
+const Button = styled.button<{ disabled?: boolean }>`
+  background: ${props => props.disabled ? '#bdc3c7' : 'linear-gradient(135deg, #3498db, #2980b9)'};
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+
+  &:hover {
+    background: ${props => props.disabled ? '#bdc3c7' : 'linear-gradient(135deg, #2980b9, #3498db)'};
+    transform: ${props => props.disabled ? 'none' : 'translateY(-2px)'};
+    box-shadow: ${props => props.disabled ? 'none' : '0 4px 15px rgba(52, 152, 219, 0.3)'};
+  }
+
+  &:active {
+    transform: ${props => props.disabled ? 'none' : 'translateY(0)'};
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffffff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const SuccessMessage = styled.div`
+  background: #d4edda;
+  color: #155724;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #c3e6cb;
+  margin-top: 1rem;
+  text-align: center;
+`;
+
+// Main Component
+const UserRegistration: React.FC = () => {
+  const [formData, setFormData] = useState<User>({
     name: '',
     email: '',
-    roleId: '',
+    password: '',
+    role_id: 0
   });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+
+  // Fetch roles from backend
   useEffect(() => {
-    loadEmployees();
-    loadRoles();
+    fetchRoles();
   }, []);
 
-  const loadEmployees = async () => {
-    const res = await getEmployees(token!);
-    setEmployees(res);
+  const fetchRoles = async () => {
+    try {
+      // Reemplaza con tu endpoint real
+      const response = await fetch('/api/roles');
+      const data = await response.json();
+      setRoles(data);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      // Datos de ejemplo si falla la conexión
+      setRoles([
+        { id: 1, name: 'Admin' },
+        { id: 2, name: 'User' },
+        { id: 3, name: 'Moderator' }
+      ]);
+    }
   };
 
-  const loadRoles = async () => {
-    const res = await getRoles(token!);
-    setRoles(res);
+  // Password strength calculator
+  const calculatePasswordStrength = (password: string): number => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return Math.min(strength, 4);
   };
 
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
-    if (!form.name.trim()) newErrors.name = 'El nombre es obligatorio';
-    if (!form.email.trim()) newErrors.email = 'El email es obligatorio';
-    if (!form.roleId) newErrors.roleId = 'El rol es obligatorio';
+  const getPasswordStrengthText = (strength: number): string => {
+    switch (strength) {
+      case 0:
+      case 1: return 'Muy débil';
+      case 2: return 'Débil';
+      case 3: return 'Buena';
+      case 4: return 'Muy fuerte';
+      default: return '';
+    }
+  };
+
+  // Form validation
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'El nombre es requerido';
+    } else if (formData.name.length > 100) {
+      newErrors.name = 'El nombre no puede exceder 100 caracteres';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'El email es requerido';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'El email no es válido';
+    } else if (formData.email.length > 100) {
+      newErrors.email = 'El email no puede exceder 100 caracteres';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'La contraseña es requerida';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+    } else if (formData.password.length > 255) {
+      newErrors.password = 'La contraseña no puede exceder 255 caracteres';
+    }
+
+    if (!formData.role_id) {
+      newErrors.role_id = 'Debe seleccionar un rol';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-    if (editingId) {
-      await updateEmployee(editingId, form, token!);
-    } else {
-      await createEmployee(form, token!);
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'role_id' ? parseInt(value) : value
+    }));
+
+    // Update password strength in real time
+    if (name === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value));
     }
-    setForm({ name: '', email: '', roleId: '' });
-    setEditingId(null);
-    setErrors({});
-    loadEmployees();
+
+    // Clear error when user starts typing
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
   };
 
-  const handleEdit = (emp: any) => {
-    setForm({
-      name: emp.name,
-      email: emp.email,
-      roleId: emp.roleId || '',
-    });
-    setEditingId(emp.id);
-  };
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
 
-  const handleDelete = async (id: number) => {
-    if (confirm('¿Eliminar este empleado?')) {
-      await deleteEmployee(id, token!);
-      loadEmployees();
+    setLoading(true);
+    setSuccess(false);
+
+    try {
+      // Enviar al backend (reemplaza con tu endpoint)
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear el usuario');
+      }
+
+      setSuccess(true);
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        role_id: 0
+      });
+      setPasswordStrength(0);
+
+    } catch (error) {
+      console.error('Error:', error);
+      setErrors({ password: 'Error al crear el usuario. Intenta de nuevo.' });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Empleados</h1>
-      <div className="mb-4 grid grid-cols-3 gap-4">
-        <div>
-          <input
+    <Container>
+      <Title>Registro de Usuario</Title>
+      
+      <Form onSubmit={handleSubmit}>
+        <InputGroup>
+          <Label htmlFor="name">Nombre</Label>
+          <Input
+            id="name"
+            name="name"
             type="text"
-            placeholder="Nombre"
-            value={form.name}
-            onChange={e => {
-              setForm({ ...form, name: e.target.value });
-              if (errors.name) validateForm();
-            }}
-            className={`border p-2 w-full ${errors.name ? 'border-red-500' : ''}`}
+            value={formData.name}
+            onChange={handleInputChange}
+            placeholder="Ingresa tu nombre completo"
+            hasError={!!errors.name}
+            maxLength={100}
           />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-        </div>
-        <div>
-          <input
+          {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+        </InputGroup>
+
+        <InputGroup>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
             type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={e => {
-              setForm({ ...form, email: e.target.value });
-              if (errors.email) validateForm();
-            }}
-            className={`border p-2 w-full ${errors.email ? 'border-red-500' : ''}`}
+            value={formData.email}
+            onChange={handleInputChange}
+            placeholder="ejemplo@correo.com"
+            hasError={!!errors.email}
+            maxLength={100}
           />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-        </div>
-        <div>
-          <select
-            value={form.roleId}
-            onChange={e => {
-              setForm({ ...form, roleId: e.target.value });
-              if (errors.roleId) validateForm();
-            }}
-            className={`border p-2 w-full ${errors.roleId ? 'border-red-500' : ''}`}
+          {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+        </InputGroup>
+
+        <InputGroup>
+          <Label htmlFor="password">Contraseña</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleInputChange}
+            placeholder="Mínimo 8 caracteres"
+            hasError={!!errors.password}
+            maxLength={255}
+          />
+          {formData.password && (
+            <>
+              <PasswordStrength strength={passwordStrength} />
+              <PasswordStrengthText strength={passwordStrength}>
+                {getPasswordStrengthText(passwordStrength)}
+              </PasswordStrengthText>
+            </>
+          )}
+          {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
+        </InputGroup>
+
+        <InputGroup>
+          <Label htmlFor="role_id">Rol</Label>
+          <Select
+            id="role_id"
+            name="role_id"
+            value={formData.role_id}
+            onChange={handleInputChange}
+            hasError={!!errors.role_id}
           >
-            <option value="">Seleccionar rol</option>
-            {roles.map((r: any) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
+            <option value={0}>Selecciona un rol</option>
+            {roles.map(role => (
+              <option key={role.id} value={role.id}>
+                {role.name}
+              </option>
             ))}
-          </select>
-          {errors.roleId && <p className="text-red-500 text-sm">{errors.roleId}</p>}
-        </div>
-      </div>
-      <button onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2 rounded mb-4">
-        {editingId ? 'Actualizar' : 'Registrar'} empleado
-      </button>
-      <table className="w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">ID</th>
-            <th className="border p-2">Nombre</th>
-            <th className="border p-2">Email</th>
-            <th className="border p-2">Rol</th>
-            <th className="border p-2">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {employees.map((emp: any) => (
-            <tr key={emp.id}>
-              <td className="border p-2">{emp.id}</td>
-              <td className="border p-2">{emp.name}</td>
-              <td className="border p-2">{emp.email}</td>
-              <td className="border p-2">
-                {
-                  // Soluciona el error tipando roles como any[]
-                  (roles as any[]).find((r) => r.id === emp.roleId)?.name || ''
-                }
-              </td>
-              <td className="border p-2 space-x-2">
-                <button onClick={() => handleEdit(emp)} className="bg-yellow-400 px-2 py-1 text-white rounded">Editar</button>
-                <button onClick={() => handleDelete(emp.id)} className="bg-red-600 px-2 py-1 text-white rounded">Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </Select>
+          {errors.role_id && <ErrorMessage>{errors.role_id}</ErrorMessage>}
+        </InputGroup>
+
+        <Button type="submit" disabled={loading}>
+          {loading && <LoadingSpinner />}
+          {loading ? 'Creando usuario...' : 'Registrar Usuario'}
+        </Button>
+
+        {success && (
+          <SuccessMessage>
+            ¡Usuario registrado exitosamente!
+          </SuccessMessage>
+        )}
+      </Form>
+    </Container>
   );
 };
 
-export default Employees;
+export default UserRegistration;
