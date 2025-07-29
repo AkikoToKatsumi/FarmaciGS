@@ -15,7 +15,8 @@ import Admin from './pages/Admin';
 import Employees from './pages/Employees';
 import Roles from './pages/Roles';
 import Prescriptions from './pages/Prescriptions';
-import Backups from './pages/Backups';
+
+import Providers from './pages/providers';
 
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
       {/* Rutas protegidas */}
       {user ? (
         <>
+         <Route path="/providers" element={<Providers />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/sales" element={<Sales />} />
@@ -55,7 +57,7 @@ export default function App() {
           <Route path="/employees" element={<Employees />} />
           <Route path="/roles" element={<Roles />} />
           <Route path="/prescriptions" element={<Prescriptions />} />
-          <Route path="/backups" element={<Backups />} />
+         
         
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </>

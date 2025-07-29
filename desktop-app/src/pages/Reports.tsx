@@ -77,7 +77,7 @@ const BackButton = styled(IconButton)`
   color: #fff;
   margin-bottom: 1.5rem;
   &:hover {
-    background: #495057;
+    background: #27cf35ff;
   }
 `;
 
@@ -262,7 +262,7 @@ const Reports = () => {
   return (
     <Container>
       <BackButton onClick={() => navigate('/dashboard')}>
-        <ArrowLeft size={16} /> Volver al Dashboard
+        <ArrowLeft size={16} /> Volver a Inicio
       </BackButton>
       <Title>Reportes</Title>
 

@@ -152,6 +152,32 @@ const SuccessMessage = styled.div`
   border: 1px solid #c3e6cb;
   margin-top: 1rem;
   text-align: center;
+  &:before {
+    content: '✓';
+    display: inline-block;
+    margin-right: 0.5rem;
+  }
+`;
+const ButtonStyled = styled.button`
+  background-color: #b9bcbeff;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  color: #333;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #4375dfff;
+    transition: all 0.3s ease;
+    transform: translateY(-2px);
+    }
+
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
 // Interfaces
@@ -331,13 +357,11 @@ const UserRegistration: React.FC = () => {
 
   return (
     <Container>
-      <Button
-        type="button"
-        style={{ marginBottom: '1rem', background: '#bcbfc2ff', width: '100%' }}
+      <ButtonStyled
         onClick={() => navigate('/dashboard')}
       >
-        Volver al Dashboard
-      </Button>
+        Volver al Inicio
+      </ButtonStyled>
       <Title>Registro de Empleado</Title>
       <Form onSubmit={handleSubmit}>
         <InputGroup>
