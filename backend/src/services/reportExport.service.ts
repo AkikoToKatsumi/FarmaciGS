@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
  * @returns Ruta absoluta del archivo generado.
  */
 export function exportReportToPDF(data: any[][], headers: string[], filename: string): string {
-  const doc = new PDFDocument({ margin: 30, size: 'A4' });
+    const doc = new PDFDocument({ margin: 30, size: 'A4' });
   const exportDir = path.join(__dirname, '../../exports');
   if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
   const filePath = path.join(exportDir, filename);
@@ -49,14 +49,19 @@ export function exportReportToPDF(data: any[][], headers: string[], filename: st
  * @returns Ruta absoluta del archivo generado.
  */
 export function exportReportToExcel(data: any[][], headers: string[], filename: string): string {
-  const exportDir = path.join(__dirname, '../../exports');
+    const exportDir = path.resolve(__dirname, '../../exports');
   if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
-  const filePath = path.join(exportDir, filename);
 
   const wsData = [headers, ...data];
+
+    // Check what is being passed to the excel library
+    console.log('Excel data:', JSON.stringify(wsData));
+
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
+
+  const filePath = path.join(exportDir, filename);
   XLSX.writeFile(wb, filePath);
 
   return filePath;

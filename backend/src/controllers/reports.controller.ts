@@ -1,5 +1,6 @@
 // c:\Farmacia GS\backend\src\controllers\reports.controller.ts
 // Importamos los tipos Request y Response de Express para manejar las peticiones y respuestas HTTP.
+import moment from 'moment';
 import { Request, Response } from 'express';
 // Importamos nuestro pool de conexiones a la base de datos.
 import pool from '../config/db';
@@ -11,17 +12,26 @@ type AuthRequest = Request & { user: { id: number } };
 
 // Exportamos la función asíncrona para obtener el reporte de ventas.
 export const getSalesReport = async (req: Request, res: Response) => {
-  // Extraemos las fechas 'from' (desde) y 'to' (hasta) de los parámetros de la consulta (query) en la URL.
-  const { from, to } = req.query;
-  // Ejecutamos una consulta para seleccionar las ventas dentro del rango de fechas especificado.
-  const result = await pool.query(
-    'SELECT * FROM sales WHERE created_at >= $1 AND created_at <= $2',
-    [from, to]
-  );
-  // Devolvemos los resultados en formato JSON.
-  res.json(result.rows);
-};
+   console.log('GET /api/reports/sales llamado con:', req.query);
+  try {
+    const from = moment(req.query.from as string).startOf('day').toISOString();
+    const to = moment(req.query.to as string).endOf('day').toISOString();
 
+    const query = `
+      SELECT s.id, s.sale_date, s.total, u.username as seller
+      FROM sales s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.sale_date BETWEEN $1 AND $2
+      ORDER BY s.sale_date DESC
+    `;
+    const result = await pool.query(query, [from, to]);
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener reporte de ventas:', error);
+    res.status(500).json({ message: 'Error al obtener el reporte de ventas' });
+  }
+};
 // Exportamos la función para obtener el reporte de medicamentos con bajo stock.
 export const getLowStock = async (_req: Request, res: Response) => {
   // Ejecutamos una consulta para encontrar todos los medicamentos cuyo stock sea menor a 10.

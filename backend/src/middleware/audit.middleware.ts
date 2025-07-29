@@ -17,10 +17,10 @@ export const auditLog = (action: string) => {
       if (req.user) {
         // Si hay un usuario, insertamos un nuevo registro en la tabla 'audit_log'.
         // Guardamos la acción realizada y el ID del usuario que la ejecutó.
-        await pool.query(
-          'INSERT INTO audit_log (action, user_id) VALUES ($1, )',
-          [action, req.user.id]
-        );
+ await pool.query(
+  'INSERT INTO audit_log (action, user_id) VALUES ($1, $2)',
+  [action, req.user.id]
+);
       }
     } catch (error) {
       // Si ocurre un error al intentar guardar el registro, lo mostramos en la consola.

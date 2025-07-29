@@ -2,13 +2,14 @@
 import { Router } from 'express';
 import * as reportsController from '../controllers/reports.controller';
 import { verifyToken } from '../middleware/auth.middleware';
+import { getSalesReport } from '../controllers/reports.controller';
 
 
 const router = Router();
 
 router.use(verifyToken);
 
-router.get('/sales', reportsController.getSalesReport);
+router.get('/sales',getSalesReport);
 router.get('/stock', reportsController.getLowStock);
 router.get('/expiring', reportsController.getExpiringMedicine);
 router.get('/backup', reportsController.listBackups);

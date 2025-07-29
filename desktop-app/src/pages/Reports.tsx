@@ -11,6 +11,9 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import styled from 'styled-components';
+
+import 'jspdf-autotable'; // Esto es imprescindible
+
 import {
   FileSpreadsheet,
   FileText,
