@@ -43,7 +43,7 @@ const BackButton = styled.button`
   font-size: 14px;
   
   &:hover {
-    background-color: #5a6268;
+    background-color: #16639eff;
   }
 `;
 
@@ -83,7 +83,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
         return `
           background-color: #007bff;
           color: white;
-          &:hover { background-color: #0056b3; }
+          &:hover { background-color: #0da319ff; }
           &:disabled { background-color: #6c757d; cursor: not-allowed; }
         `;
       case 'danger':
