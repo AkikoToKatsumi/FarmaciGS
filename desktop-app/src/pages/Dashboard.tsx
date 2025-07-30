@@ -127,7 +127,7 @@ const NavButton = styled.button`
 `;
 
 const AdminNavButton = styled(NavButton)`
-  background: linear-gradient(135deg, #e17055 0%, #fd79a8 100%);
+  background: linear-gradient(135deg, #ca411fff 0%, #e70f0fff 100%);
 `;
 
 const MainContent = styled.main`

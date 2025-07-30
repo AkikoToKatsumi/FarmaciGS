@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useUserStore } from '../store/user';
+import { employeeService } from '../services/employees.service';
+
 
 // Interfaces
 interface Employee {
@@ -236,6 +238,44 @@ const ButtonGroup = styled.div`
   margin-top: 20px;
 `;
 
+const Notification = styled.div<{ type: 'success' | 'error' }>`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  color: white;
+  background-color: ${props => props.type === 'success' ? '#28a745' : '#dc3545'};
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 300px;
+  animation: slideIn 0.5s ease-out;
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+`;
+
+const NotificationCloseButton = styled.button`
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  margin-left: 15px;
+  line-height: 1;
+`;
+
 const Admin = () => {
   const navigate = useNavigate();
   const { user } = useUserStore();
@@ -258,55 +298,162 @@ const Admin = () => {
     address: '',
     status: 'active'
   });
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Datos de ejemplo
-  useEffect(() => {
-    const mockEmployees: Employee[] = [
-      {
-        id: '1',
-        name: 'Juan Pérez',
-        email: 'juan.perez@empresa.com',
-        position: 'Desarrollador Frontend',
-        department: 'Tecnología',
-        salary: 45000,
-        contractType: 'full-time',
-        schedule: 'Lunes a Viernes 9:00 AM - 6:00 PM',
-        startDate: '2023-01-15',
-        phone: '+1 234 567 8901',
-        address: '123 Main St, Ciudad',
-        status: 'active'
-      },
-      {
-        id: '2',
-        name: 'María García',
-        email: 'maria.garcia@empresa.com',
-        position: 'Diseñadora UX/UI',
-        department: 'Diseño',
-        salary: 42000,
-        contractType: 'full-time',
-        schedule: 'Lunes a Viernes 8:00 AM - 5:00 PM',
-        startDate: '2023-03-20',
-        phone: '+1 234 567 8902',
-        address: '456 Oak Ave, Ciudad',
-        status: 'active'
-      },
-      {
-        id: '3',
-        name: 'Carlos López',
-        email: 'carlos.lopez@empresa.com',
-        position: 'Analista de Marketing',
-        department: 'Marketing',
-        salary: 38000,
-        contractType: 'part-time',
-        schedule: 'Lunes, Miércoles, Viernes 10:00 AM - 4:00 PM',
-        startDate: '2023-06-10',
-        phone: '+1 234 567 8903',
-        address: '789 Pine St, Ciudad',
-        status: 'inactive'
+ useEffect(() => {
+  const fetchEmployees = async () => {
+    try {
+      const employeesData = await employeeService.getAllEmployees();
+      // Transformar los datos para que coincidan con la interfaz del frontend
+      const transformedEmployees = employeesData.map(emp => ({
+        id: emp.user_id?.toString() || '',
+        name: emp.name,
+        email: emp.email,
+        position: emp.position,
+        department: emp.department,
+        salary: emp.salary,
+        contractType: emp.contracttype as Employee['contractType'],
+        schedule: emp.schedule,
+        startDate: emp.startdate || emp.hire_date || '',
+        phone: emp.phone,
+        address: emp.address,
+        status: emp.status as Employee['status']
+      }));
+      setEmployees(transformedEmployees);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      // Aquí puedes mostrar un mensaje de error al usuario
+    }
+  };
+
+  fetchEmployees();
+}, []);
+
+// Actualizar la función handleAddEmployee:
+const handleAddOrUpdateEmployee = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const employeeData = {
+      name: formData.name!,
+      email: formData.email!,
+      position: formData.position!,
+      department: formData.department!,
+      salary: formData.salary!,
+      contractType: formData.contractType!,
+      schedule: formData.schedule!,
+      phone: formData.phone!,
+      address: formData.address!,
+      status: formData.status!
+    };
+
+    const newEmployee = await employeeService.createEmployee(employeeData);
+    
+    // Transformar el empleado creado para el frontend
+    const transformedEmployee = {
+      id: newEmployee.user_id?.toString() || Date.now().toString(),
+      name: newEmployee.name,
+      email: newEmployee.email,
+      position: newEmployee.position,
+      department: newEmployee.department,
+      salary: newEmployee.salary,
+      contractType: newEmployee.contracttype as Employee['contractType'],
+      schedule: newEmployee.schedule,
+      startDate: newEmployee.startdate || newEmployee.hire_date || '',
+      phone: newEmployee.phone,
+      address: newEmployee.address,
+      status: newEmployee.status as Employee['status']
+    };
+
+    setEmployees(prev => [...prev, transformedEmployee]);
+    
+    // Resetear formulario
+    setFormData({
+      name: '',
+      email: '',
+      position: '',
+      department: '',
+      salary: 0,
+      contractType: 'full-time',
+      schedule: '',
+      phone: '',
+      address: '',
+      status: 'active'
+    });
+    setIsAddModalOpen(false);
+    setNotification({ message: 'Empleado agregado exitosamente', type: 'success' });
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    // Mostrar mensaje de error al usuario
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    setNotification({ message: `Error al crear empleado: ${errorMessage}`, type: 'error' });
+  }
+};
+
+// Actualizar la función handleDeleteEmployee:
+const handleDeleteEmployee = async (id: string) => {
+  if (window.confirm('¿Estás seguro de que deseas eliminar este empleado?')) {
+    try {
+      await employeeService.deleteEmployee(Number(id));
+      setEmployees(prev => prev.filter(emp => emp.id !== id));
+      setNotification({ message: 'Empleado eliminado exitosamente', type: 'success' });
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setNotification({ message: `Error al eliminar empleado: ${errorMessage}`, type: 'error' });
+    }
+  }
+};
+
+// Para la búsqueda en tiempo real, puedes usar:
+useEffect(() => {
+  const performSearch = async () => {
+    if (searchTerm.trim() === '') {
+      // Si no hay término de búsqueda, cargar todos los empleados
+      const employeesData = await employeeService.getAllEmployees();
+      const transformedEmployees = employeesData.map(emp => ({
+        id: emp.user_id?.toString() || '',
+        name: emp.name,
+        email: emp.email,
+        position: emp.position,
+        department: emp.department,
+        salary: emp.salary,
+        contractType: emp.contracttype as Employee['contractType'],
+        schedule: emp.schedule,
+        startDate: emp.startdate || emp.hire_date || '',
+        phone: emp.phone,
+        address: emp.address,
+        status: emp.status as Employee['status']
+      }));
+      setEmployees(transformedEmployees);
+    } else {
+      // Buscar empleados
+      try {
+        const searchResults = await employeeService.searchEmployees(searchTerm);
+        const transformedResults = searchResults.map(emp => ({
+          id: emp.user_id?.toString() || '',
+          name: emp.name,
+          email: emp.email,
+          position: emp.position,
+          department: emp.department,
+          salary: emp.salary,
+          contractType: emp.contracttype as Employee['contractType'],
+          schedule: emp.schedule,
+          startDate: emp.startdate || emp.hire_date || '',
+          phone: emp.phone,
+          address: emp.address,
+          status: emp.status as Employee['status']
+        }));
+        setEmployees(transformedResults);
+      } catch (error) {
+        console.error('Error searching employees:', error);
       }
-    ];
-    setEmployees(mockEmployees);
-  }, []);
+    }
+  };
+
+  const timeoutId = setTimeout(performSearch, 300); // Debounce
+  return () => clearTimeout(timeoutId);
+}, [searchTerm]);
 
   if (user?.role_name !== 'admin') {
     return (
@@ -366,15 +513,18 @@ const Admin = () => {
     setIsDetailModalOpen(true);
   };
 
-  // Eliminar empleado
-  const handleDeleteEmployee = (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este empleado?')) {
-      setEmployees(prev => prev.filter(emp => emp.id !== id));
-    }
-  };
+  
 
   return (
     <Container>
+      {notification && (
+        <Notification type={notification.type}>
+          <span>{notification.message}</span>
+          <NotificationCloseButton onClick={() => setNotification(null)}>
+            ×
+          </NotificationCloseButton>
+        </Notification>
+      )}
       <Header>
         <BackButton onClick={() => navigate('/dashboard')}>
           ← Volver al Dashboard
