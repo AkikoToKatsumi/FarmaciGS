@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useUserStore } from '../store/user';
 import { getRoles } from '../services/role.service';
-import bcrypt from 'bcryptjs'; // Instala con: npm install bcryptjs
 import { useNavigate } from 'react-router-dom';
 
 // Styled Components
@@ -318,10 +317,7 @@ const UserRegistration: React.FC = () => {
     setSuccess(false);
 
     try {
-      // Hashea la contraseña antes de enviar
-      const hashedPassword = await bcrypt.hash(formData.password, 10);
-
-      // Enviar al backend
+      // Envía la contraseña en texto plano, el backend la hashea
       const response = await fetch('http://localhost:4004/api/users', {
         method: 'POST',
         headers: {
@@ -330,7 +326,7 @@ const UserRegistration: React.FC = () => {
         },
         body: JSON.stringify({
           ...formData,
-          password: hashedPassword,
+          password: formData.password,
         })
       });
 

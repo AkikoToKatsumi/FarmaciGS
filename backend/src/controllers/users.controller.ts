@@ -61,10 +61,15 @@ export const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   // Obtenemos los datos a actualizar del cuerpo de la solicitud.
   const { name, email, password, roleId } = req.body;
-  
+
+  let hashedPassword = password;
+  if (password) {
+    hashedPassword = await bcrypt.hash(password, 10);
+  }
+
   const result = await pool.query(
     'UPDATE users SET name = $1, email = $2, password = $3, role_id = $4 WHERE id = $5 RETURNING *',
-    [name, email, password, roleId, id]
+    [name, email, hashedPassword, roleId, id]
   );
   // Devolvemos los datos del usuario actualizado.
   res.json(result.rows[0]);

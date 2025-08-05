@@ -330,7 +330,7 @@ const Dashboard = () => {
   {user?.role_name === 'admin' && (
     <>
     
-      <NavButton onClick={() => navigate('/employees')}>Empleados</NavButton>
+      <NavButton onClick={() => navigate('/employees')}>Usuarios</NavButton>
       <NavButton onClick={() => navigate('/reports')}>Reportes</NavButton>
       <AdminNavButton onClick={() => navigate('/admin')}>Administración</AdminNavButton>
       <AdminNavButton onClick={() => navigate('/roles')}>Roles</AdminNavButton>

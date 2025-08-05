@@ -226,26 +226,57 @@ const Reports = () => {
   }
 
   // Exportar a Excel
-  const exportExcel = (data: any[], filename:string) => {
+  const exportExcel = (data: any[], filename: string, total?: number) => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
+    // Si es ventas y hay total, agrega una fila al final
+    if (filename.startsWith('ventas') && typeof total === 'number') {
+      const lastRow = data.length + 2;
+      XLSX.utils.sheet_add_aoa(ws, [['', 'TOTAL', total]], { origin: `A${lastRow}` });
+    }
     XLSX.writeFile(wb, filename);
   };
 
   // Exportar a PDF
-  const exportPDF = (data: any[], headers: string[], filename: string) => {
+  const exportPDF = (data: any[], headers: string[], filename: string, total?: number) => {
     const doc = new jsPDF();
     autoTable(doc, {
       head: [headers],
       body: data,
     });
+    // Si es ventas y hay total, agrega una fila al final
+    if (filename.startsWith('ventas') && typeof total === 'number') {
+      autoTable(doc, {
+        body: [['', 'TOTAL', total]],
+        theme: 'plain',
+        styles: { fontStyle: 'bold', textColor: [37, 99, 235] },
+        startY: (doc as any).lastAutoTable.finalY + 2,
+      });
+    }
     doc.save(filename);
   };
 
   // Backup manual
   const handleBackup = async () => {
-    await createBackup(token!);
+    try {
+      const result = await createBackup(token!);
+      // Si el backend retorna la ruta o nombre del archivo, descarga el backup
+      if (result && result.filename) {
+        // Asume que el backend expone el archivo en /backups/:filename o similar
+        const url = `http://localhost:4004/backups/${encodeURIComponent(result.filename)}`;
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert('Backup creado, pero no se pudo descargar automáticamente.');
+      }
+    } catch (err) {
+      alert('Error al crear o descargar el backup.');
+    }
   };
 
   // Restore manual (no implementado en el servicio frontend)
@@ -291,7 +322,8 @@ const Reports = () => {
                     Vendedor: s.seller,
                     Total: s.total,
                   })),
-                  'ventas.xlsx'
+                  'ventas.xlsx',
+                  salesTotal
                 )
               }
               title="Excel"
@@ -303,7 +335,8 @@ const Reports = () => {
                 exportPDF(
                   sales.map((s: any) => [s.id, s.seller, s.total]),
                   ['ID', 'Vendedor', 'Total'],
-                  'ventas.pdf'
+                  'ventas.pdf',
+                  salesTotal
                 )
               }
               title="PDF"
