@@ -1,5 +1,0 @@
-CREATE TABLE permissions (
-  id SERIAL PRIMARY KEY,
-  role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
-  action VARCHAR(100) NOT NULL
-);

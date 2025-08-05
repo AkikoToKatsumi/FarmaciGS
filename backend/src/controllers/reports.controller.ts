@@ -13,16 +13,23 @@ type AuthRequest = Request & { user: { id: number } };
 // Exportamos la función asíncrona para obtener el reporte de ventas.
 export const getSalesReport = async (req: Request, res: Response) => {
    console.log('GET /api/reports/sales llamado con:', req.query);
+  // Validamos que las fechas 'from' y 'to' se hayan proporcionado.
+  const { from: fromDate, to: toDate } = req.query;
+  if (!fromDate || !toDate) {
+    return res.status(400).json({ message: 'Las fechas "from" y "to" son requeridas.' });
+  }
+
   try {
-    const from = moment(req.query.from as string).startOf('day').toISOString();
-    const to = moment(req.query.to as string).endOf('day').toISOString();
+    const from = moment.utc(fromDate as string).startOf('day').toISOString();
+    // Establecemos 'to' al inicio del día *siguiente* para asegurar que la consulta sea totalmente inclusiva.
+    const to = moment.utc(toDate as string).add(1, 'day').startOf('day').toISOString();
 
     const query = `
-      SELECT s.id, s.sale_date, s.total, u.username as seller
+      SELECT s.id, s.created_at as sale_date, s.total, u.username as seller
       FROM sales s
       JOIN users u ON s.user_id = u.id
-      WHERE s.sale_date BETWEEN $1 AND $2
-      ORDER BY s.sale_date DESC
+      WHERE s.created_at >= $1 AND s.created_at < $2
+      ORDER BY s.created_at DESC
     `;
     const result = await pool.query(query, [from, to]);
 
@@ -34,26 +41,36 @@ export const getSalesReport = async (req: Request, res: Response) => {
 };
 // Exportamos la función para obtener el reporte de medicamentos con bajo stock.
 export const getLowStock = async (_req: Request, res: Response) => {
-  // Ejecutamos una consulta para encontrar todos los medicamentos cuyo stock sea menor a 10.
-  const result = await pool.query('SELECT * FROM medicine WHERE stock < 10');
-  // Devolvemos los resultados en formato JSON.
-  res.json(result.rows);
+  try {
+    // Ejecutamos una consulta para encontrar todos los medicamentos cuyo stock sea menor a 10.
+    const result = await pool.query('SELECT * FROM medicine WHERE stock < 10 ORDER BY stock ASC');
+    // Devolvemos los resultados en formato JSON.
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener el reporte de bajo stock:', error);
+    res.status(500).json({ message: 'Error al obtener el reporte de bajo stock' });
+  }
 };
 
 // Exportamos la función para obtener el reporte de medicamentos próximos a expirar.
 export const getExpiringMedicine = async (_: Request, res: Response) => {
-  // Obtenemos la fecha y hora actual.
-  const now = new Date();
-  // Calculamos la fecha de "pronto", que será un mes a partir de ahora.
-  const soon = new Date();
-  soon.setMonth(soon.getMonth() + 1);
-  // Ejecutamos una consulta para encontrar los medicamentos que expiran entre hoy y el próximo mes.
-  const result = await pool.query(
-    'SELECT * FROM medicine WHERE expiration_date >= $1 AND expiration_date <= $2',
-    [now, soon]
-  );
-  // Devolvemos los resultados en formato JSON.
-  res.json(result.rows);
+  try {
+    // Obtenemos la fecha y hora actual.
+    const now = new Date();
+    // Calculamos la fecha de "pronto", que será un mes a partir de ahora.
+    const soon = new Date();
+    soon.setMonth(soon.getMonth() + 1);
+    // Ejecutamos una consulta para encontrar los medicamentos que expiran entre hoy y el próximo mes.
+    const result = await pool.query(
+      'SELECT * FROM medicine WHERE expiration_date >= $1 AND expiration_date <= $2 ORDER BY expiration_date ASC',
+      [now, soon]
+    );
+    // Devolvemos los resultados en formato JSON.
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener el reporte de medicamentos por expirar:', error);
+    res.status(500).json({ message: 'Error al obtener el reporte de medicamentos por expirar' });
+  }
 };
 
 // Exportamos la función para crear una copia de seguridad de la base de datos.

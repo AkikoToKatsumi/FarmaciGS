@@ -151,9 +151,9 @@ const Reports = () => {
         .toISOString()
         .split('T')[0];
 
-      const s = await getSalesReport(weekAgo, today, token!);
-      const e = await getExpiringSoonReport(token!);
-      const l = await getStockLowReport(token!);
+      const s = await getSalesReport(weekAgo, today);
+      const e = await getExpiringSoonReport();
+      const l = await getStockLowReport();
 
       setSales(s);
       setExpiring(e);
@@ -181,10 +181,10 @@ const Reports = () => {
 
   // Exportar a CSV
   const exportSalesCSV = () => {
-    const header = ['ID', 'Cliente', 'Total'];
+    const header = ['ID', 'Vendedor', 'Total'];
     const rows = sales.map((s: any) => [
       s.id,
-      s.client?.name || 'Cliente General',
+      s.seller,
       s.total,
     ]);
     const csvContent = [header, ...rows].map((r) => r.join(',')).join('\n');
@@ -224,16 +224,8 @@ const Reports = () => {
   }
 
   // Exportar a Excel
-  const exportExcel = (data: any[], headers: string[], filename: string) => {
-    const ws = XLSX.utils.json_to_sheet(
-      data.map((row) => {
-        const obj: any = {};
-        headers.forEach((h, i) => {
-          obj[h] = row[i];
-        });
-        return obj;
-      })
-    );
+  const exportExcel = (data: any[], filename:string) => {
+    const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
     XLSX.writeFile(wb, filename);
@@ -292,8 +284,11 @@ const Reports = () => {
             <IconButton
               onClick={() =>
                 exportExcel(
-                  sales.map((s: any) => [s.id, s.client?.name || 'Cliente General', s.total]),
-                  ['ID', 'Cliente', 'Total'],
+                  sales.map((s: any) => ({
+                    ID: s.id,
+                    Vendedor: s.seller,
+                    Total: s.total,
+                  })),
                   'ventas.xlsx'
                 )
               }
@@ -304,8 +299,8 @@ const Reports = () => {
             <IconButton
               onClick={() =>
                 exportPDF(
-                  sales.map((s: any) => [s.id, s.client?.name || 'Cliente General', s.total]),
-                  ['ID', 'Cliente', 'Total'],
+                  sales.map((s: any) => [s.id, s.seller, s.total]),
+                  ['ID', 'Vendedor', 'Total'],
                   'ventas.pdf'
                 )
               }
@@ -318,7 +313,7 @@ const Reports = () => {
         <List>
           {sales.map((s: any) => (
             <ListItem key={s.id}>
-              #{s.id} - {s.client?.name || 'Cliente General'} - RD${s.total}
+              #{s.id} - Vendedor: {s.seller} - RD${s.total}
             </ListItem>
           ))}
         </List>
@@ -335,12 +330,13 @@ const Reports = () => {
             <IconButton
               onClick={() =>
                 exportExcel(
-                  expiring.map((m: any) => [
-                    m.id,
-                    m.name,
-                    new Date(m.expirationDate).toLocaleDateString(),
-                  ]),
-                  ['ID', 'Nombre', 'Fecha de Vencimiento'],
+                  expiring.map((m: any) => ({
+                    ID: m.id,
+                    Nombre: m.name,
+                    'Fecha de Vencimiento': new Date(
+                      m.expirationDate
+                    ).toLocaleDateString(),
+                  })),
                   'por_vencer.xlsx'
                 )
               }
@@ -387,8 +383,11 @@ const Reports = () => {
             <IconButton
               onClick={() =>
                 exportExcel(
-                  lowStock.map((m: any) => [m.id, m.name, m.stock]),
-                  ['ID', 'Nombre', 'Stock'],
+                  lowStock.map((m: any) => ({
+                    ID: m.id,
+                    Nombre: m.name,
+                    Stock: m.stock,
+                  })),
                   'stock_bajo.xlsx'
                 )
               }
