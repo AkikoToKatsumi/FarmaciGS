@@ -21,11 +21,10 @@ export const getSalesReport = async (req: Request, res: Response) => {
 
   try {
     const from = moment.utc(fromDate as string).startOf('day').toISOString();
-    // Establecemos 'to' al inicio del día *siguiente* para asegurar que la consulta sea totalmente inclusiva.
     const to = moment.utc(toDate as string).add(1, 'day').startOf('day').toISOString();
 
     const query = `
-      SELECT s.id, s.created_at as sale_date, s.total, u.username as seller
+      SELECT s.id, s.created_at as sale_date, s.total, u.name as seller
       FROM sales s
       JOIN users u ON s.user_id = u.id
       WHERE s.created_at >= $1 AND s.created_at < $2
@@ -33,7 +32,13 @@ export const getSalesReport = async (req: Request, res: Response) => {
     `;
     const result = await pool.query(query, [from, to]);
 
-    res.status(200).json(result.rows);
+    // Calcular la sumatoria de todas las ventas
+    const totalSum = result.rows.reduce((sum, row) => sum + Number(row.total), 0);
+
+    res.status(200).json({
+      sales: result.rows,
+      totalSum
+    });
   } catch (error) {
     console.error('Error al obtener reporte de ventas:', error);
     res.status(500).json({ message: 'Error al obtener el reporte de ventas' });

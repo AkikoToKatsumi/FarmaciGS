@@ -574,7 +574,7 @@ useEffect(() => {
             <ModalTitle>Agregar Nuevo Empleado</ModalTitle>
             <CloseButton onClick={() => setIsAddModalOpen(false)}>×</CloseButton>
           </ModalHeader>
-          <Form onSubmit={handleAddEmployee}>
+          <Form onSubmit={handleAddOrUpdateEmployee}>
             <FormGroup>
               <Label htmlFor="name">Nombre Completo</Label>
               <Input

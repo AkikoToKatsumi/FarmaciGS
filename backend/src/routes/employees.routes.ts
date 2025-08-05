@@ -31,7 +31,7 @@ router.get('/:id', getEmployeeById);
 router.post('/', createEmployee);
 router.put('/:id', updateEmployee);
 router.delete('/:id', deleteEmployee);
-router.post('/', authorizeRolesById(1), employeesController.createEmployee);
+
 
 
 export default router;

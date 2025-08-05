@@ -9,10 +9,8 @@ import {
 import { createBackup } from '../services/backup.service';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import styled from 'styled-components';
-
-import 'jspdf-autotable'; // Esto es imprescindible
 
 import {
   FileSpreadsheet,
@@ -141,6 +139,7 @@ const Reports = () => {
   const token = useUserStore((s) => s.token);
   const user = useUserStore((s) => s.user);
   const [sales, setSales] = useState([]);
+  const [salesTotal, setSalesTotal] = useState(0);
   const [expiring, setExpiring] = useState([]);
   const [lowStock, setLowStock] = useState([]);
 
@@ -151,11 +150,14 @@ const Reports = () => {
         .toISOString()
         .split('T')[0];
 
-      const s = await getSalesReport(weekAgo, today);
+      const salesRes = await getSalesReport(weekAgo, today);
+      // Si el backend devuelve { sales, totalSum }
+      setSales(salesRes.sales || []);
+      setSalesTotal(salesRes.totalSum || 0);
+
       const e = await getExpiringSoonReport();
       const l = await getStockLowReport();
 
-      setSales(s);
       setExpiring(e);
       setLowStock(l);
     };
@@ -234,7 +236,7 @@ const Reports = () => {
   // Exportar a PDF
   const exportPDF = (data: any[], headers: string[], filename: string) => {
     const doc = new jsPDF();
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [headers],
       body: data,
     });
@@ -317,6 +319,10 @@ const Reports = () => {
             </ListItem>
           ))}
         </List>
+        {/* Mostrar sumatoria de ventas */}
+        <div style={{ marginTop: '1rem', fontWeight: 600, fontSize: '1.1rem', color: '#2563eb', textAlign: 'right' }}>
+          Total de ventas: RD${salesTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        </div>
       </Section>
 
       {/* Productos por vencer */}

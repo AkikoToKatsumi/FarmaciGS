@@ -64,13 +64,19 @@ export const updateRole = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, permissions } = req.body;
   try {
-    await pool.query('DELETE FROM permissions WHERE role_id = $1', [id]);
-    await pool.query('UPDATE roles SET name = $1 WHERE id = $2', [name, id]);
-    for (const action of permissions) {
-      await pool.query(
-        'INSERT INTO permissions (role_id, action) VALUES ($1, $2)',
-        [id, action]
-      );
+    // Si se envían permisos, actualiza permisos y nombre
+    if (Array.isArray(permissions)) {
+      await pool.query('DELETE FROM permissions WHERE role_id = $1', [id]);
+      await pool.query('UPDATE roles SET name = $1 WHERE id = $2', [name, id]);
+      for (const action of permissions) {
+        await pool.query(
+          'INSERT INTO permissions (role_id, action) VALUES ($1, $2)',
+          [id, action]
+        );
+      }
+    } else {
+      // Si no se envían permisos, solo actualiza el nombre
+      await pool.query('UPDATE roles SET name = $1 WHERE id = $2', [name, id]);
     }
     const roleResult = await pool.query('SELECT * FROM roles WHERE id = $1', [id]);
     const perms = await pool.query('SELECT * FROM permissions WHERE role_id = $1', [id]);

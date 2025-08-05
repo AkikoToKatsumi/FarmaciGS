@@ -9,8 +9,8 @@ const router = Router();
 
 router.use(verifyToken);
 
-router.get('/sales',getSalesReport);
-router.get('/stock', reportsController.getLowStock);
+router.get('/sales', getSalesReport);
+router.get('/low-stock', reportsController.getLowStock); // Cambia '/stock' a '/low-stock'
 router.get('/expiring', reportsController.getExpiringMedicine);
 router.get('/backup', reportsController.listBackups);
 router.post('/backup', verifyToken, reportsController.backupDatabase as unknown as import('express').RequestHandler);

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getRoles, createRole, updateRole, deleteRole } from '../services/role.service';
 import { useUserStore } from '../store/user';
 import styled from 'styled-components';
+import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 // Interfaces
 interface Role {
@@ -224,6 +225,96 @@ const LoadingState = styled.div`
   color: #666;
 `;
 
+const NotificationsContainer = styled.div`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+`;
+
+const Notification = styled.div<{ type: 'success' | 'error' | 'info'; isVisible: boolean }>`
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid ${props =>
+    props.type === 'success' ? '#00cc66' :
+      props.type === 'error' ? '#cc0000' : '#0066cc'
+  };
+  border-left: 4px solid ${props =>
+    props.type === 'success' ? '#00cc66' :
+      props.type === 'error' ? '#cc0000' : '#0066cc'
+  };
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: fadein 0.3s;
+`;
+
+const NotificationIcon = styled.div<{ type: 'success' | 'error' | 'info' }>`
+  color: ${props => {
+    switch (props.type) {
+      case 'success': return '#00cc66';
+      case 'error': return '#cc0000';
+      case 'info': return '#0066cc';
+      default: return '#6b7280';
+    }
+  }};
+  flex-shrink: 0;
+`;
+
+const NotificationContent = styled.div`
+  flex: 1;
+`;
+
+const NotificationTitle = styled.h4<{ type: 'success' | 'error' | 'info' }>`
+  font-size: 14px;
+  font-weight: 500;
+  color: ${props => {
+    switch (props.type) {
+      case 'success': return '#15803d';
+      case 'error': return '#b91c1c';
+      case 'info': return '#1d4ed8';
+      default: return '#374151';
+    }
+  }};
+  margin: 0 0 2px 0;
+`;
+
+const NotificationMessage = styled.p<{ type: 'success' | 'error' | 'info' }>`
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+`;
+
+const NotificationCloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  &:hover {
+    background: #f5f5f5;
+    color: #666;
+  }
+`;
+
+type NotificationType = 'success' | 'error' | 'info';
+interface NotificationState {
+  id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  isVisible: boolean;
+}
+
 const Roles = () => {
   const token = useUserStore((s) => s.token);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -232,6 +323,7 @@ const Roles = () => {
   const [form, setForm] = useState<FormData>({ name: '' });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitting, setSubmitting] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationState[]>([]);
 
   useEffect(() => {
     loadRoles();
@@ -264,20 +356,55 @@ const Roles = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const showNotification = (type: NotificationType, title: string, message: string) => {
+    const id = Date.now();
+    const newNotification: NotificationState = {
+      id,
+      type,
+      title,
+      message,
+      isVisible: true
+    };
+    setNotifications(prev => [...prev, newNotification]);
+    setTimeout(() => {
+      setNotifications(prev =>
+        prev.map(notif =>
+          notif.id === id ? { ...notif, isVisible: false } : notif
+        )
+      );
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(notif => notif.id !== id));
+      }, 300);
+    }, 4000);
+  };
+
+  const closeNotification = (id: number) => {
+    setNotifications(prev =>
+      prev.map(notif =>
+        notif.id === id ? { ...notif, isVisible: false } : notif
+      )
+    );
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+    }, 300);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     try {
       setSubmitting(true);
-      
+
       if (editingId) {
         await updateRole(editingId, form, token!);
+        showNotification('success', 'Rol actualizado', 'Rol actualizado correctamente.');
       } else {
         await createRole(form, token!);
+        showNotification('success', 'Rol creado', 'Rol creado correctamente.');
       }
-      
+
       setForm({ name: '' });
       setEditingId(null);
       setErrors({});
@@ -285,6 +412,7 @@ const Roles = () => {
     } catch (error) {
       console.error('Error submitting form:', error);
       setErrors({ submit: 'Error al guardar el rol. Inténtalo de nuevo.' });
+      showNotification('error', 'Error', 'Error al guardar el rol. Inténtalo de nuevo.');
     } finally {
       setSubmitting(false);
     }
@@ -306,10 +434,11 @@ const Roles = () => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este rol?')) {
       try {
         await deleteRole(id, token!);
+        showNotification('success', 'Rol eliminado', 'Rol eliminado correctamente.');
         await loadRoles();
       } catch (error) {
         console.error('Error deleting role:', error);
-        alert('Error al eliminar el rol. Inténtalo de nuevo.');
+        showNotification('error', 'Error', 'Error al eliminar el rol. Inténtalo de nuevo.');
       }
     }
   };
@@ -332,6 +461,40 @@ const Roles = () => {
         </BackButton>
         <Title>Gestión de Roles</Title>
       </Header>
+
+      {/* Notificaciones flotantes */}
+      <NotificationsContainer>
+        {notifications.map((notification) => (
+          <Notification
+            key={notification.id}
+            type={notification.type}
+            isVisible={notification.isVisible}
+          >
+            <NotificationIcon type={notification.type}>
+              {notification.type === 'success' ? (
+                <CheckCircle2 size={20} />
+              ) : notification.type === 'error' ? (
+                <AlertCircle size={20} />
+              ) : (
+                <Info size={20} />
+              )}
+            </NotificationIcon>
+            <NotificationContent>
+              <NotificationTitle type={notification.type}>
+                {notification.title}
+              </NotificationTitle>
+              <NotificationMessage type={notification.type}>
+                {notification.message}
+              </NotificationMessage>
+            </NotificationContent>
+            <NotificationCloseButton
+              onClick={() => closeNotification(notification.id)}
+            >
+              <X size={16} />
+            </NotificationCloseButton>
+          </Notification>
+        ))}
+      </NotificationsContainer>
 
       {/* Formulario para crear/editar roles */}
       <FormSection>
