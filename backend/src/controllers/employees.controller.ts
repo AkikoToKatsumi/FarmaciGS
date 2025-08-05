@@ -87,7 +87,7 @@ export const createEmployee = async (req: Request, res: Response) => {
     !email ||
     !position ||
     !department ||
-    salary === undefined || salary === null || isNaN(Number(salary)) ||
+    salary === undefined || salary === null || salary === '' || isNaN(Number(salary)) ||
     !contractType ||
     !schedule ||
     !phone ||
@@ -141,7 +141,7 @@ export const createEmployee = async (req: Request, res: Response) => {
         $10
       ) RETURNING *
     `, [
-      Number(salary),
+      Number(salary), // Salario mensual
       status,
       email,
       name,
@@ -188,6 +188,21 @@ export const updateEmployee = async (req: Request, res: Response) => {
       }
     }
 
+    // Validación para salario mensual y permitir borrar el campo
+    if (
+      !name ||
+      !email ||
+      !position ||
+      !department ||
+      salary === undefined || salary === null || salary === '' || isNaN(Number(salary)) ||
+      !contractType ||
+      !schedule ||
+      !phone ||
+      !address
+    ) {
+      return res.status(400).json({ message: 'Todos los campos son obligatorios y el salario debe ser un número válido.' });
+    }
+
     // Actualizar el empleado y devolver el registro actualizado
     const result = await pool.query(
       `UPDATE employees 
@@ -209,7 +224,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
         email,
         position,
         department,
-        salary, // Asegura que el salario se actualiza correctamente
+        Number(salary), // Salario mensual
         contractType,
         schedule,
         phone,

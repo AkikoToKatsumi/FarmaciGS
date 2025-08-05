@@ -659,13 +659,22 @@ const Admin = () => {
               />
             </FormGroup>
             <FormGroup>
-              <Label htmlFor="salary">Salario Anual</Label>
+              <Label htmlFor="salary">Salario Mensual</Label>
               <Input
                 type="number"
                 id="salary"
                 name="salary"
-                value={formData.salary}
-                onChange={handleInputChange}
+                value={formData.salary === 0 || formData.salary === undefined ? '' : formData.salary}
+                onChange={e => {
+                  // Permite borrar el campo y que quede vacío, y asegura que salary sea number | undefined
+                  const val = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    salary: val === '' ? undefined : Number(val)
+                  }));
+                }}
+                min="0"
+                placeholder="Ingrese el salario mensual"
                 required
               />
             </FormGroup>
