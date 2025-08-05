@@ -81,10 +81,33 @@ export const createEmployee = async (req: Request, res: Response) => {
     status = 'active'
   } = req.body;
 
-  // Verificar si ya existe un empleado con el mismo email
-  const existingEmployee = await pool.query('SELECT * FROM employees WHERE email = $1', [email]);
+  // Validación: asegúrate de que todos los campos requeridos estén presentes y correctos
+  if (
+    !name ||
+    !email ||
+    !position ||
+    !department ||
+    salary === undefined || salary === null || isNaN(Number(salary)) ||
+    !contractType ||
+    !schedule ||
+    !phone ||
+    !address
+  ) {
+    return res.status(400).json({ message: 'Todos los campos son obligatorios y el salario debe ser un número válido.' });
+  }
+
+  // Verificar si ya existe un empleado con el mismo email (case-insensitive)
+  const existingEmployee = await pool.query(
+    'SELECT * FROM employees WHERE LOWER(email) = LOWER($1)',
+    [email]
+  );
   if (existingEmployee.rows.length > 0) {
-    console.log('Email already exists:', email);
+    // Si el error es por email duplicado, pero el registro está inactivo, permitir crear uno nuevo
+    if (existingEmployee.rows[0].status === 'inactive') {
+      // Opcional: podrías actualizar el registro existente en vez de crear uno nuevo
+      // Pero por ahora, bloquea la creación
+      return res.status(400).json({ message: 'Ya existe un empleado con ese correo electrónico (inactivo).' });
+    }
     return res.status(400).json({ message: 'Ya existe un empleado con ese correo electrónico.' });
   }
 
@@ -117,9 +140,19 @@ export const createEmployee = async (req: Request, res: Response) => {
         $9,
         $10
       ) RETURNING *
-    `, [salary, status, email, name, position, department, contractType, schedule, phone, address]);
+    `, [
+      Number(salary),
+      status,
+      email,
+      name,
+      position,
+      department,
+      contractType,
+      schedule,
+      phone,
+      address
+    ]);
 
-    console.log('Empleado creado:', result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creando empleado:', error);
@@ -144,16 +177,20 @@ export const updateEmployee = async (req: Request, res: Response) => {
       status
     } = req.body;
 
-    // Si se está actualizando el email, verificar que no exista
+    // Si se está actualizando el email, verificar que no exista en otro empleado
     if (email) {
       const existingEmail = await pool.query('SELECT * FROM employees WHERE email = $1', [email]);
-      if (existingEmail.rows.length > 0 && existingEmail.rows[0].user_id !== Number(id)) {
+      if (
+        existingEmail.rows.length > 0 &&
+        existingEmail.rows[0].user_id !== Number(id)
+      ) {
         return res.status(400).json({ message: 'Ese correo ya pertenece a otro empleado.' });
       }
     }
 
-    const result = await pool.query(`
-      UPDATE employees 
+    // Actualizar el empleado y devolver el registro actualizado
+    const result = await pool.query(
+      `UPDATE employees 
       SET 
         name = $1,
         email = $2,
@@ -166,13 +203,27 @@ export const updateEmployee = async (req: Request, res: Response) => {
         address = $9,
         status = $10
       WHERE user_id = $11 
-      RETURNING *
-    `, [name, email, position, department, salary, contractType, schedule, phone, address, status, Number(id)]);
+      RETURNING *`,
+      [
+        name,
+        email,
+        position,
+        department,
+        salary, // Asegura que el salario se actualiza correctamente
+        contractType,
+        schedule,
+        phone,
+        address,
+        status,
+        Number(id)
+      ]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
 
+    // Devuelve el registro actualizado
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error actualizando empleado:', error);

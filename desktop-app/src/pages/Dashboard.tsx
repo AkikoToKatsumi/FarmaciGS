@@ -22,18 +22,7 @@ import {
   X,
   DollarSign,
 } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-  Legend,
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend, Cell } from 'recharts';
 
 type DashboardStatsWithTrends = DashboardStats & {
   salesTrend?: Array<{ week: string; sales: number }>;
@@ -56,17 +45,19 @@ const Sidebar = styled.nav<{ collapsed: boolean }>`
   flex-direction: column;
   align-items: ${({ collapsed }) => (collapsed ? 'center' : 'flex-start')};
   padding-top: 1rem;
-`;
 
-const SidebarToggle = styled.button`
-  background: none;
-  border: none;
-  color: #fff;
-  margin-left: 10px;
-  margin-bottom: 2rem;
-  cursor: pointer;
-  font-size: 1.5rem;
-  align-self: flex-end;
+  @media (max-width: 900px) {
+    width: ${({ collapsed }) => (collapsed ? '0px' : '180px')};
+    min-width: 0;
+    padding-top: 0.5rem;
+    z-index: 200;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    background: #1964aaff;
+    transition: width 0.2s;
+    overflow-x: hidden;
+  }
 `;
 
 const SidebarLogo = styled.div`
@@ -85,13 +76,15 @@ const SidebarLogo = styled.div`
   font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
-`;
 
-const SidebarMenu = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  width: 100%;
+  @media (max-width: 900px) {
+    padding: 0 0.5rem 1rem 0.5rem;
+    font-size: 1rem;
+    img {
+      width: 32px;
+      height: 32px;
+    }
+  }
 `;
 
 const SidebarMenuItem = styled.li<{ active?: boolean }>`
@@ -120,24 +113,42 @@ const SidebarMenuItem = styled.li<{ active?: boolean }>`
     span {
       display: ${({ active }) => (active ? 'inline' : 'inline')};
     }
+    @media (max-width: 900px) {
+      padding: 10px 10px;
+      font-size: 0.95rem;
+      gap: 10px;
+    }
   }
 `;
 
 const SidebarFooter = styled.div<{ $collapsed: boolean }>`
-  margin-top: auto;
   width: 100%;
-  padding: 1rem;
+  padding: 1.5rem 1.5rem 2rem 1.5rem;
   display: flex;
-  justify-content: ${props => (props.$collapsed ? 'center' : 'flex-end')};
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #1964aaff;
+  min-height: 80px;
+  box-sizing: border-box;
+
+  @media (max-width: 900px) {
+    padding: 1rem 0.5rem 1.5rem 0.5rem;
+    min-height: 60px;
+  }
 `;
 
-// Main content
 const Main = styled.div<{ $collapsed: boolean }>`
   margin-left: ${({ $collapsed }) => ($collapsed ? '60px' : '220px')};
   transition: margin-left 0.2s;
   padding: 2rem;
-  background: #f5f7fa7c;
+  background: #f7f9fb;
   min-height: 100vh;
+
+  @media (max-width: 900px) {
+    margin-left: 0;
+    padding: 1rem 0.5rem 1.5rem 0.5rem;
+  }
 `;
 
 const Header = styled.header`
@@ -145,6 +156,8 @@ const Header = styled.header`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 `;
 
 const Title = styled.h1`
@@ -155,50 +168,33 @@ const Title = styled.h1`
   display: flex;
   align-items: center;
   gap: 12px;
+  @media (max-width: 600px) {
+    font-size: 1.2rem;
+    gap: 6px;
+  }
 `;
 
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
-`;
-
-const UserName = styled.span`
-  font-size: 1rem;
-  font-weight: 500;
-`;
-
-const Role = styled.span`
-  font-size: 0.9rem;
-  opacity: 0.8;
-  background: rgba(25, 100, 170, 0.15);
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-`;
-
-const LogoutButton = styled.button`
-  background: rgba(146, 130, 130, 0.42);
-  color: white;
-  border: 2px solid rgba(54, 46, 46, 0.44);
-  padding: 0.5rem 1rem;
-  border-radius: 25px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
-  &:hover {
-    background: rgba(238, 11, 11, 0.87);
-    transform: translateY(-2px);
-  }
-  &:active {
-    transform: translateY(0);
+  @media (max-width: 600px) {
+    gap: 0.5rem;
+    font-size: 0.95rem;
   }
 `;
 
 const DashboardGrid = styled.div`
+  background-color: #f5f7fa7c;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 `;
 
 const DashboardCard = styled.div`
@@ -222,14 +218,14 @@ const DashboardCard = styled.div`
     align-items: center;
     gap: 8px;
   }
-`;
-
-const DashboardStat = styled.p`
-  margin: 0;
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #2563eb;
-  text-align: left;
+  @media (max-width: 600px) {
+    padding: 1rem;
+    border-radius: 8px;
+    h3 {
+      font-size: 0.95rem;
+      gap: 4px;
+    }
+  }
 `;
 
 const ChartSection = styled.div`
@@ -239,6 +235,10 @@ const ChartSection = styled.div`
   border: 1px solid #e1e8ed;
   padding: 2rem;
   margin-bottom: 2rem;
+  @media (max-width: 600px) {
+    padding: 1rem;
+    border-radius: 8px;
+  }
 `;
 
 const ChartTitle = styled.h3`
@@ -246,6 +246,10 @@ const ChartTitle = styled.h3`
   font-weight: 600;
   color: #1964aaff;
   margin-bottom: 1.5rem;
+  @media (max-width: 600px) {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const RecentActivities = styled.div`
@@ -284,6 +288,84 @@ const RecentActivities = styled.div`
       border-radius: 4px;
     }
   }
+  @media (max-width: 600px) {
+    padding: 1rem;
+    border-radius: 8px;
+    h3 {
+      font-size: 1rem;
+      padding-bottom: 0.3rem;
+    }
+    li {
+      font-size: 0.85rem;
+    }
+  }
+`;
+
+const SidebarToggle = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  margin-left: 10px;
+  margin-bottom: 2rem;
+  cursor: pointer;
+  font-size: 1.5rem;
+  align-self: flex-end;
+  @media (max-width: 900px) {
+    margin-left: 0;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+  }
+`;
+
+const SidebarContent = styled.div`
+  flex: 1 1 auto;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarMenu = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+`;
+
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.15s;
+  &:hover {
+    color: #e74c3c;
+  }
+`;
+
+const UserName = styled.span`
+  font-size: 1rem;
+  font-weight: 500;
+`;
+
+const Role = styled.span`
+  font-size: 0.9rem;
+  opacity: 0.8;
+  background: rgba(25, 100, 170, 0.15);
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+`;
+
+const DashboardStat = styled.p`
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #2563eb;
+  text-align: left;
 `;
 
 const Dashboard = () => {
@@ -333,6 +415,23 @@ const Dashboard = () => {
     // ...más datos
   ];
 
+  // Colores para los gráficos según cantidad
+  const getBarColor = (value: number) => {
+    if (value < 1000000) return "#e74c3c"; // rojo
+    if (value < 1500000) return "#128ef3ff"; // azul
+    if (value < 2000000) return "#f10fdeff"; // rosa
+    return "#27ae60"; // verde
+  };
+
+  const getLineColor = (key: string) => {
+    switch (key) {
+      case "sales": return "#0e83e4ff";
+      case "returns": return "#3ce792ff";
+      case "discounts": return "#ec12f3ff";
+      default: return "#2563eb";
+    }
+  };
+
   // Sidebar menu items
   const menuItems = [
     { label: 'Overview', icon: <BarChart2 />, onClick: () => navigate('/dashboard'), active: true },
@@ -360,22 +459,24 @@ const Dashboard = () => {
             Farmacia GS
           </SidebarLogo>
         )}
-        <SidebarMenu>
-          {menuItems
-            .filter((item) => item.show === undefined || item.show)
-            .map((item, idx) => (
-              <SidebarMenuItem key={item.label} active={item.active}>
-                <button onClick={item.onClick}>
-                  {item.icon}
-                  {!sidebarCollapsed && <span>{item.label}</span>}
-                </button>
-              </SidebarMenuItem>
-            ))}
-        </SidebarMenu>
+        <SidebarContent>
+          <SidebarMenu>
+            {menuItems
+              .filter((item) => item.show === undefined || item.show)
+              .map((item, idx) => (
+                <SidebarMenuItem key={item.label} active={item.active}>
+                  <button onClick={item.onClick}>
+                    {item.icon}
+                    {!sidebarCollapsed && <span>{item.label}</span>}
+                  </button>
+                </SidebarMenuItem>
+              ))}
+          </SidebarMenu>
+        </SidebarContent>
         <SidebarFooter $collapsed={sidebarCollapsed}>
           <LogoutButton onClick={handleLogout}>
             <LogOut size={20} style={{ marginRight: 8 }} />
-            {!sidebarCollapsed && 'Cerrar Sesión'}
+            {!sidebarCollapsed && <span>Cerrar Sesión</span>}
           </LogoutButton>
         </SidebarFooter>
       </Sidebar>
@@ -383,7 +484,7 @@ const Dashboard = () => {
         <Header>
           <Title>
             <BarChart2 size={32} />
-            Dashboard Farmacia GS
+            Panel Principal de Farmacia GS
           </Title>
           <UserInfo>
             <User size={30} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
@@ -403,53 +504,82 @@ const Dashboard = () => {
           <>
             <DashboardGrid>
               <DashboardCard>
-                <h3><DollarSign size={20} color="#2563eb" /> Ventas del Día</h3>
-                <DashboardStat>${stats.dailySales.toFixed(2)}</DashboardStat>
+                <h3><DollarSign size={20} color="#27ae60" /> Ventas del Día</h3>
+                <DashboardStat style={{ color: "#27ae60" }}>
+                  ${stats.dailySales.toLocaleString("es-ES", { minimumFractionDigits: 2 })}
+                </DashboardStat>
               </DashboardCard>
               <DashboardCard>
-                <h3><ShoppingCart size={20} color="#2563eb" /> Productos Vendidos</h3>
-                <DashboardStat>{stats.productsSold}</DashboardStat>
+                <h3><ShoppingCart size={20} color="#3498db" /> Productos Vendidos</h3>
+                <DashboardStat style={{ color: stats.productsSold < 100 ? "#e74c3c" : stats.productsSold < 200 ? "#f39c12" : "#27ae60" }}>
+                  {stats.productsSold}
+                </DashboardStat>
               </DashboardCard>
               <DashboardCard>
-                <h3><Users size={20} color="#2563eb" /> Clientes Atendidos</h3>
-                <DashboardStat>{stats.clientsServed}</DashboardStat>
+                <h3><Users size={20} color="#8e44ad" /> Clientes Atendidos</h3>
+                <DashboardStat style={{ color: stats.clientsServed < 50 ? "#e74c3c" : stats.clientsServed < 100 ? "#f39c12" : "#27ae60" }}>
+                  {stats.clientsServed}
+                </DashboardStat>
               </DashboardCard>
               <DashboardCard>
-                <h3><Package size={20} color="#2563eb" /> Stock Bajo</h3>
-                <DashboardStat>{stats.lowStockCount}</DashboardStat>
+                <h3><Package size={20} color="#e67e22" /> Stock Bajo</h3>
+                <DashboardStat style={{ color: stats.lowStockCount > 10 ? "#e74c3c" : stats.lowStockCount > 5 ? "#f39c12" : "#27ae60" }}>
+                  {stats.lowStockCount}
+                </DashboardStat>
               </DashboardCard>
             </DashboardGrid>
 
             <ChartSection>
               <ChartTitle>
-                <TrendingUp size={20} color="#1964aaff" style={{ marginRight: 8 }} />
-                Net Sales Week Trend
+                <TrendingUp size={20} color="#27ae60" style={{ marginRight: 8 }} />
+                Tendencia Semanal de Ventas Netas
               </ChartTitle>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={salesTrend}>
-                  <XAxis dataKey="week" />
-                  <YAxis tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`} />
-                  <Tooltip formatter={v => `$${Number(v).toLocaleString()}`} />
-                  <Bar dataKey="sales" fill="#2563eb" />
+                  <XAxis dataKey="week" label={{ value: "Semana", position: "insideBottom", offset: -5 }} />
+                  <YAxis
+                    tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
+                    label={{ value: "Ventas", angle: -90, position: "insideLeft" }}
+                  />
+                  <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
+                  <Bar
+                    dataKey="sales"
+                    fill="#27ae60"
+                    isAnimationActive={true}
+                  >
+                    {salesTrend.map((entry, idx) => (
+                      <Cell key={`cell-${idx}`} fill={getBarColor(entry.sales)} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </ChartSection>
 
             <ChartSection>
               <ChartTitle>
-                <BarChart2 size={20} color="#1964aaff" style={{ marginRight: 8 }} />
-                Total Sales Trend
+                <BarChart2 size={20} color="#3498db" style={{ marginRight: 8 }} />
+                Tendencia Total de Ventas
               </ChartTitle>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={totalSalesTrend}>
-                  <XAxis dataKey="date" />
-                  <YAxis tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`} />
-                  <Tooltip formatter={v => `$${Number(v).toLocaleString()}`} />
+                  <XAxis dataKey="date" label={{ value: "Fecha", position: "insideBottom", offset: -5 }} />
+                  <YAxis
+                    tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
+                    label={{ value: "Monto", angle: -90, position: "insideLeft" }}
+                  />
+                  <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
                   <CartesianGrid stroke="#e1e8ed" />
-                  <Legend />
-                  <Line type="monotone" dataKey="sales" stroke="#2563eb" name="Net Sales" strokeWidth={2} />
-                  <Line type="monotone" dataKey="returns" stroke="#e74c3c" name="Total Returns" strokeWidth={2} />
-                  <Line type="monotone" dataKey="discounts" stroke="#f39c12" name="Total Discounts" strokeWidth={2} />
+                  <Legend
+                    formatter={value => {
+                      if (value === "sales") return "Ventas Netas";
+                      if (value === "returns") return "Devoluciones";
+                      if (value === "discounts") return "Descuentos";
+                      return value;
+                    }}
+                  />
+                  <Line type="monotone" dataKey="sales" stroke={getLineColor("sales")} name="Ventas Netas" strokeWidth={2} />
+                  <Line type="monotone" dataKey="returns" stroke={getLineColor("returns")} name="Devoluciones" strokeWidth={2} />
+                  <Line type="monotone" dataKey="discounts" stroke={getLineColor("discounts")} name="Descuentos" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </ChartSection>
@@ -460,7 +590,7 @@ const Dashboard = () => {
                 {stats.recentActivities.map((activity) => (
                   <li key={activity.id}>
                     <span style={{ fontWeight: 'bold' }}>{activity.action}</span> — por <em>{activity.user?.name || 'Sistema'}</em><br />
-                    <small style={{ color: '#666' }}>{new Date(activity.created_at).toLocaleString()}</small>
+                    <small style={{ color: '#666' }}>{new Date(activity.created_at).toLocaleString("es-ES")}</small>
                   </li>
                 ))}
               </ul>

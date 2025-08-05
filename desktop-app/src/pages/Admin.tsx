@@ -279,7 +279,7 @@ const NotificationCloseButton = styled.button`
 const Admin = () => {
   const navigate = useNavigate();
   const { user } = useUserStore();
-  
+
   // Estados
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -299,6 +299,7 @@ const Admin = () => {
     status: 'active'
   });
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null); // Nuevo estado para edición
 
   // Datos de ejemplo
  useEffect(() => {
@@ -330,107 +331,123 @@ const Admin = () => {
   fetchEmployees();
 }, []);
 
-// Actualizar la función handleAddEmployee:
-const handleAddOrUpdateEmployee = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const employeeData = {
-      name: formData.name!,
-      email: formData.email!,
-      position: formData.position!,
-      department: formData.department!,
-      salary: formData.salary!,
-      contractType: formData.contractType!,
-      schedule: formData.schedule!,
-      phone: formData.phone!,
-      address: formData.address!,
-      status: formData.status!
-    };
-
-    const newEmployee = await employeeService.createEmployee(employeeData);
-    
-    // Transformar el empleado creado para el frontend
-    const transformedEmployee = {
-      id: newEmployee.user_id?.toString() || Date.now().toString(),
-      name: newEmployee.name,
-      email: newEmployee.email,
-      position: newEmployee.position,
-      department: newEmployee.department,
-      salary: newEmployee.salary,
-      contractType: newEmployee.contracttype as Employee['contractType'],
-      schedule: newEmployee.schedule,
-      startDate: newEmployee.startdate || newEmployee.hire_date || '',
-      phone: newEmployee.phone,
-      address: newEmployee.address,
-      status: newEmployee.status as Employee['status']
-    };
-
-    setEmployees(prev => [...prev, transformedEmployee]);
-    
-    // Resetear formulario
-    setFormData({
-      name: '',
-      email: '',
-      position: '',
-      department: '',
-      salary: 0,
-      contractType: 'full-time',
-      schedule: '',
-      phone: '',
-      address: '',
-      status: 'active'
-    });
-    setIsAddModalOpen(false);
-    setNotification({ message: 'Empleado agregado exitosamente', type: 'success' });
-  } catch (error) {
-    console.error('Error creating employee:', error);
-    // Mostrar mensaje de error al usuario
-    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    setNotification({ message: `Error al crear empleado: ${errorMessage}`, type: 'error' });
-  }
-};
-
-// Actualizar la función handleDeleteEmployee:
-const handleDeleteEmployee = async (id: string) => {
-  if (window.confirm('¿Estás seguro de que deseas eliminar este empleado?')) {
+  // Actualizar la función handleAddEmployee para soportar edición y guardar salario correctamente:
+  const handleAddOrUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await employeeService.deleteEmployee(Number(id));
-      setEmployees(prev => prev.filter(emp => emp.id !== id));
-      setNotification({ message: 'Empleado eliminado exitosamente', type: 'success' });
-    } catch (error) {
-      console.error('Error deleting employee:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      setNotification({ message: `Error al eliminar empleado: ${errorMessage}`, type: 'error' });
-    }
-  }
-};
+      const employeeData = {
+        name: formData.name!,
+        email: formData.email!,
+        position: formData.position!,
+        department: formData.department!,
+        salary: Number(formData.salary), // Asegura que sea número
+        contractType: formData.contractType!,
+        schedule: formData.schedule!,
+        phone: formData.phone!,
+        address: formData.address!,
+        status: formData.status!
+      };
 
-// Para la búsqueda en tiempo real, puedes usar:
-useEffect(() => {
-  const performSearch = async () => {
-    if (searchTerm.trim() === '') {
-      // Si no hay término de búsqueda, cargar todos los empleados
-      const employeesData = await employeeService.getAllEmployees();
-      const transformedEmployees = employeesData.map(emp => ({
-        id: emp.user_id?.toString() || '',
-        name: emp.name,
-        email: emp.email,
-        position: emp.position,
-        department: emp.department,
-        salary: emp.salary,
-        contractType: emp.contracttype as Employee['contractType'],
-        schedule: emp.schedule,
-        startDate: emp.startdate || emp.hire_date || '',
-        phone: emp.phone,
-        address: emp.address,
-        status: emp.status as Employee['status']
-      }));
-      setEmployees(transformedEmployees);
-    } else {
-      // Buscar empleados
+      if (editingId) {
+        // Editar empleado existente
+        const updated = await employeeService.updateEmployee(Number(editingId), employeeData);
+        setEmployees(prev =>
+          prev.map(emp =>
+            emp.id === editingId
+              ? {
+                  ...emp,
+                  ...employeeData,
+                  salary: Number(employeeData.salary),
+                  contractType: updated.contracttype as Employee['contractType'],
+                  startDate: updated.startdate || updated.hire_date || emp.startDate
+                }
+              : emp
+          )
+        );
+        setNotification({ message: 'Empleado actualizado exitosamente', type: 'success' });
+      } else {
+        // Crear nuevo empleado
+        const newEmployee = await employeeService.createEmployee(employeeData);
+        const transformedEmployee = {
+          id: newEmployee.user_id?.toString() || Date.now().toString(),
+          name: newEmployee.name,
+          email: newEmployee.email,
+          position: newEmployee.position,
+          department: newEmployee.department,
+          salary: Number(newEmployee.salary),
+          contractType: newEmployee.contracttype as Employee['contractType'],
+          schedule: newEmployee.schedule,
+          startDate: newEmployee.startdate || newEmployee.hire_date || '',
+          phone: newEmployee.phone,
+          address: newEmployee.address,
+          status: newEmployee.status as Employee['status']
+        };
+        setEmployees(prev => [...prev, transformedEmployee]);
+        setNotification({ message: 'Empleado agregado exitosamente', type: 'success' });
+      }
+
+      // Resetear formulario y estado de edición
+      setFormData({
+        name: '',
+        email: '',
+        position: '',
+        department: '',
+        salary: 0,
+        contractType: 'full-time',
+        schedule: '',
+        phone: '',
+        address: '',
+        status: 'active'
+      });
+      setEditingId(null);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Error creando/actualizando empleado:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setNotification({ message: `Error al guardar empleado: ${errorMessage}`, type: 'error' });
+    }
+  };
+
+  // Botón para editar empleado
+  const handleEditEmployee = (employee: Employee) => {
+    setFormData({
+      name: employee.name,
+      email: employee.email,
+      position: employee.position,
+      department: employee.department,
+      salary: employee.salary,
+      contractType: employee.contractType,
+      schedule: employee.schedule,
+      phone: employee.phone,
+      address: employee.address,
+      status: employee.status
+    });
+    setEditingId(employee.id);
+    setIsAddModalOpen(true);
+  };
+
+  // Actualizar la función handleDeleteEmployee:
+  const handleDeleteEmployee = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este empleado?')) {
       try {
-        const searchResults = await employeeService.searchEmployees(searchTerm);
-        const transformedResults = searchResults.map(emp => ({
+        await employeeService.deleteEmployee(Number(id));
+        setEmployees(prev => prev.filter(emp => emp.id !== id));
+        setNotification({ message: 'Empleado eliminado exitosamente', type: 'success' });
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        setNotification({ message: `Error al eliminar empleado: ${errorMessage}`, type: 'error' });
+      }
+    }
+  };
+
+  // Para la búsqueda en tiempo real, puedes usar:
+  useEffect(() => {
+    const performSearch = async () => {
+      if (searchTerm.trim() === '') {
+        // Si no hay término de búsqueda, cargar todos los empleados
+        const employeesData = await employeeService.getAllEmployees();
+        const transformedEmployees = employeesData.map(emp => ({
           id: emp.user_id?.toString() || '',
           name: emp.name,
           email: emp.email,
@@ -444,16 +461,35 @@ useEffect(() => {
           address: emp.address,
           status: emp.status as Employee['status']
         }));
-        setEmployees(transformedResults);
-      } catch (error) {
-        console.error('Error searching employees:', error);
+        setEmployees(transformedEmployees);
+      } else {
+        // Buscar empleados
+        try {
+          const searchResults = await employeeService.searchEmployees(searchTerm);
+          const transformedResults = searchResults.map(emp => ({
+            id: emp.user_id?.toString() || '',
+            name: emp.name,
+            email: emp.email,
+            position: emp.position,
+            department: emp.department,
+            salary: emp.salary,
+            contractType: emp.contracttype as Employee['contractType'],
+            schedule: emp.schedule,
+            startDate: emp.startdate || emp.hire_date || '',
+            phone: emp.phone,
+            address: emp.address,
+            status: emp.status as Employee['status']
+          }));
+          setEmployees(transformedResults);
+        } catch (error) {
+          console.error('Error searching employees:', error);
+        }
       }
-    }
-  };
+    };
 
-  const timeoutId = setTimeout(performSearch, 300); // Debounce
-  return () => clearTimeout(timeoutId);
-}, [searchTerm]);
+    const timeoutId = setTimeout(performSearch, 300); // Debounce
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   if (user?.role_name !== 'admin') {
     return (
@@ -533,7 +569,7 @@ useEffect(() => {
       </Header>
 
       <ActionBar>
-        <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
+        <Button variant="primary" onClick={() => { setIsAddModalOpen(true); setEditingId(null); }}>
           + Agregar Empleado
         </Button>
         <SearchInput
@@ -550,7 +586,7 @@ useEffect(() => {
             <EmployeeName>{employee.name}</EmployeeName>
             <EmployeeInfo><strong>Puesto:</strong> {employee.position}</EmployeeInfo>
             <EmployeeInfo><strong>Departamento:</strong> {employee.department}</EmployeeInfo>
-            <EmployeeInfo><strong>Salario:</strong> ${employee.salary.toLocaleString()}</EmployeeInfo>
+            <EmployeeInfo><strong>Salario:</strong> ${Number(employee.salary).toLocaleString()}</EmployeeInfo>
             <EmployeeInfo><strong>Contrato:</strong> {employee.contractType}</EmployeeInfo>
             <EmployeeInfo>
               <strong>Estado:</strong> <StatusBadge status={employee.status}>{employee.status}</StatusBadge>
@@ -558,6 +594,9 @@ useEffect(() => {
             <ButtonGroup>
               <Button onClick={() => handleViewEmployee(employee)}>
                 Ver Detalles
+              </Button>
+              <Button variant="primary" onClick={() => handleEditEmployee(employee)}>
+                Editar
               </Button>
               <Button variant="danger" onClick={() => handleDeleteEmployee(employee.id)}>
                 Eliminar
@@ -567,12 +606,12 @@ useEffect(() => {
         ))}
       </EmployeeGrid>
 
-      {/* Modal para agregar empleado */}
+      {/* Modal para agregar/editar empleado */}
       <Modal isOpen={isAddModalOpen}>
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Agregar Nuevo Empleado</ModalTitle>
-            <CloseButton onClick={() => setIsAddModalOpen(false)}>×</CloseButton>
+            <ModalTitle>{editingId ? 'Editar Empleado' : 'Agregar Nuevo Empleado'}</ModalTitle>
+            <CloseButton onClick={() => { setIsAddModalOpen(false); setEditingId(null); }}>×</CloseButton>
           </ModalHeader>
           <Form onSubmit={handleAddOrUpdateEmployee}>
             <FormGroup>
@@ -692,12 +731,18 @@ useEffect(() => {
               </Select>
             </FormGroup>
             <ButtonGroup>
-              <Button type="button" onClick={() => setIsAddModalOpen(false)}>
+              <Button type="button" onClick={() => { setIsAddModalOpen(false); setEditingId(null); }}>
                 Cancelar
               </Button>
-              <Button type="submit" variant="primary">
-                Agregar Empleado
-              </Button>
+              {editingId ? (
+                <Button type="submit" variant="primary">
+                  Actualizar Empleado
+                </Button>
+              ) : (
+                <Button type="submit" variant="primary">
+                  Agregar Empleado
+                </Button>
+              )}
             </ButtonGroup>
           </Form>
         </ModalContent>
@@ -716,7 +761,7 @@ useEffect(() => {
               <EmployeeInfo><strong>Email:</strong> {selectedEmployee.email}</EmployeeInfo>
               <EmployeeInfo><strong>Puesto:</strong> {selectedEmployee.position}</EmployeeInfo>
               <EmployeeInfo><strong>Departamento:</strong> {selectedEmployee.department}</EmployeeInfo>
-              <EmployeeInfo><strong>Salario:</strong> ${selectedEmployee.salary.toLocaleString()}</EmployeeInfo>
+              <EmployeeInfo><strong>Salario:</strong> ${Number(selectedEmployee.salary).toLocaleString()}</EmployeeInfo>
               <EmployeeInfo><strong>Tipo de Contrato:</strong> {selectedEmployee.contractType}</EmployeeInfo>
               <EmployeeInfo><strong>Horario:</strong> {selectedEmployee.schedule}</EmployeeInfo>
               <EmployeeInfo><strong>Fecha de Inicio:</strong> {selectedEmployee.startDate}</EmployeeInfo>
