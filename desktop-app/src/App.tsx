@@ -12,11 +12,12 @@ import Clients from './pages/Clients';
 import Reports from './pages/Reports';
 import Admin from './pages/Admin';
 
-import Employees from './pages/Employees';
+import User from './pages/Users';
 import Roles from './pages/Roles';
 import Prescriptions from './pages/Prescriptions';
 
 import Providers from './pages/providers';
+import { Users } from 'lucide-react';
 
 
 export default function App() {
@@ -54,9 +55,10 @@ export default function App() {
           <Route path="/clients" element={<Clients />} />
           { <Route path="/reports" element={<Reports />} /> }
           <Route path="/admin" element={<Admin />} />
-          <Route path="/employees" element={<Employees />} />
+          <Route path="/users" element={<User />} />
           <Route path="/roles" element={<Roles />} />
           <Route path="/prescriptions" element={<Prescriptions />} />
+         
          
         
           <Route path="/" element={<Navigate to="/dashboard" />} />
