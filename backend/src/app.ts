@@ -32,7 +32,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/provider', providersRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
-app.use('/api/employees', employeesRoutes);
+app.use('/api/employees', verifyToken, employeesRoutes);
 app.use('/api/users', usersRoutes);
 
 app.listen(PORT, () => {

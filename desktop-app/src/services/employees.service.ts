@@ -6,35 +6,36 @@ const API = axios.create({ baseURL: 'http://localhost:4004/api' });
 export interface Employee {
   user_id?: number;
   hire_date?: string;
-  salary: number;
+  salary?: number;
   status: string;
   email: string;
   name: string;
-  position: string;
-  department: string;
-  contracttype: string;
-  schedule: string;
+  position?: string;
+  department?: string;
+  contracttype?: string;
+  schedule?: string;
   startdate?: string;
-  phone: string;
-  address: string;
+  phone?: string;
+  address?: string;
 }
 
 export interface CreateEmployeeData {
   name: string;
   email: string;
-  position: string;
-  department: string;
-  salary: number;
-  contractType: string;
-  schedule: string;
-  phone: string;
-  address: string;
+  position?: string;
+  department?: string;
+  salary?: number;
+  contractType?: string;
+  schedule?: string;
+  phone?: string;
+  address?: string;
   status?: string;
 }
 
 class EmployeeService {
   private getHeaders() {
     const token = localStorage.getItem('token');
+    console.log('Token for employees request:', token ? 'Present' : 'Missing');
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',
@@ -43,10 +44,20 @@ class EmployeeService {
 
   async getAllEmployees(): Promise<Employee[]> {
     try {
-      const response = await API.get('/employees', { headers: this.getHeaders() });
+      console.log('=== EMPLOYEE SERVICE: GET ALL ===');
+      const headers = this.getHeaders();
+      console.log('Request headers:', headers);
+      
+      const response = await API.get('/employees', { headers });
+      console.log('Response status:', response.status);
+      console.log('Response data:', response.data);
+      console.log('=== END EMPLOYEE SERVICE ===');
+      
       return response.data;
     } catch (error: any) {
       console.error('Error fetching employees:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       throw new Error(error.response?.data?.message || 'Error fetching employees');
     }
   }

@@ -30,37 +30,52 @@ type DashboardStatsWithTrends = DashboardStats & {
 };
 
 // Sidebar
-const Sidebar = styled.nav<{ collapsed: boolean }>`
+const Sidebar = styled.nav<{ collapsed: boolean; isMobile: boolean }>`
   position: fixed;
   left: 0;
   top: 0;
   height: 100vh;
-  width: ${({ collapsed }) => (collapsed ? '60px' : '220px')};
+  width: ${({ collapsed, isMobile }) => {
+    if (isMobile) {
+      return collapsed ? '0px' : '250px';
+    }
+    return collapsed ? '60px' : '220px';
+  }};
   background: #1964aaff;
   color: #fff;
-  transition: width 0.2s;
-  z-index: 100;
+  transition: width 0.3s ease, transform 0.3s ease;
+  z-index: ${({ isMobile }) => isMobile ? '1000' : '100'};
   box-shadow: 2px 0 8px rgba(0,0,0,0.07);
   display: flex;
   flex-direction: column;
-  align-items: ${({ collapsed }) => (collapsed ? 'center' : 'flex-start')};
+  align-items: ${({ collapsed, isMobile }) => (collapsed && !isMobile ? 'center' : 'flex-start')};
   padding-top: 1rem;
+  transform: ${({ collapsed, isMobile }) => 
+    isMobile && collapsed ? 'translateX(-100%)' : 'translateX(0)'};
+  overflow-x: hidden;
 
-  @media (max-width: 900px) {
-    width: ${({ collapsed }) => (collapsed ? '0px' : '180px')};
-    min-width: 0;
-    padding-top: 0.5rem;
-    z-index: 200;
-    left: 0;
-    top: 0;
-    height: 100vh;
-    background: #1964aaff;
-    transition: width 0.2s;
-    overflow-x: hidden;
+  @media (max-width: 768px) {
+    width: ${({ collapsed }) => (collapsed ? '0px' : '280px')};
+    box-shadow: ${({ collapsed }) => collapsed ? 'none' : '2px 0 8px rgba(0,0,0,0.3)'};
   }
 `;
 
-const SidebarLogo = styled.div`
+const SidebarOverlay = styled.div<{ show: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: ${({ show }) => show ? 'block' : 'none'};
+  
+  @media (min-width: 769px) {
+    display: none;
+  }
+`;
+
+const SidebarLogo = styled.div<{ collapsed: boolean; isMobile: boolean }>`
   width: 100%;
   display: flex;
   align-items: center;
@@ -76,10 +91,13 @@ const SidebarLogo = styled.div`
   font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
+  opacity: ${({ collapsed, isMobile }) => (collapsed && !isMobile ? '0' : '1')};
+  transition: opacity 0.3s ease;
 
-  @media (max-width: 900px) {
+  @media (max-width: 768px) {
     padding: 0 0.5rem 1rem 0.5rem;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    opacity: 1;
     img {
       width: 32px;
       height: 32px;
@@ -87,7 +105,7 @@ const SidebarLogo = styled.div`
   }
 `;
 
-const SidebarMenuItem = styled.li<{ active?: boolean }>`
+const SidebarMenuItem = styled.li<{ active?: boolean; collapsed?: boolean; isMobile?: boolean }>`
   width: 100%;
   margin-bottom: 8px;
   button {
@@ -104,19 +122,35 @@ const SidebarMenuItem = styled.li<{ active?: boolean }>`
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s;
+    text-align: left;
+    justify-content: ${({ collapsed, isMobile }) => 
+      (collapsed && !isMobile) ? 'center' : 'flex-start'};
+    
     &:hover {
       background: #2563eb;
     }
+    
     svg {
       min-width: 22px;
+      flex-shrink: 0;
     }
+    
     span {
-      display: ${({ active }) => (active ? 'inline' : 'inline')};
+      display: ${({ collapsed, isMobile }) => 
+        (collapsed && !isMobile) ? 'none' : 'inline'};
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    @media (max-width: 900px) {
-      padding: 10px 10px;
+
+    @media (max-width: 768px) {
+      padding: 14px 16px;
       font-size: 0.95rem;
-      gap: 10px;
+      gap: 12px;
+      
+      span {
+        display: inline;
+      }
     }
   }
 `;
@@ -138,16 +172,19 @@ const SidebarFooter = styled.div<{ $collapsed: boolean }>`
   }
 `;
 
-const Main = styled.div<{ $collapsed: boolean }>`
-  margin-left: ${({ $collapsed }) => ($collapsed ? '60px' : '220px')};
-  transition: margin-left 0.2s;
+const Main = styled.div<{ $collapsed: boolean; $isMobile: boolean }>`
+  margin-left: ${({ $collapsed, $isMobile }) => {
+    if ($isMobile) return '0px';
+    return $collapsed ? '60px' : '220px';
+  }};
+  transition: margin-left 0.3s ease;
   padding: 2rem;
   background: #f7f9fb;
   min-height: 100vh;
 
-  @media (max-width: 900px) {
+  @media (max-width: 768px) {
     margin-left: 0;
-    padding: 1rem 0.5rem 1.5rem 0.5rem;
+    padding: 1rem;
   }
 `;
 
@@ -301,19 +338,53 @@ const RecentActivities = styled.div`
   }
 `;
 
-const SidebarToggle = styled.button`
+const SidebarToggle = styled.button<{ isMobile: boolean }>`
   background: none;
   border: none;
   color: #fff;
-  margin-left: 10px;
+  margin-left: ${({ isMobile }) => isMobile ? '0' : '10px'};
   margin-bottom: 2rem;
   cursor: pointer;
   font-size: 1.5rem;
-  align-self: flex-end;
-  @media (max-width: 900px) {
+  align-self: ${({ isMobile }) => isMobile ? 'flex-start' : 'flex-end'};
+  padding: 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  @media (max-width: 768px) {
     margin-left: 0;
     margin-bottom: 1rem;
-    font-size: 1.3rem;
+    font-size: 1.4rem;
+    align-self: flex-start;
+    margin-left: 1rem;
+  }
+`;
+
+const MobileMenuButton = styled.button`
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1001;
+  background: #1964aaff;
+  border: none;
+  color: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: background 0.2s;
+  
+  &:hover {
+    background: #2563eb;
+  }
+
+  @media (max-width: 768px) {
+    display: block;
   }
 `;
 
@@ -376,6 +447,22 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarCollapsed(true); // Start collapsed on mobile
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -396,6 +483,16 @@ const Dashboard = () => {
   const handleLogout = () => {
     clearUser();
     navigate('/login');
+  };
+
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const handleOverlayClick = () => {
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
   };
 
   // Simulación de datos de gráficos si no existen en el backend
@@ -449,38 +546,79 @@ const Dashboard = () => {
 
   return (
     <>
-      <Sidebar collapsed={sidebarCollapsed}>
-        <SidebarToggle onClick={() => setSidebarCollapsed((c) => !c)}>
-          {sidebarCollapsed ? <Menu size={28} /> : <X size={28} />}
-        </SidebarToggle>
-        {!sidebarCollapsed && (
-          <SidebarLogo>
+      {isMobile && (
+        <MobileMenuButton onClick={handleSidebarToggle}>
+          <Menu size={24} />
+        </MobileMenuButton>
+      )}
+      
+      <SidebarOverlay show={isMobile && !sidebarCollapsed} onClick={handleOverlayClick} />
+      
+      <Sidebar collapsed={sidebarCollapsed} isMobile={isMobile}>
+        {!isMobile && (
+          <SidebarToggle isMobile={isMobile} onClick={handleSidebarToggle}>
+            {sidebarCollapsed ? <Menu size={28} /> : <X size={28} />}
+          </SidebarToggle>
+        )}
+        
+        {(!sidebarCollapsed || isMobile) && (
+          <SidebarLogo collapsed={sidebarCollapsed} isMobile={isMobile}>
+            {isMobile && (
+              <button 
+                onClick={handleSidebarToggle}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#fff', 
+                  marginLeft: 'auto',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                <X size={24} />
+              </button>
+            )}
             <img src="imagenes/logo.png" alt="Logo" />
-            Farmacia GS
+            {!isMobile && <span>Farmacia GS</span>}
+            {isMobile && <span>Farmacia GS</span>}
           </SidebarLogo>
         )}
+        
         <SidebarContent>
           <SidebarMenu>
             {menuItems
               .filter((item) => item.show === undefined || item.show)
               .map((item, idx) => (
-                <SidebarMenuItem key={item.label} active={item.active}>
-                  <button onClick={item.onClick}>
+                <SidebarMenuItem 
+                  key={item.label} 
+                  active={item.active}
+                  collapsed={sidebarCollapsed}
+                  isMobile={isMobile}
+                >
+                  <button onClick={() => {
+                    item.onClick();
+                    if (isMobile) setSidebarCollapsed(true);
+                  }}>
                     {item.icon}
-                    {!sidebarCollapsed && <span>{item.label}</span>}
+                    <span>{item.label}</span>
                   </button>
                 </SidebarMenuItem>
               ))}
           </SidebarMenu>
         </SidebarContent>
+        
         <SidebarFooter $collapsed={sidebarCollapsed}>
-          <LogoutButton onClick={handleLogout}>
+          <LogoutButton onClick={() => {
+            handleLogout();
+            if (isMobile) setSidebarCollapsed(true);
+          }}>
             <LogOut size={20} style={{ marginRight: 8 }} />
-            {!sidebarCollapsed && <span>Cerrar Sesión</span>}
+            {(!sidebarCollapsed || isMobile) && <span>Cerrar Sesión</span>}
           </LogoutButton>
         </SidebarFooter>
       </Sidebar>
-      <Main $collapsed={sidebarCollapsed}>
+      
+      <Main $collapsed={sidebarCollapsed} $isMobile={isMobile}>
         <Header>
           <Title>
             <BarChart2 size={32} />

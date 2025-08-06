@@ -317,8 +317,22 @@ const UserRegistration: React.FC = () => {
     setSuccess(false);
 
     try {
-      // Envía la contraseña en texto plano, el backend la hashea
-      const response = await fetch('http://localhost:4004/api/users', {
+      // Crear el empleado con los datos del formulario
+      const employeeData = {
+        name: formData.name,
+        email: formData.email,
+        position: '', // Valor por defecto
+        department: '', // Valor por defecto
+        salary: 0, // Valor por defecto
+        contractType: 'full-time', // Valor por defecto
+        schedule: '', // Valor por defecto
+        phone: '', // Valor por defecto
+        address: '', // Valor por defecto
+        status: 'active'
+      };
+
+      // Primero crear el usuario
+      const userResponse = await fetch('http://localhost:4004/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -330,8 +344,30 @@ const UserRegistration: React.FC = () => {
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Error al crear el usuario');
+      if (!userResponse.ok) {
+        const errorData = await userResponse.json();
+        throw new Error(errorData.message || 'Error al crear el usuario');
+      }
+
+      const userData = await userResponse.json();
+      console.log('User created:', userData);
+
+      // Luego crear el empleado en la tabla employees
+      const employeeResponse = await fetch('http://localhost:4004/api/employees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...employeeData,
+          name: formData.name,
+          email: formData.email,
+        })
+      });
+
+      if (!employeeResponse.ok) {
+        console.warn('Employee record creation failed, but user was created');
       }
 
       setSuccess(true);
@@ -345,7 +381,7 @@ const UserRegistration: React.FC = () => {
 
     } catch (error) {
       console.error('Error:', error);
-      setErrors({ password: 'Error al crear el usuario. Intenta de nuevo.' });
+      setErrors({ password: error instanceof Error ? error.message : 'Error al crear el usuario. Intenta de nuevo.' });
     } finally {
       setLoading(false);
     }
