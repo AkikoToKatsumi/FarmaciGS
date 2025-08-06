@@ -3,111 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth.service';
 import { useUserStore } from '../store/user';
-import styled, { createGlobalStyle } from 'styled-components';
-
-const GlobalStyle = createGlobalStyle`
-  body, html {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-    background-image: url('../imagenes/partes-de-una-farmacia.jpg');
-    background-size: cover;
-  }
-
-  .login-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 90vh;
-    height: 90vh;
-    width: 90vw;
-    background: none;
-  }
-
-  .login-card {
-    display: flex;
-    flex-direction: row;
-    width: 90%;
-    max-width: 900px;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    background-color: white;
-  }
-
-  .login-image-section {
-    flex: 1;
-    background: linear-gradient(to bottom right, #a78bfa, #60a5fa);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-
-  .login-image {
-    width: 80%;
-    max-height: 300px;
-    object-fit: cover;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-
-  .login-form-section {
-    flex: 1;
-    padding: 40px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-
-  .login-title {
-    font-size: 28px;
-    margin-bottom: 10px;
-    color: #333;
-    text-align: center;
-  }
-
-  .login-subtitle {
-    color: #777;
-    margin-bottom: 30px;
-    text-align: center;
-  }
-
-  .input-group {
-    margin-bottom: 20px;
-  }
-
-  .input-group input {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .input-group input:focus {
-    border-color: #02a310;
-    box-shadow: 0 0 0 2px #58f052;
-  }
-
-  .login-button {
-    padding: 14px;
-    background-color: #7c3aed;
-    color: white;
-    font-size: 16px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .login-button:hover {
-    background-color: #6d28d9;
-  }
-`;
+// Corrige el import del CSS
+import './login.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -126,10 +23,10 @@ const Login = () => {
     try {
       const response = await login(email, password);
       console.log('Respuesta del login:', response);
-      
+
       // El servicio ya maneja el localStorage, solo necesitamos actualizar el store
       setUser(response.user, response.accessToken);
-      
+
       console.log('Usuario logueado:', response.user);
       navigate('/dashboard');
     } catch (error: any) {
@@ -141,75 +38,78 @@ const Login = () => {
   };
 
   return (
-    <>
-      <GlobalStyle />
-      <div
-        className="login-container"
-        style={
-          bgError
-            ? { background: 'linear-gradient(120deg, #e0d7fa 0%, #b5c6e0 100%)' }
-            : {}
-        }
-      >
-        <img
-          src="imagenes/partes-de-una-farmacia.jpg"
-          alt=""
-          style={{ display: 'none' }}
-          onError={() => setBgError(true)}
-          onLoad={() => setBgError(false)}
-        />
-        <div className="login-card">
-          <div className="login-image-section">
-            <img
-              src="imagenes/logo.ico"
-              alt="login"
-              className="login-image"
-              style={{ height: '300px', objectFit: 'contain', width: '300px',  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}
-            />
-          </div>
-          <div className="login-form-section">
-            <h2 className="login-title">INICIAR SESIÓN</h2>
-            <p className="login-subtitle">¿Con qué perfil quieres iniciar?</p>
-            
-            {error && (
-              <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>
-                {error}
-              </div>
-            )}
-            
-            <form onSubmit={handleLogin}>
-              <div className="input-group">
-                <input
-                  type="email"
-                  placeholder="Usuario"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="input-group">
-                <input
-                  type="password"
-                  placeholder="Contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <button 
-                type="submit" 
-                className="login-button"
+    <div
+      className="login-container"
+      style={
+        bgError
+          ? { background: 'linear-gradient(120deg, #e0d7fa 0%, #b5c6e0 100%)' }
+          : {}
+      }
+    >
+      {/* Puedes eliminar este img si no necesitas cambiar el fondo dinámicamente */}
+      {/* <img
+        src="imagenes/partes-de-una-farmacia.jpg"
+        alt=""
+        style={{ display: 'none' }}
+        onError={() => setBgError(true)}
+        onLoad={() => setBgError(false)}
+      /> */}
+      <div className="login-card">
+        <div className="login-image-section">
+          <img
+            src="imagenes/logo.ico"
+            alt="login"
+            className="login-image"
+            style={{
+              height: '300px',
+              objectFit: 'contain',
+              width: '300px',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+            }}
+          />
+        </div>
+        <div className="login-form-section">
+          <h2 className="login-title">INICIAR SESIÓN</h2>
+          <p className="login-subtitle">¿Con qué perfil quieres iniciar?</p>
+
+          {error && (
+            <div className="error-message" style={{ color: 'red', marginBottom: '10px' }}>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin}>
+            <div className="input-group">
+              <input
+                type="email"
+                placeholder="Usuario"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 disabled={isLoading}
-              >
-                {isLoading ? 'Iniciando...' : 'Entrar'}
-              </button>
-            </form>
-          </div>
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <button
+              type="submit"
+              className="login-button"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Iniciando...' : 'Entrar'}
+            </button>
+          </form>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
