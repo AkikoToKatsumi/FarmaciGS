@@ -394,7 +394,7 @@ const UserRegistration: React.FC = () => {
       >
         Volver al Inicio
       </ButtonStyled>
-      <Title>Registro de Empleado</Title>
+      <Title>Registro de Usuarios</Title>
       <Form onSubmit={handleSubmit}>
         <InputGroup>
           <Label htmlFor="name">Nombre</Label>
