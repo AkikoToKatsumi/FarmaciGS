@@ -180,6 +180,8 @@ const Main = styled.div<{ $collapsed: boolean; $isMobile: boolean }>`
   transition: margin-left 0.3s ease;
   padding: 2rem;
   background: #f7f9fb;
+
+  
   min-height: 100vh;
 
   @media (max-width: 768px) {
@@ -543,15 +545,17 @@ const Dashboard = () => {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [trendLoading, setTrendLoading] = useState(false);
 
+  // Nuevo estado para la tendencia histórica (mensual por defecto)
+  const [historicalTrendData, setHistoricalTrendData] = useState<any[]>([]);
+  const [historicalTrendType, setHistoricalTrendType] = useState<'semana' | 'mes' | 'año'>('mes');
+
   // Función para obtener los datos de tendencia según el tipo seleccionado
   const fetchTrendData = async () => {
     if (!token) return;
     setTrendLoading(true);
     try {
-      // Ahora getDashboardStats acepta trendType como segundo argumento
       const data = await getDashboardStats(token, trendType);
       setStats(data);
-      // Usar la propiedad correcta según el tipo
       if (trendType === 'semana') setTrendData(data.salesTrend || []);
       else setTrendData(data.totalSalesTrend || []);
     } catch (err) {
@@ -561,11 +565,30 @@ const Dashboard = () => {
     }
   };
 
+  // Nueva función para obtener la tendencia histórica (semana, mes o año)
+  const fetchHistoricalTrendData = async (type: 'semana' | 'mes' | 'año' = 'mes') => {
+    if (!token) return;
+    try {
+      const data = await getDashboardStats(token, type);
+      if (type === 'semana') setHistoricalTrendData(data.salesTrend || []);
+      else setHistoricalTrendData(data.totalSalesTrend || []);
+      setHistoricalTrendType(type);
+    } catch (err) {
+      // No mostrar error aquí para no sobreescribir el error principal
+    }
+  };
+
   // Llama a fetchTrendData cuando cambia trendType o token
   useEffect(() => {
     fetchTrendData();
     // eslint-disable-next-line
   }, [trendType, token]);
+
+  // Llama a fetchHistoricalTrendData cuando cambia historicalTrendType o token
+  useEffect(() => {
+    fetchHistoricalTrendData(historicalTrendType);
+    // eslint-disable-next-line
+  }, [historicalTrendType, token]);
 
   return (
     <>
@@ -726,6 +749,25 @@ const Dashboard = () => {
                 <option value="mes">Mes</option>
                 <option value="año">Año</option>
               </select>
+              <span style={{ marginLeft: 24, fontWeight: 600, color: '#2563eb' }}>Histórico:</span>
+              <select
+                value={historicalTrendType}
+                onChange={e => setHistoricalTrendType(e.target.value as 'semana' | 'mes' | 'año')}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: '1px solid #d1d5db',
+                  fontSize: '1rem',
+                  background: 'white',
+                  color: '#128ef3',
+                  fontWeight: 600,
+                  outline: 'none'
+                }}
+              >
+                <option value="semana">Semana</option>
+                <option value="mes">Mes</option>
+                <option value="año">Año</option>
+              </select>
             </div>
 
             {/* Gráfica de tendencia */}
@@ -808,6 +850,75 @@ const Dashboard = () => {
                     />
                   </LineChart>
                 )}
+              </ResponsiveContainer>
+            </ChartSection>
+
+            {/* Gráfico de líneas clásico: Ventas, Devoluciones y Descuentos */}
+            <ChartSection>
+              <ChartTitle>
+                <TrendingUp size={20} color="#128ef3" style={{ marginRight: 8 }} />
+                Ventas, Devoluciones y Descuentos (Histórico)
+              </ChartTitle>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={historicalTrendData}>
+                  <XAxis
+                    dataKey={
+                      historicalTrendType === 'año'
+                        ? 'year'
+                        : historicalTrendType === 'mes'
+                        ? 'month'
+                        : 'week'
+                    }
+                    label={{
+                      value:
+                        historicalTrendType === 'año'
+                          ? 'Año'
+                          : historicalTrendType === 'mes'
+                          ? 'Mes'
+                          : 'Semana',
+                      position: 'insideBottom',
+                      offset: -5
+                    }}
+                  />
+                  <YAxis
+                    tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
+                    label={{ value: "Monto", angle: -90, position: "insideLeft" }}
+                  />
+                  <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
+                  <CartesianGrid stroke="#e1e8ed" />
+                  <Legend
+                    formatter={value => {
+                      if (value === "sales") return "Ventas Netas";
+                      if (value === "returns") return "Devoluciones";
+                      if (value === "discounts") return "Descuentos";
+                      return value;
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="#128ef3"
+                    name="Ventas Netas"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#128ef3" }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="returns"
+                    stroke="#f10f0fff"
+                    name="Devoluciones"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#f10f35ff" }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="discounts"
+                    stroke="#5deb25ff"
+                    name="Descuentos"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#25eb25ff" }}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </ChartSection>
 

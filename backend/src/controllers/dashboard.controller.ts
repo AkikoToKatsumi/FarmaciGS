@@ -102,65 +102,156 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     // --- NUEVO: Manejo de parámetro trendType ---
     const trendType = (req.query.trendType as string)?.toLowerCase() || 'semana';
 
-    let salesTrend: Array<{ week: string; sales: number }> = [];
+    let salesTrend: Array<{ week: string; sales: number; returns: number; discounts: number }> = [];
     let totalSalesTrend: Array<{ date?: string; month?: string; year?: string; sales: number; returns: number; discounts: number }> = [];
 
     if (trendType === 'semana') {
-      // Tendencia semanal: ventas netas por semana (últimas 8 semanas)
+      // Tendencia semanal: ventas netas y devoluciones por semana (últimas 8 semanas)
       const weeklyResult = await pool.query(`
         SELECT 
-          TO_CHAR(DATE_TRUNC('week', created_at AT TIME ZONE 'America/Santo_Domingo'), 'IW/YYYY') AS week,
-          SUM(total) AS sales
-        FROM sales
+          TO_CHAR(DATE_TRUNC('week', s.created_at AT TIME ZONE 'America/Santo_Domingo'), 'IW/YYYY') AS week,
+          COALESCE(SUM(s.total), 0) AS sales
+        FROM sales s
+        WHERE s.status IS NULL OR s.status != 'cancelled'
         GROUP BY week
         ORDER BY week DESC
         LIMIT 8
       `);
+
+      // Sumar devoluciones reales desde la tabla returns
+      const weeklyReturnsResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('week', r.created_at AT TIME ZONE 'America/Santo_Domingo'), 'IW/YYYY') AS week,
+          COALESCE(SUM(r.amount), 0) AS returns
+        FROM returns r
+        GROUP BY week
+        ORDER BY week DESC
+        LIMIT 8
+      `);
+
+      // Sumar ventas canceladas como devoluciones
+      const weeklyCancelledResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('week', s.created_at AT TIME ZONE 'America/Santo_Domingo'), 'IW/YYYY') AS week,
+          COALESCE(SUM(s.total), 0) AS cancelled_returns
+        FROM sales s
+        WHERE s.status = 'cancelled'
+        GROUP BY week
+        ORDER BY week DESC
+        LIMIT 8
+      `);
+
+      const returnsMap = new Map<string, number>();
+      for (const row of weeklyReturnsResult.rows) {
+        returnsMap.set(row.week, parseFloat(row.returns));
+      }
+      for (const row of weeklyCancelledResult.rows) {
+        returnsMap.set(row.week, (returnsMap.get(row.week) || 0) + Math.abs(parseFloat(row.cancelled_returns)));
+      }
+
       salesTrend = weeklyResult.rows.reverse().map(row => ({
         week: row.week,
-        sales: parseFloat(row.sales)
+        sales: parseFloat(row.sales) || 0,
+        returns: returnsMap.get(row.week) || 0,
+        discounts: 0
       }));
     } else if (trendType === 'mes') {
-      // Tendencia mensual: ventas, devoluciones y descuentos por mes (últimos 12 meses)
+      // Tendencia mensual: ventas y devoluciones por mes (últimos 12 meses)
       const monthlyResult = await pool.query(`
         SELECT 
-          TO_CHAR(DATE_TRUNC('month', created_at AT TIME ZONE 'America/Santo_Domingo'), 'MM/YYYY') AS month,
-          SUM(total) AS sales,
-          COALESCE(SUM(returns), 0) AS returns,
-          COALESCE(SUM(discounts), 0) AS discounts
-        FROM sales
+          TO_CHAR(DATE_TRUNC('month', s.created_at AT TIME ZONE 'America/Santo_Domingo'), 'MM/YYYY') AS month,
+          COALESCE(SUM(s.total), 0) AS sales
+        FROM sales s
+        WHERE s.status IS NULL OR s.status != 'cancelled'
         GROUP BY month
         ORDER BY month DESC
         LIMIT 12
       `);
+
+      const monthlyReturnsResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('month', r.created_at AT TIME ZONE 'America/Santo_Domingo'), 'MM/YYYY') AS month,
+          COALESCE(SUM(r.amount), 0) AS returns
+        FROM returns r
+        GROUP BY month
+        ORDER BY month DESC
+        LIMIT 12
+      `);
+
+      const monthlyCancelledResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('month', s.created_at AT TIME ZONE 'America/Santo_Domingo'), 'MM/YYYY') AS month,
+          COALESCE(SUM(s.total), 0) AS cancelled_returns
+        FROM sales s
+        WHERE s.status = 'cancelled'
+        GROUP BY month
+        ORDER BY month DESC
+        LIMIT 12
+      `);
+
+      const returnsMap = new Map<string, number>();
+      for (const row of monthlyReturnsResult.rows) {
+        returnsMap.set(row.month, parseFloat(row.returns));
+      }
+      for (const row of monthlyCancelledResult.rows) {
+        returnsMap.set(row.month, (returnsMap.get(row.month) || 0) + Math.abs(parseFloat(row.cancelled_returns)));
+      }
+
       totalSalesTrend = monthlyResult.rows.reverse().map(row => ({
         month: row.month,
-        sales: parseFloat(row.sales),
-        returns: parseFloat(row.returns),
-        discounts: parseFloat(row.discounts)
+        sales: parseFloat(row.sales) || 0,
+        returns: returnsMap.get(row.month) || 0,
+        discounts: 0
       }));
     } else if (trendType === 'año') {
-      // Tendencia anual: ventas, devoluciones y descuentos por año (últimos 5 años)
+      // Tendencia anual: ventas y devoluciones por año (últimos 5 años)
       const yearlyResult = await pool.query(`
         SELECT 
-          TO_CHAR(DATE_TRUNC('year', created_at AT TIME ZONE 'America/Santo_Domingo'), 'YYYY') AS year,
-          SUM(total) AS sales,
-          COALESCE(SUM(returns), 0) AS returns,
-          COALESCE(SUM(discounts), 0) AS discounts
-        FROM sales
+          TO_CHAR(DATE_TRUNC('year', s.created_at AT TIME ZONE 'America/Santo_Domingo'), 'YYYY') AS year,
+          COALESCE(SUM(s.total), 0) AS sales
+        FROM sales s
+        WHERE s.status IS NULL OR s.status != 'cancelled'
         GROUP BY year
         ORDER BY year DESC
         LIMIT 5
       `);
+
+      const yearlyReturnsResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('year', r.created_at AT TIME ZONE 'America/Santo_Domingo'), 'YYYY') AS year,
+          COALESCE(SUM(r.amount), 0) AS returns
+        FROM returns r
+        GROUP BY year
+        ORDER BY year DESC
+        LIMIT 5
+      `);
+
+      const yearlyCancelledResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('year', s.created_at AT TIME ZONE 'America/Santo_Domingo'), 'YYYY') AS year,
+          COALESCE(SUM(s.total), 0) AS cancelled_returns
+        FROM sales s
+        WHERE s.status = 'cancelled'
+        GROUP BY year
+        ORDER BY year DESC
+        LIMIT 5
+      `);
+
+      const returnsMap = new Map<string, number>();
+      for (const row of yearlyReturnsResult.rows) {
+        returnsMap.set(row.year, parseFloat(row.returns));
+      }
+      for (const row of yearlyCancelledResult.rows) {
+        returnsMap.set(row.year, (returnsMap.get(row.year) || 0) + Math.abs(parseFloat(row.cancelled_returns)));
+      }
+
       totalSalesTrend = yearlyResult.rows.reverse().map(row => ({
         year: row.year,
-        sales: parseFloat(row.sales),
-        returns: parseFloat(row.returns),
-        discounts: parseFloat(row.discounts)
+        sales: parseFloat(row.sales) || 0,
+        returns: returnsMap.get(row.year) || 0,
+        discounts: 0
       }));
     }
-
-    // --- FIN NUEVO ---
 
     // 5. Respuesta final
     const response: any = {
