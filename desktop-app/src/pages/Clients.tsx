@@ -6,6 +6,8 @@ import { useUserStore } from '../store/user';
 
 // Styled Components
 const Container = styled.div`
+background-color: #f0f4f8;
+min-height: 100vh;
   padding: 20px;
 `;
 
@@ -19,7 +21,7 @@ const BackButton = styled.button`
   cursor: pointer;
   
   &:hover {
-    background-color: #f5f5f5;
+    background-color: #1234f7ff;
   }
 `;
 

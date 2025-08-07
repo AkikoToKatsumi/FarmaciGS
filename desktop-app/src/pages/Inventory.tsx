@@ -17,6 +17,7 @@ import {
 // --- Styled Components ---
 
 const PageContainer = styled.div`
+background-color: #f0f4f8;
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem 1rem;
@@ -46,7 +47,7 @@ const BaseButton = styled.button`
   border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
   font-size: 0.875rem;
 `;
 
@@ -54,7 +55,7 @@ const PrimaryButton = styled(BaseButton)`
   background-color: #4299e1;
   color: white;
   &:hover {
-    background-color: #3182ce;
+    background-color: #0840daff;
   }
 `;
 
@@ -249,20 +250,21 @@ const ActionButton = styled.button`
 `;
 
 const EditButton = styled(ActionButton)`
-  color: #2563eb;
-  
-  &:hover {
-    color: #1d4ed8;
-    background-color: #dbeafe;
-  }
+ background: #3b82f6;
+    color: #fff;
+    
+    &:hover {
+      background: #2563eb;
+    }
 `;
 
 const DeleteButton = styled(ActionButton)`
-  color: #dc2626;
-  
-  &:hover {
-    color: #b91c1c;
-    background-color: #fee2e2;
+  background: #ef4444;
+    color: #fff;
+    
+    &:hover {
+      background: #dc2626;
+    
   }
 `;
 
@@ -273,7 +275,7 @@ const ActionContainer = styled.div`
 
 const Price = styled.span`
   font-weight: 500;
-  color: #111827;
+  color: #07690fff;
 `;
 
 const ExpirationDate = styled.span<{ isExpiringSoon: boolean }>`
@@ -393,8 +395,8 @@ const SubmitButton = styled.button`
 
 // Alert styles
 const AlertContainer = styled.div`
-  background-color: #fef3c7;
-  border: 1px solid #fbbf24;
+  background-color: #c7b497ff;
+  border: 1px solid #ec8a09ff;
   border-radius: 0.5rem;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -602,6 +604,21 @@ const MessageCloseButton = styled.button`
     opacity: 1;
     background-color: rgba(0, 0, 0, 0.1);
     transform: scale(1.1);
+  }
+`;
+
+// Botón "Volver a inicio" con animación azul al hacer hover
+const BackToHomeButton = styled(BaseButton)`
+  background-color: #f3f4f6;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
+
+  &:hover {
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+    transform: translateY(-2px) scale(1.03);
   }
 `;
 
@@ -935,9 +952,9 @@ const Inventory = () => {
           >
             Agregar Producto
           </PrimaryButton>
-          <BaseButton onClick={() => navigate('/dashboard')} style={{ backgroundColor: '#f3f4f6', color: '#374151' }}>
+          <BackToHomeButton onClick={() => navigate('/dashboard')}>
             Volver a inicio
-          </BaseButton>
+          </BackToHomeButton>
         </ButtonContainer>
       </Header>
 
@@ -1176,7 +1193,7 @@ const Inventory = () => {
                   </td>
                   <td>
                     <Price>
-                      {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(product.price)}
+                      {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(product.price)}
                     </Price>
                   </td>
                   <td>

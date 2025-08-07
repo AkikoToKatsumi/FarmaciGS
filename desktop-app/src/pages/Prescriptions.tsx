@@ -372,6 +372,9 @@ const Prescriptions = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Nuevo estado para el filtro de búsqueda de productos
+  const [medicineSearch, setMedicineSearch] = useState('');
+
   const userRole = localStorage.getItem('userRole');
   console.log('Rol del usuario:', userRole);
 
@@ -462,6 +465,12 @@ const Prescriptions = () => {
     return medicine?.quantity || 1;
   };
 
+  // Filtrar los medicamentos según el término de búsqueda
+  const filteredMedicines = medicines.filter((m) =>
+    m.name.toLowerCase().includes(medicineSearch.toLowerCase()) ||
+    (m.description && m.description.toLowerCase().includes(medicineSearch.toLowerCase()))
+  );
+
   return (
     <Container>
       <BackButton onClick={() => window.history.back()}>← Volver</BackButton>
@@ -484,10 +493,21 @@ const Prescriptions = () => {
           </Select>
         </FormGroup>
 
+        {/* Buscador de productos */}
+        <FormGroup>
+          <Label>Buscar producto:</Label>
+          <Input
+            type="text"
+            placeholder="Buscar por nombre o descripción..."
+            value={medicineSearch}
+            onChange={e => setMedicineSearch(e.target.value)}
+          />
+        </FormGroup>
+
         <FormGroup>
           <Label>Selecciona medicamentos y cantidades:</Label>
           <MedicineGrid>
-            {medicines.map((m) => (
+            {filteredMedicines.map((m) => (
               <MedicineItem key={m.id}>
                 <CheckboxLabel>
                   <Checkbox
