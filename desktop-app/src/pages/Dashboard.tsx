@@ -564,7 +564,7 @@ const Dashboard = () => {
 
   // Nuevo estado para la tendencia histórica (mensual por defecto)
   const [historicalTrendData, setHistoricalTrendData] = useState<any[]>([]);
-  const [historicalTrendType, setHistoricalTrendType] = useState<'semana' | 'mes' | 'año'>('mes');
+  const [historicalTrendType, setHistoricalTrendType] = useState<'semana' | 'mes' | 'año'>('semana');
 
   // Función para obtener los datos de tendencia según el tipo seleccionado
   const fetchTrendData = async () => {
