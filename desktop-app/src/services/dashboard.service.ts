@@ -16,6 +16,9 @@ export interface DashboardStats {
     };
     created_at: string;
   }[];
+  // Agrega las propiedades opcionales para tendencias
+  salesTrend?: Array<{ week: string; sales: number }>;
+  totalSalesTrend?: Array<{ date?: string; month?: string; year?: string; sales: number; returns: number; discounts: number }>;
 }
 
 export interface Sale {
@@ -47,12 +50,18 @@ export interface CreateSaleResponse {
 }
 
 // Función para obtener estadísticas del dashboard
-export const getDashboardStats = async (token: string): Promise<DashboardStats> => {
+export const getDashboardStats = async (
+  token: string,
+  trendType?: 'semana' | 'mes' | 'año'
+): Promise<DashboardStats> => {
   try {
+    const params: any = {};
+    if (trendType) params.trendType = trendType;
     const response = await axios.get(`${API_URL}/dashboard/stats`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      params,
     });
     
     console.log('Dashboard stats response:', response.data);

@@ -26,7 +26,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 
 type DashboardStatsWithTrends = DashboardStats & {
   salesTrend?: Array<{ week: string; sales: number }>;
-  totalSalesTrend?: Array<{ date: string; sales: number; returns: number; discounts: number }>;
+  totalSalesTrend?: Array<{ date?: string; month?: string; year?: string; sales: number; returns: number; discounts: number }>;
 };
 
 // Sidebar
@@ -468,6 +468,7 @@ const Dashboard = () => {
     const fetchStats = async () => {
       if (!token) return;
       try {
+        // El backend debe retornar salesTrend y totalSalesTrend en el objeto de stats
         const data = await getDashboardStats(token);
         setStats(data);
       } catch (err) {
@@ -479,6 +480,10 @@ const Dashboard = () => {
     };
     fetchStats();
   }, [token]);
+
+  // Usar los datos del backend si existen, si no, fallback vacío
+  const salesTrend = stats?.salesTrend || [];
+  const totalSalesTrend = stats?.totalSalesTrend || [];
 
   const handleLogout = () => {
     clearUser();
@@ -495,28 +500,11 @@ const Dashboard = () => {
     }
   };
 
-  // Simulación de datos de gráficos si no existen en el backend
-  const salesTrend = stats?.salesTrend || [
-    { week: '18/2023', sales: 1700000 },
-    { week: '19/2023', sales: 2000000 },
-    { week: '20/2023', sales: 2000000 },
-    { week: '21/2023', sales: 1000000 },
-    { week: '22/2023', sales: 1000000 },
-  ];
-  const totalSalesTrend = stats?.totalSalesTrend || [
-    { date: '5/1/2023', sales: 1000000, returns: 10000, discounts: 5000 },
-    { date: '5/2/2023', sales: 1200000, returns: 12000, discounts: 6000 },
-    { date: '5/3/2023', sales: 900000, returns: 8000, discounts: 4000 },
-    { date: '5/4/2023', sales: 1500000, returns: 15000, discounts: 7000 },
-    { date: '5/5/2023', sales: 1100000, returns: 9000, discounts: 3000 },
-    // ...más datos
-  ];
-
   // Colores para los gráficos según cantidad
   const getBarColor = (value: number) => {
     if (value < 1000000) return "#e74c3c"; // rojo
     if (value < 1500000) return "#128ef3ff"; // azul
-    if (value < 2000000) return "#f10fdeff"; // rosa
+    if (value < 2000000) return "#0f13f1ff"; // rosa
     return "#27ae60"; // verde
   };
 
@@ -524,7 +512,7 @@ const Dashboard = () => {
     switch (key) {
       case "sales": return "#0e83e4ff";
       case "returns": return "#3ce792ff";
-      case "discounts": return "#ec12f3ff";
+      case "discounts": return "#3b12f3ff";
       default: return "#2563eb";
     }
   };
@@ -543,6 +531,37 @@ const Dashboard = () => {
     { label: 'Proveedores', icon: <Truck />, onClick: () => navigate('/providers'), show: user?.role_name === 'admin' },
     // { label: 'Auditoría', icon: <Activity />, onClick: () => navigate('/audit'), show: user?.role_name === 'admin' },
   ];
+
+  // Nuevo estado para tipo de rango de tendencia
+  const [trendType, setTrendType] = useState<'semana' | 'mes' | 'año'>('semana');
+
+  // Nuevo estado para los datos de tendencia
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [trendLoading, setTrendLoading] = useState(false);
+
+  // Función para obtener los datos de tendencia según el tipo seleccionado
+  const fetchTrendData = async () => {
+    if (!token) return;
+    setTrendLoading(true);
+    try {
+      // Ahora getDashboardStats acepta trendType como segundo argumento
+      const data = await getDashboardStats(token, trendType);
+      setStats(data);
+      // Usar la propiedad correcta según el tipo
+      if (trendType === 'semana') setTrendData(data.salesTrend || []);
+      else setTrendData(data.totalSalesTrend || []);
+    } catch (err) {
+      setError('No se pudieron cargar los datos de tendencia.');
+    } finally {
+      setTrendLoading(false);
+    }
+  };
+
+  // Llama a fetchTrendData cuando cambia trendType o token
+  useEffect(() => {
+    fetchTrendData();
+    // eslint-disable-next-line
+  }, [trendType, token]);
 
   return (
     <>
@@ -635,9 +654,24 @@ const Dashboard = () => {
             Cargando estadísticas...
           </p>
         ) : error ? (
-          <p style={{ color: '#e74c3c', background: '#ffeaea', padding: '1rem', borderRadius: 8, borderLeft: '4px solid #e74c3c', margin: '1rem 0' }}>
-            {error}
-          </p>
+          <div style={{ color: '#e74c3c', background: '#ffeaea', padding: '1rem', borderRadius: 8, borderLeft: '4px solid #e74c3c', margin: '1rem 0', textAlign: 'center' }}>
+            <div style={{ marginBottom: '1rem' }}>{error}</div>
+            <button
+              style={{
+                background: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                padding: '10px 24px',
+                fontWeight: 600,
+                fontSize: '1rem',
+                cursor: 'pointer'
+              }}
+              onClick={() => navigate('/')}
+            >
+              Volver atrás
+            </button>
+          </div>
         ) : stats ? (
           <>
             <DashboardGrid>
@@ -667,58 +701,109 @@ const Dashboard = () => {
               </DashboardCard>
             </DashboardGrid>
 
+            {/* Selector de tendencia */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+              <label style={{ fontWeight: 600, color: '#2563eb' }}>Ver tendencia por:</label>
+              <select
+                value={trendType}
+                onChange={e => setTrendType(e.target.value as 'semana' | 'mes' | 'año')}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: '1px solid #d1d5db',
+                  fontSize: '1rem',
+                  background: 'white',
+                  color: '#2563eb',
+                  fontWeight: 600,
+                  outline: 'none'
+                }}
+              >
+                <option value="semana">Semana</option>
+                <option value="mes">Mes</option>
+                <option value="año">Año</option>
+              </select>
+            </div>
+
+            {/* Gráfica de tendencia */}
             <ChartSection>
               <ChartTitle>
                 <TrendingUp size={20} color="#27ae60" style={{ marginRight: 8 }} />
-                Tendencia Semanal de Ventas Netas
+                {trendType === 'semana'
+                  ? 'Tendencia Semanal de Ventas Netas'
+                  : trendType === 'mes'
+                  ? 'Tendencia Mensual de Ventas Netas'
+                  : 'Tendencia Anual de Ventas Netas'}
               </ChartTitle>
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={salesTrend}>
-                  <XAxis dataKey="week" label={{ value: "Semana", position: "insideBottom", offset: -5 }} />
-                  <YAxis
-                    tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
-                    label={{ value: "Ventas", angle: -90, position: "insideLeft" }}
-                  />
-                  <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
-                  <Bar
-                    dataKey="sales"
-                    fill="#27ae60"
-                    isAnimationActive={true}
-                  >
-                    {salesTrend.map((entry, idx) => (
-                      <Cell key={`cell-${idx}`} fill={getBarColor(entry.sales)} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartSection>
-
-            <ChartSection>
-              <ChartTitle>
-                <BarChart2 size={20} color="#3498db" style={{ marginRight: 8 }} />
-                Tendencia Total de Ventas
-              </ChartTitle>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={totalSalesTrend}>
-                  <XAxis dataKey="date" label={{ value: "Fecha", position: "insideBottom", offset: -5 }} />
-                  <YAxis
-                    tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
-                    label={{ value: "Monto", angle: -90, position: "insideLeft" }}
-                  />
-                  <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
-                  <CartesianGrid stroke="#e1e8ed" />
-                  <Legend
-                    formatter={value => {
-                      if (value === "sales") return "Ventas Netas";
-                      if (value === "returns") return "Devoluciones";
-                      if (value === "discounts") return "Descuentos";
-                      return value;
-                    }}
-                  />
-                  <Line type="monotone" dataKey="sales" stroke={getLineColor("sales")} name="Ventas Netas" strokeWidth={2} />
-                  <Line type="monotone" dataKey="returns" stroke={getLineColor("returns")} name="Devoluciones" strokeWidth={2} />
-                  <Line type="monotone" dataKey="discounts" stroke={getLineColor("discounts")} name="Descuentos" strokeWidth={2} />
-                </LineChart>
+                {trendType === 'semana' ? (
+                  <BarChart data={trendData} barCategoryGap={32}>
+                    <XAxis dataKey="week" label={{ value: "Semana", position: "insideBottom", offset: -5 }} />
+                    <YAxis
+                      tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
+                      label={{ value: "Ventas", angle: -90, position: "insideLeft" }}
+                    />
+                    <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
+                    <Bar
+                      dataKey="sales"
+                      fill="#128ef3"
+                      barSize={28}
+                      // @ts-ignore: recharts types don't acept array but it works for rounded bars
+                      radius={[8, 8, 8, 8]}
+                    >
+                      {trendData.map((entry, idx) => (
+                        <Cell
+                          // @ts-ignore
+                          key={`cell-${idx}`}
+                          fill={idx % 2 === 0 ? "#128ef3" : "#0f13f1"}
+                          // @ts-ignore
+                          radius={[8, 8, 8, 8]}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                ) : (
+                  <LineChart data={trendData}>
+                    <XAxis dataKey={trendType === 'mes' ? 'month' : 'year'} label={{ value: trendType === 'mes' ? "Mes" : "Año", position: "insideBottom", offset: -5 }} />
+                    <YAxis
+                      tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
+                      label={{ value: "Monto", angle: -90, position: "insideLeft" }}
+                    />
+                    <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
+                    <CartesianGrid stroke="#e1e8ed" />
+                    <Legend
+                      formatter={value => {
+                        if (value === "sales") return "Ventas Netas";
+                        if (value === "returns") return "Devoluciones";
+                        if (value === "discounts") return "Descuentos";
+                        return value;
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="sales"
+                      stroke="#128ef3"
+                      name="Ventas Netas"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: "#128ef3" }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="returns"
+                      stroke="#0f13f1"
+                      name="Devoluciones"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: "#0f13f1" }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="discounts"
+                      stroke="#2563eb"
+                      name="Descuentos"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: "#2563eb" }}
+                    />
+                  </LineChart>
+                )}
               </ResponsiveContainer>
             </ChartSection>
 

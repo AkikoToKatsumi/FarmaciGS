@@ -16,7 +16,7 @@ const getTodayInDominicanRepublic = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-export const getDashboardStats = async (_req: Request, res: Response) => {
+export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     // Obtener la fecha actual en la zona horaria de República Dominicana
     const todayString = getTodayInDominicanRepublic();
@@ -99,14 +99,84 @@ export const getDashboardStats = async (_req: Request, res: Response) => {
       }
     }
 
+    // --- NUEVO: Manejo de parámetro trendType ---
+    const trendType = (req.query.trendType as string)?.toLowerCase() || 'semana';
+
+    let salesTrend: Array<{ week: string; sales: number }> = [];
+    let totalSalesTrend: Array<{ date?: string; month?: string; year?: string; sales: number; returns: number; discounts: number }> = [];
+
+    if (trendType === 'semana') {
+      // Tendencia semanal: ventas netas por semana (últimas 8 semanas)
+      const weeklyResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('week', created_at AT TIME ZONE 'America/Santo_Domingo'), 'IW/YYYY') AS week,
+          SUM(total) AS sales
+        FROM sales
+        GROUP BY week
+        ORDER BY week DESC
+        LIMIT 8
+      `);
+      salesTrend = weeklyResult.rows.reverse().map(row => ({
+        week: row.week,
+        sales: parseFloat(row.sales)
+      }));
+    } else if (trendType === 'mes') {
+      // Tendencia mensual: ventas, devoluciones y descuentos por mes (últimos 12 meses)
+      const monthlyResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('month', created_at AT TIME ZONE 'America/Santo_Domingo'), 'MM/YYYY') AS month,
+          SUM(total) AS sales,
+          COALESCE(SUM(returns), 0) AS returns,
+          COALESCE(SUM(discounts), 0) AS discounts
+        FROM sales
+        GROUP BY month
+        ORDER BY month DESC
+        LIMIT 12
+      `);
+      totalSalesTrend = monthlyResult.rows.reverse().map(row => ({
+        month: row.month,
+        sales: parseFloat(row.sales),
+        returns: parseFloat(row.returns),
+        discounts: parseFloat(row.discounts)
+      }));
+    } else if (trendType === 'año') {
+      // Tendencia anual: ventas, devoluciones y descuentos por año (últimos 5 años)
+      const yearlyResult = await pool.query(`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('year', created_at AT TIME ZONE 'America/Santo_Domingo'), 'YYYY') AS year,
+          SUM(total) AS sales,
+          COALESCE(SUM(returns), 0) AS returns,
+          COALESCE(SUM(discounts), 0) AS discounts
+        FROM sales
+        GROUP BY year
+        ORDER BY year DESC
+        LIMIT 5
+      `);
+      totalSalesTrend = yearlyResult.rows.reverse().map(row => ({
+        year: row.year,
+        sales: parseFloat(row.sales),
+        returns: parseFloat(row.returns),
+        discounts: parseFloat(row.discounts)
+      }));
+    }
+
+    // --- FIN NUEVO ---
+
     // 5. Respuesta final
-    const response = {
+    const response: any = {
       dailySales: dailySales,
       productsSold: productsSold,
       clientsServed: clientsServed,
       lowStockCount: lowStockCount,
       recentActivities: recentActivities,
     };
+
+    // Agregar tendencias según el tipo solicitado
+    if (trendType === 'semana') {
+      response.salesTrend = salesTrend;
+    } else {
+      response.totalSalesTrend = totalSalesTrend;
+    }
 
     logger.info('Estadísticas del dashboard obtenidas exitosamente:', response);
     res.json(response);
