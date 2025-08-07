@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { getClients, createClient, updateClient, deleteClient } from '../services/client.service';
 import { useNavigate } from 'react-router-dom';
-
 import { useUserStore } from '../store/user';
 
 // Styled Components
@@ -89,32 +88,42 @@ const SubmitButton = styled.button`
   }
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 8px;
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
 `;
 
-const TableHeader = styled.th`
-  background: #f3f4f6;
-  font-weight: 700;
-  padding: 12px;
-  border: none;
-`;
-
-const TableRow = styled.tr`
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-`;
-
-const TableCell = styled.td`
+const ClientCard = styled.div`
   background: #f9fafb;
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const ClientName = styled.h3`
+  margin: 0 0 8px 0;
+  color: #2563eb;
+  font-size: 1.1rem;
+`;
+
+const ClientInfo = styled.p`
+  margin: 2px 0;
+  color: #444;
+  font-size: 0.98rem;
+`;
+
+const CardActions = styled.div`
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 `;
 
 const ActionButton = styled.button<{ variant: 'edit' | 'delete' }>`
-  margin-right: 8px;
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
@@ -141,12 +150,17 @@ const ActionButton = styled.button<{ variant: 'edit' | 'delete' }>`
   `}
 `;
 
-const PaginationContainer = styled.div`
-  margin-top: 16px;
+const PageSizeContainer = styled.div`
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+
+const Label = styled.label`
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #374151;
 `;
 
 const Select = styled.select`
@@ -162,13 +176,15 @@ const Select = styled.select`
   }
 `;
 
-const Label = styled.label`
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #374151;
+const PaginationContainer = styled.div`
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
 `;
 
-const BaseButton = styled.button`
+const PageButton = styled.button`
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
@@ -177,6 +193,7 @@ const BaseButton = styled.button`
   font-size: 0.95rem;
   background: #3b82f6;
   color: white;
+  margin: 0 8px;
   
   &:hover {
     background: #2563eb;
@@ -188,20 +205,184 @@ const BaseButton = styled.button`
   }
 `;
 
-const PageButton = styled(BaseButton)`
-  margin: 0 8px;
-`;
-
 const PageInfo = styled.span`
   font-size: 0.95rem;
   color: #6b7280;
 `;
 
-const PageSizeContainer = styled.div`
+// Modal styles (igual que inventario)
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  justify-content: center;
+  z-index: 50;
+`;
+
+const ModalContent = styled.div`
+  background-color: white;
+  border-radius: 8px;
+  padding: 30px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90%;
+  overflow-y: auto;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const ModalTitle = styled.h2`
+  margin: 0;
+  color: #333;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  &:hover {
+    color: #333;
+  }
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const ModalLabel = styled.label`
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+`;
+
+const Input = styled.input<{ hasError?: boolean }>`
+  padding: 8px 12px;
+  border: 1px solid ${props => props.hasError ? '#ef4444' : '#ddd'};
+  border-radius: 4px;
+  font-size: 14px;
+`;
+
+const TextArea = styled.textarea`
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+`;
+
+const Button = styled.button<{ variant?: 'primary' | 'danger' }>`
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  background-color: ${props => props.variant === 'primary' ? '#007bff' : props.variant === 'danger' ? '#dc3545' : '#6c757d'};
+  color: white;
+  &:hover {
+    background-color: ${props => props.variant === 'primary' ? '#0056b3' : props.variant === 'danger' ? '#c82333' : '#5a6268'};
+  }
+`;
+
+// Mensajes tipo Sales.tsx
+const NotificationsContainer = styled.div`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+`;
+
+const Notification = styled.div<{ type: 'success' | 'error'; isVisible: boolean }>`
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid ${props =>
+    props.type === 'success' ? '#00cc66' : '#cc0000'};
+  border-left: 4px solid ${props =>
+    props.type === 'success' ? '#00cc66' : '#cc0000'};
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: ${props => props.isVisible ? 'slideIn' : 'slideOut'} 0.3s ease;
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+`;
+
+const NotificationIcon = styled.div<{ type: 'success' | 'error' }>`
+  color: ${props => props.type === 'success' ? '#00cc66' : '#cc0000'};
+  flex-shrink: 0;
+  font-size: 20px;
+`;
+
+const NotificationContent = styled.div`
+  flex: 1;
+`;
+
+const NotificationTitle = styled.h4<{ type: 'success' | 'error' }>`
+  font-size: 14px;
+  font-weight: 500;
+  color: ${props => props.type === 'success' ? '#15803d' : '#b91c1c'};
+  margin: 0 0 2px 0;
+`;
+
+const NotificationMessage = styled.p<{ type: 'success' | 'error' }>`
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+`;
+
+const NotificationCloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  font-size: 16px;
+  &:hover {
+    background: #f5f5f5;
+    color: #666;
+  }
 `;
 
 const Clients = () => {
@@ -213,6 +394,10 @@ const Clients = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [notifications, setNotifications] = useState<
+    { id: number; type: 'success' | 'error'; title: string; message: string; isVisible: boolean }[]
+  >([]);
 
   const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setPageSize(Number(e.target.value));
@@ -252,117 +437,131 @@ const Clients = () => {
     return Object.keys(e).length === 0;
   };
 
+  // Función para mostrar notificaciones
+  const showNotification = (type: 'success' | 'error', title: string, message: string) => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, type, title, message, isVisible: true }]);
+    setTimeout(() => {
+      setNotifications(prev =>
+        prev.map(notif =>
+          notif.id === id ? { ...notif, isVisible: false } : notif
+        )
+      );
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(notif => notif.id !== id));
+      }, 300);
+    }, 4000);
+  };
+
+  const closeNotification = (id: number) => {
+    setNotifications(prev =>
+      prev.map(notif =>
+        notif.id === id ? { ...notif, isVisible: false } : notif
+      )
+    );
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+    }, 300);
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    if (editingId) {
-      await updateClient(editingId, form, token!);
-    } else {
-      await createClient(form, token!);
+    try {
+      if (editingId) {
+        await updateClient(editingId, form, token!);
+        showNotification('success', 'Cliente actualizado', 'El cliente fue actualizado correctamente.');
+      } else {
+        await createClient(form, token!);
+        showNotification('success', 'Cliente creado', 'El cliente fue agregado correctamente.');
+      }
+      setForm({ name: '', email: '', phone: '', rnc: '', cedula: '', address: '' });
+      setEditingId(null);
+      setErrors({});
+      setIsModalOpen(false);
+      loadClients();
+    } catch (error) {
+      showNotification('error', 'Error', 'Error al guardar el cliente. Intenta de nuevo.');
+      setErrors({ name: 'Error al guardar el cliente. Intenta de nuevo.' });
     }
-
-    setForm({ name: '', email: '', phone: '', rnc: '', cedula: '', address: '' });
-    setEditingId(null);
-    setErrors({});
-    loadClients();
   };
 
   const handleEdit = (c: any) => {
-    setForm({ 
-      name: c.name || '', 
-      email: c.email || '', 
+    setForm({
+      name: c.name || '',
+      email: c.email || '',
       phone: c.phone || '',
       rnc: c.rnc || '',
       cedula: c.cedula || '',
       address: c.address || ''
     });
     setEditingId(c.id);
+    setIsModalOpen(true); // <-- asegúrate de abrir el modal al editar
   };
 
   const handleDelete = async (id: number) => {
     if (confirm('¿Eliminar este cliente?')) {
-      await deleteClient(id, token!);
-      loadClients();
+      try {
+        await deleteClient(id, token!);
+        showNotification('success', 'Cliente eliminado', 'El cliente fue eliminado correctamente.');
+        loadClients();
+      } catch {
+        showNotification('error', 'Error', 'No se pudo eliminar el cliente.');
+      }
     }
+  };
+
+  // Abrir modal para agregar o editar
+  const openModal = (client?: any) => {
+    if (client) {
+      setForm({
+        name: client.name || '',
+        email: client.email || '',
+        phone: client.phone || '',
+        rnc: client.rnc || '',
+        cedula: client.cedula || '',
+        address: client.address || ''
+      });
+      setEditingId(client.id);
+    } else {
+      setForm({ name: '', email: '', phone: '', rnc: '', cedula: '', address: '' });
+      setEditingId(null);
+    }
+    setErrors({});
+    setIsModalOpen(true);
   };
 
   return (
     <Container>
+      <NotificationsContainer>
+        {notifications.map(notification => (
+          <Notification
+            key={notification.id}
+            type={notification.type}
+            isVisible={notification.isVisible}
+          >
+            <NotificationIcon type={notification.type}>
+              {notification.type === 'success' ? '✓' : '✕'}
+            </NotificationIcon>
+            <NotificationContent>
+              <NotificationTitle type={notification.type}>{notification.title}</NotificationTitle>
+              <NotificationMessage type={notification.type}>{notification.message}</NotificationMessage>
+            </NotificationContent>
+            <NotificationCloseButton onClick={() => closeNotification(notification.id)}>
+              ×
+            </NotificationCloseButton>
+          </Notification>
+        ))}
+      </NotificationsContainer>
       <BackButton onClick={() => navigate('/dashboard')}>
-       Volver a Inicio
+        Volver a Inicio
       </BackButton>
-
       <Card>
         <Title>Clientes</Title>
+        <Button variant="primary" style={{ marginBottom: 20 }} onClick={() => openModal()}>
+          + Agregar Cliente
+        </Button>
         
-        <FormRow>
-          <InputContainer>
-            <FormInput
-              type="text"
-              placeholder="Nombre"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              hasError={!!errors.name}
-            />
-            {errors.name && <ErrorText>{errors.name}</ErrorText>}
-          </InputContainer>
-          
-          <InputContainer>
-            <FormInput
-              type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              hasError={!!errors.email}
-            />
-            {errors.email && <ErrorText>{errors.email}</ErrorText>}
-          </InputContainer>
-          
-          <InputContainer>
-            <FormInput
-              type="text"
-              placeholder="Teléfono"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              hasError={!!errors.phone}
-            />
-            {errors.phone && <ErrorText>{errors.phone}</ErrorText>}
-          </InputContainer>
-        </FormRow>
-
-        <FormRow>
-          <InputContainer>
-            <FormInput
-              type="text"
-              placeholder="RNC (Opcional)"
-              value={form.rnc}
-              onChange={(e) => setForm({ ...form, rnc: e.target.value })}
-            />
-          </InputContainer>
-          
-          <InputContainer>
-            <FormInput
-              type="text"
-              placeholder="Cédula (Opcional)"
-              value={form.cedula}
-              onChange={(e) => setForm({ ...form, cedula: e.target.value })}
-            />
-          </InputContainer>
-          
-          <InputContainer flex={2}>
-            <FormInput
-              type="text"
-              placeholder="Dirección (Opcional)"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-          </InputContainer>
-        </FormRow>
-
-        <SubmitButton onClick={handleSubmit}>
-          {editingId ? 'Actualizar' : 'Crear'} Cliente
-        </SubmitButton>
-
         <PageSizeContainer>
           <Label htmlFor="pageSize">Clientes por página:</Label>
           <Select id="pageSize" value={pageSize} onChange={handlePageSizeChange} style={{width: 100}}>
@@ -373,51 +572,36 @@ const Clients = () => {
           </Select>
         </PageSizeContainer>
 
-        <Table>
-          <thead>
-            <tr>
-              <TableHeader>ID</TableHeader>
-              <TableHeader>Nombre</TableHeader>
-              <TableHeader>Email</TableHeader>
-              <TableHeader>Teléfono</TableHeader>
-              <TableHeader>RNC</TableHeader>
-              <TableHeader>Cédula</TableHeader>
-              <TableHeader>Dirección</TableHeader>
-              <TableHeader>Acciones</TableHeader>
-            </tr>
-          </thead>
-          <tbody>
-            {currentClients.length > 0 ? currentClients.map((c: any) => (
-              <TableRow key={c.id}>
-                <TableCell>{c.id}</TableCell>
-                <TableCell>{c.name}</TableCell>
-                <TableCell>{c.email}</TableCell>
-                <TableCell>{c.phone}</TableCell>
-                <TableCell>{c.rnc}</TableCell>
-                <TableCell>{c.cedula}</TableCell>
-                <TableCell>{c.address}</TableCell>
-                <TableCell>
-                  <ActionButton
-                    variant="edit"
-                    onClick={() => handleEdit(c)}
-                  >
-                    Editar
-                  </ActionButton>
-                  <ActionButton
-                    variant="delete"
-                    onClick={() => handleDelete(c.id)}
-                  >
-                    Eliminar
-                  </ActionButton>
-                </TableCell>
-              </TableRow>
-            )) : (
-              <tr>
-                <TableCell colSpan={8} style={{textAlign: 'center'}}>No hay clientes registrados.</TableCell>
-              </tr>
-            )}
-          </tbody>
-        </Table>
+        <Grid>
+          {currentClients.length > 0 ? currentClients.map((c: any) => (
+            <ClientCard key={c.id}>
+              <ClientName>{c.name}</ClientName>
+              <ClientInfo><strong>Email:</strong> {c.email || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+              <ClientInfo><strong>Teléfono:</strong> {c.phone || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+              <ClientInfo><strong>RNC:</strong> {c.rnc || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+              <ClientInfo><strong>Cédula:</strong> {c.cedula || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+              <ClientInfo><strong>Dirección:</strong> {c.address || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+              <CardActions>
+                <ActionButton
+                  variant="edit"
+                  onClick={() => handleEdit(c)}
+                >
+                  Editar
+                </ActionButton>
+                <ActionButton
+                  variant="delete"
+                  onClick={() => handleDelete(c.id)}
+                >
+                  Eliminar
+                </ActionButton>
+              </CardActions>
+            </ClientCard>
+          )) : (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888' }}>
+              No hay clientes registrados.
+            </div>
+          )}
+        </Grid>
           
         {totalPages > 1 && (
           <PaginationContainer>
@@ -431,6 +615,94 @@ const Clients = () => {
           </PaginationContainer>
         )}
       </Card>
+
+      {/* Modal para agregar/editar cliente */}
+      {isModalOpen && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>{editingId ? 'Editar Cliente' : 'Agregar Nuevo Cliente'}</ModalTitle>
+              <CloseButton onClick={() => setIsModalOpen(false)}>×</CloseButton>
+            </ModalHeader>
+            <Form onSubmit={e => { e.preventDefault(); handleSubmit(); setIsModalOpen(false); }}>
+              <FormGroup>
+                <ModalLabel htmlFor="name">Nombre Completo</ModalLabel>
+                <Input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  hasError={!!errors.name}
+                  required
+                />
+                {errors.name && <ErrorText>{errors.name}</ErrorText>}
+              </FormGroup>
+              <FormGroup>
+                <ModalLabel htmlFor="email">Email</ModalLabel>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  hasError={!!errors.email}
+                />
+                {errors.email && <ErrorText>{errors.email}</ErrorText>}
+              </FormGroup>
+              <FormGroup>
+                <ModalLabel htmlFor="phone">Teléfono</ModalLabel>
+                <Input
+                  type="text"
+                  id="phone"
+                  name="phone"
+                  value={form.phone}
+                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                  hasError={!!errors.phone}
+                />
+                {errors.phone && <ErrorText>{errors.phone}</ErrorText>}
+              </FormGroup>
+              <FormGroup>
+                <ModalLabel htmlFor="rnc">RNC</ModalLabel>
+                <Input
+                  type="text"
+                  id="rnc"
+                  name="rnc"
+                  value={form.rnc}
+                  onChange={e => setForm({ ...form, rnc: e.target.value })}
+                />
+              </FormGroup>
+              <FormGroup>
+                <ModalLabel htmlFor="cedula">Cédula</ModalLabel>
+                <Input
+                  type="text"
+                  id="cedula"
+                  name="cedula"
+                  value={form.cedula}
+                  onChange={e => setForm({ ...form, cedula: e.target.value })}
+                />
+              </FormGroup>
+              <FormGroup>
+                <ModalLabel htmlFor="address">Dirección</ModalLabel>
+                <TextArea
+                  id="address"
+                  name="address"
+                  value={form.address}
+                  onChange={e => setForm({ ...form, address: e.target.value })}
+                />
+              </FormGroup>
+              <ButtonGroup>
+                <Button type="button" onClick={() => setIsModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="primary">
+                  {editingId ? 'Actualizar Cliente' : 'Agregar Cliente'}
+                </Button>
+              </ButtonGroup>
+            </Form>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </Container>
   );
 };

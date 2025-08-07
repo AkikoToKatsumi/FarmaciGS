@@ -536,7 +536,7 @@ const Dashboard = () => {
     { label: 'Clientes', icon: <Users />, onClick: () => navigate('/clients'), show: user?.role_name === 'admin' || user?.role_name === 'cashier' },
     { label: 'Inventario', icon: <Package />, onClick: () => navigate('/inventory'), show: user?.role_name === 'admin' || user?.role_name === 'pharmacist' },
     { label: 'Prescripciones', icon: <ClipboardList />, onClick: () => navigate('/prescriptions'), show: user?.role_name === 'admin' || user?.role_name === 'pharmacist' },
-    { label: 'Usuarios', icon: <User />, onClick: () => navigate('/employees'), show: user?.role_name === 'admin' },
+    { label: 'Usuarios', icon: <User />, onClick: () => navigate('/Users'), show: user?.role_name === 'admin' },
     { label: 'Reportes', icon: <FileText />, onClick: () => navigate('/reports'), show: user?.role_name === 'admin' },
     { label: 'Administración', icon: <Shield />, onClick: () => navigate('/admin'), show: user?.role_name === 'admin' },
     { label: 'Roles', icon: <Layers />, onClick: () => navigate('/roles'), show: user?.role_name === 'admin' },
