@@ -523,17 +523,34 @@ const Dashboard = () => {
     }
   };
 
-  // Sidebar menu items
+  // Sidebar menu items con autorización por usuario
   const menuItems = [
-    { label: 'Overview', icon: <BarChart2 />, onClick: () => navigate('/dashboard'), active: true },
-    { label: 'Ventas', icon: <ShoppingCart />, onClick: () => navigate('/sales'), show: user?.role_name === 'admin' || user?.role_name === 'cashier' },
-    { label: 'Clientes', icon: <Users />, onClick: () => navigate('/clients'), show: user?.role_name === 'admin' || user?.role_name === 'cashier' },
+    // Todos pueden ver Overview
+    { label: 'Overview', icon: <BarChart2 />, onClick: () => navigate('/dashboard'), active: true, show: true },
+    // Ventas
+    { label: 'Ventas', icon: <ShoppingCart />, onClick: () => navigate('/sales'), show: user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist' },
+    // Clientes
+    { label: 'Clientes', icon: <Users />, onClick: () => navigate('/clients'), show: user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist' },
+    // Inventario
     { label: 'Inventario', icon: <Package />, onClick: () => navigate('/inventory'), show: user?.role_name === 'admin' || user?.role_name === 'pharmacist' },
+    // Prescripciones
     { label: 'Prescripciones', icon: <ClipboardList />, onClick: () => navigate('/prescriptions'), show: user?.role_name === 'admin' || user?.role_name === 'pharmacist' },
+    // Usuarios
     { label: 'Usuarios', icon: <User />, onClick: () => navigate('/Users'), show: user?.role_name === 'admin' },
-    { label: 'Reportes', icon: <FileText />, onClick: () => navigate('/reports'), show: user?.role_name === 'admin' },
+    // Reportes
+    { 
+      label: 'Reportes', 
+      icon: <FileText />, 
+      onClick: () => navigate('/reports'), 
+      show: user?.role_name === 'admin' 
+        || user?.role_name === 'pharmacist' 
+        || user?.role_name === 'cashier' 
+    },
+    // Administración
     { label: 'Administración', icon: <Shield />, onClick: () => navigate('/admin'), show: user?.role_name === 'admin' },
+    // Roles
     { label: 'Roles', icon: <Layers />, onClick: () => navigate('/roles'), show: user?.role_name === 'admin' },
+    // Proveedores
     { label: 'Proveedores', icon: <Truck />, onClick: () => navigate('/providers'), show: user?.role_name === 'admin' },
     // { label: 'Auditoría', icon: <Activity />, onClick: () => navigate('/audit'), show: user?.role_name === 'admin' },
   ];
@@ -633,7 +650,7 @@ const Dashboard = () => {
         <SidebarContent>
           <SidebarMenu>
             {menuItems
-              .filter((item) => item.show === undefined || item.show)
+              .filter((item) => item.show)
               .map((item, idx) => (
                 <SidebarMenuItem 
                   key={item.label} 

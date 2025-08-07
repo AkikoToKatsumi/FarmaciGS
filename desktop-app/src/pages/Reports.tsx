@@ -168,7 +168,7 @@ const Reports = () => {
   const allowedRoles = ['admin', 'cashier', 'pharmacist', 1, 2, 3];
   if (
     user &&
-    !allowedRoles.includes(user.role) &&
+    !allowedRoles.includes(user.role_name) &&
     !allowedRoles.includes(user.role_id)
   ) {
     return (
@@ -291,171 +291,179 @@ const Reports = () => {
       </BackButton>
       <Title>Reportes</Title>
 
-      {/* Backup y Restore */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-        <BackupButton onClick={handleBackup}>
-          <Download size={16} /> Descargar Backup
-        </BackupButton>
-        <RestoreLabel>
-          <Upload size={16} /> Restaurar Backup
-          <input
-            type="file"
-            accept=".json"
-            onChange={handleRestore}
-          />
-        </RestoreLabel>
-      </div>
-
-      {/* Ventas del día */}
-      <Section>
-        <SectionHeader>
-          <SectionTitle>Ventas (últimos 7 días)</SectionTitle>
-          <ButtonGroup>
-            <IconButton onClick={exportSalesCSV} title="CSV">
-              <FileText size={16} /> CSV
-            </IconButton>
-            <IconButton
-              onClick={() =>
-                exportExcel(
-                  sales.map((s: any) => ({
-                    ID: s.id,
-                    Vendedor: s.seller,
-                    Total: s.total,
-                  })),
-                  'ventas.xlsx',
-                  salesTotal
-                )
-              }
-              title="Excel"
-            >
-              <FileSpreadsheet size={16} /> Excel
-            </IconButton>
-            <IconButton
-              onClick={() =>
-                exportPDF(
-                  sales.map((s: any) => [s.id, s.seller, s.total]),
-                  ['ID', 'Vendedor', 'Total'],
-                  'ventas.pdf',
-                  salesTotal
-                )
-              }
-              title="PDF"
-            >
-              <FileBarChart2 size={16} /> PDF
-            </IconButton>
-          </ButtonGroup>
-        </SectionHeader>
-        <List>
-          {sales.map((s: any) => (
-            <ListItem key={s.id}>
-              #{s.id} - Vendedor: {s.seller} - RD${s.total}
-            </ListItem>
-          ))}
-        </List>
-        {/* Mostrar sumatoria de ventas */}
-        <div style={{ marginTop: '1rem', fontWeight: 600, fontSize: '1.1rem', color: '#2563eb', textAlign: 'right' }}>
-          Total de ventas: RD${salesTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+      {/* Backup y Restore solo admin */}
+      {user?.role_name === 'admin' && (
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+          <BackupButton onClick={handleBackup}>
+            <Download size={16} /> Descargar Backup
+          </BackupButton>
+          <RestoreLabel>
+            <Upload size={16} /> Restaurar Backup
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleRestore}
+            />
+          </RestoreLabel>
         </div>
-      </Section>
+      )}
 
-      {/* Productos por vencer */}
-      <Section>
-        <SectionHeader>
-          <SectionTitle>Medicamentos por vencer</SectionTitle>
-          <ButtonGroup>
-            <IconButton onClick={exportExpiringCSV} title="CSV">
-              <FileText size={16} /> CSV
-            </IconButton>
-            <IconButton
-              onClick={() =>
-                exportExcel(
-                  expiring.map((m: any) => ({
-                    ID: m.id,
-                    Nombre: m.name,
-                    'Fecha de Vencimiento': new Date(
-                      m.expirationDate
-                    ).toLocaleDateString(),
-                  })),
-                  'por_vencer.xlsx'
-                )
-              }
-              title="Excel"
-            >
-              <FileSpreadsheet size={16} /> Excel
-            </IconButton>
-            <IconButton
-              onClick={() =>
-                exportPDF(
-                  expiring.map((m: any) => [
-                    m.id,
-                    m.name,
-                    new Date(m.expirationDate).toLocaleDateString(),
-                  ]),
-                  ['ID', 'Nombre', 'Fecha de Vencimiento'],
-                  'por_vencer.pdf'
-                )
-              }
-              title="PDF"
-            >
-              <FileBarChart2 size={16} /> PDF
-            </IconButton>
-          </ButtonGroup>
-        </SectionHeader>
-        <List>
-          {expiring.map((m: any) => (
-            <ListItem key={m.id}>
-              {m.name} - Vence:{' '}
-              {new Date(m.expirationDate).toLocaleDateString()}
-            </ListItem>
-          ))}
-        </List>
-      </Section>
+      {/* Ventas del día: solo admin y cajero */}
+      {(user?.role_name === 'admin' || user?.role_name === 'cashier') && (
+        <Section>
+          <SectionHeader>
+            <SectionTitle>Ventas (últimos 7 días)</SectionTitle>
+            <ButtonGroup>
+              <IconButton onClick={exportSalesCSV} title="CSV">
+                <FileText size={16} /> CSV
+              </IconButton>
+              <IconButton
+                onClick={() =>
+                  exportExcel(
+                    sales.map((s: any) => ({
+                      ID: s.id,
+                      Vendedor: s.seller,
+                      Total: s.total,
+                    })),
+                    'ventas.xlsx',
+                    salesTotal
+                  )
+                }
+                title="Excel"
+              >
+                <FileSpreadsheet size={16} /> Excel
+              </IconButton>
+              <IconButton
+                onClick={() =>
+                  exportPDF(
+                    sales.map((s: any) => [s.id, s.seller, s.total]),
+                    ['ID', 'Vendedor', 'Total'],
+                    'ventas.pdf',
+                    salesTotal
+                  )
+                }
+                title="PDF"
+              >
+                <FileBarChart2 size={16} /> PDF
+              </IconButton>
+            </ButtonGroup>
+          </SectionHeader>
+          <List>
+            {sales.map((s: any) => (
+              <ListItem key={s.id}>
+                #{s.id} - Vendedor: {s.seller} - RD${s.total}
+              </ListItem>
+            ))}
+          </List>
+          {/* Mostrar sumatoria de ventas */}
+          <div style={{ marginTop: '1rem', fontWeight: 600, fontSize: '1.1rem', color: '#2563eb', textAlign: 'right' }}>
+            Total de ventas: RD${salesTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </div>
+        </Section>
+      )}
 
-      {/* Stock bajo */}
-      <Section>
-        <SectionHeader>
-          <SectionTitle>Stock Bajo</SectionTitle>
-          <ButtonGroup>
-            <IconButton onClick={exportLowStockCSV} title="CSV">
-              <FileText size={16} /> CSV
-            </IconButton>
-            <IconButton
-              onClick={() =>
-                exportExcel(
-                  lowStock.map((m: any) => ({
-                    ID: m.id,
-                    Nombre: m.name,
-                    Stock: m.stock,
-                  })),
-                  'stock_bajo.xlsx'
-                )
-              }
-              title="Excel"
-            >
-              <FileSpreadsheet size={16} /> Excel
-            </IconButton>
-            <IconButton
-              onClick={() =>
-                exportPDF(
-                  lowStock.map((m: any) => [m.id, m.name, m.stock]),
-                  ['ID', 'Nombre', 'Stock'],
-                  'stock_bajo.pdf'
-                )
-              }
-              title="PDF"
-            >
-              <FileBarChart2 size={16} /> PDF
-            </IconButton>
-          </ButtonGroup>
-        </SectionHeader>
-        <List>
-          {lowStock.map((m: any) => (
-            <ListItem key={m.id}>
-              {m.name} - Quedan: {m.stock}
-            </ListItem>
-          ))}
-        </List>
-      </Section>
+      {/* Productos por vencer: solo admin y farmacéutico */}
+      {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+        <Section>
+          <SectionHeader>
+            <SectionTitle>Medicamentos por vencer</SectionTitle>
+            <ButtonGroup>
+              <IconButton onClick={exportExpiringCSV} title="CSV">
+                <FileText size={16} /> CSV
+              </IconButton>
+              <IconButton
+                onClick={() =>
+                  exportExcel(
+                    expiring.map((m: any) => ({
+                      ID: m.id,
+                      Nombre: m.name,
+                      'Fecha de Vencimiento': new Date(
+                        m.expirationDate
+                      ).toLocaleDateString(),
+                    })),
+                    'por_vencer.xlsx'
+                  )
+                }
+                title="Excel"
+              >
+                <FileSpreadsheet size={16} /> Excel
+              </IconButton>
+              <IconButton
+                onClick={() =>
+                  exportPDF(
+                    expiring.map((m: any) => [
+                      m.id,
+                      m.name,
+                      new Date(m.expirationDate).toLocaleDateString(),
+                    ]),
+                    ['ID', 'Nombre', 'Fecha de Vencimiento'],
+                    'por_vencer.pdf'
+                  )
+                }
+                title="PDF"
+              >
+                <FileBarChart2 size={16} /> PDF
+              </IconButton>
+            </ButtonGroup>
+          </SectionHeader>
+          <List>
+            {expiring.map((m: any) => (
+              <ListItem key={m.id}>
+                {m.name} - Vence:{' '}
+                {new Date(m.expirationDate).toLocaleDateString()}
+              </ListItem>
+            ))}
+          </List>
+        </Section>
+      )}
+
+      {/* Stock bajo: solo admin y farmacéutico */}
+      {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+        <Section>
+          <SectionHeader>
+            <SectionTitle>Stock Bajo</SectionTitle>
+            <ButtonGroup>
+              <IconButton onClick={exportLowStockCSV} title="CSV">
+                <FileText size={16} /> CSV
+              </IconButton>
+              <IconButton
+                onClick={() =>
+                  exportExcel(
+                    lowStock.map((m: any) => ({
+                      ID: m.id,
+                      Nombre: m.name,
+                      Stock: m.stock,
+                    })),
+                    'stock_bajo.xlsx'
+                  )
+                }
+                title="Excel"
+              >
+                <FileSpreadsheet size={16} /> Excel
+              </IconButton>
+              <IconButton
+                onClick={() =>
+                  exportPDF(
+                    lowStock.map((m: any) => [m.id, m.name, m.stock]),
+                    ['ID', 'Nombre', 'Stock'],
+                    'stock_bajo.pdf'
+                  )
+                }
+                title="PDF"
+              >
+                <FileBarChart2 size={16} /> PDF
+              </IconButton>
+            </ButtonGroup>
+          </SectionHeader>
+          <List>
+            {lowStock.map((m: any) => (
+              <ListItem key={m.id}>
+                {m.name} - Quedan: {m.stock}
+              </ListItem>
+            ))}
+          </List>
+        </Section>
+      )}
     </Container>
   );
 };
