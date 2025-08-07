@@ -12,5 +12,6 @@ router.get('/:id', salesController.getSaleById);
 router.post('/', salesController.createSale);
 router.put('/:id', salesController.updateSale);
 router.delete('/:id', salesController.deleteSale);
+router.patch('/:id/cancel', salesController.cancelSale);
 
 export default router;

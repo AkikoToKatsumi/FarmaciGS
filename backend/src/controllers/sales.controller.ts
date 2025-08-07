@@ -245,3 +245,48 @@ if (clientId) {
     client.release();
   }
 };
+
+// Nueva función: Cancelar factura (solo admin)
+export const cancelSale = async (req: AuthRequest, res: Response) => {
+  try {
+    // Solo admin puede cancelar
+    if (!req.user || req.user.role_name !== 'admin') {
+      return res.status(403).json({ message: 'Solo el administrador puede cancelar facturas.' });
+    }
+
+    const { id } = req.params;
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ message: 'ID de factura inválido.' });
+    }
+
+    // Verificar si la venta existe y no está ya cancelada
+    const saleResult = await pool.query('SELECT * FROM sales WHERE id = $1', [id]);
+    if (saleResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Factura no encontrada.' });
+    }
+    const sale = saleResult.rows[0];
+    if (sale.status === 'cancelled') {
+      return res.status(400).json({ message: 'La factura ya está cancelada.' });
+    }
+
+    // Marcar la venta como cancelada
+    await pool.query('UPDATE sales SET status = $1 WHERE id = $2', ['cancelled', id]);
+
+    // Revertir stock de los productos vendidos
+    const itemsResult = await pool.query('SELECT medicine_id, quantity FROM sale_items WHERE sale_id = $1', [id]);
+    for (const item of itemsResult.rows) {
+      await pool.query('UPDATE medicine SET stock = stock + $1 WHERE id = $2', [item.quantity, item.medicine_id]);
+    }
+
+    // Registrar en el audit_log
+    await pool.query(
+      'INSERT INTO audit_log (user_id, action, created_at) VALUES ($1, $2, NOW())',
+      [req.user.id, `Factura #${id} cancelada por admin`]
+    );
+
+    res.json({ message: 'Factura cancelada correctamente.' });
+  } catch (error) {
+    console.error('Error al cancelar factura:', error);
+    res.status(500).json({ message: 'Error interno al cancelar la factura.' });
+  }
+};

@@ -1310,6 +1310,47 @@ const SalesPOS: React.FC = () => {
     return getSubtotal() + getItbis();
   };
 
+  // Añadir función para cancelar factura
+  const cancelSaleById = async (saleId: number, token: string): Promise<{ message: string }> => {
+    const response = await axios.patch(
+      `http://localhost:4004/api/sales/${saleId}/cancel`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  };
+
+  const [cancelSaleId, setCancelSaleId] = useState('');
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  // Handler para cancelar factura
+  const handleCancelSale = async () => {
+    if (!cancelSaleId.trim()) {
+      showNotification('error', 'Error', 'Debes ingresar un número de factura');
+      return;
+    }
+    if (!token) {
+      showNotification('error', 'Error de autenticación', 'No se encontró token de autenticación.');
+      return;
+    }
+    setCancelLoading(true);
+    try {
+      const result = await cancelSaleById(Number(cancelSaleId), token);
+      showNotification('success', 'Factura cancelada', result.message);
+      setCancelSaleId('');
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        showNotification('error', 'Acceso denegado', error.response?.data?.message || 'Solo el administrador puede cancelar facturas.');
+      } else if (error.response?.data?.message) {
+        showNotification('error', 'Error', error.response.data.message);
+      } else {
+        showNotification('error', 'Error', 'No se pudo cancelar la factura');
+      }
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   return (
     <Container>
       <MaxWidthContainer>
@@ -1322,6 +1363,36 @@ const SalesPOS: React.FC = () => {
             Volver al inicio
           </BackButton>
         </Header>
+
+        {/* Opción para cancelar factura solo para admin */}
+        {user?.role_name === 'admin' && (
+          <Card style={{ marginBottom: 32, border: '2px solid #f56565', background: '#fff5f5' }}>
+            <CardTitle style={{ color: '#b91c1c' }}>Cancelar Factura</CardTitle>
+            <FormGroup>
+              <Label htmlFor="cancelSaleId">Número de Factura</Label>
+              <Input
+                id="cancelSaleId"
+                type="number"
+                placeholder="Ingrese el número de factura a cancelar"
+                value={cancelSaleId}
+                onChange={e => setCancelSaleId(e.target.value)}
+                style={{ width: 200, marginRight: 12 }}
+                min={1}
+              />
+              <SearchButton
+                style={{ background: '#dc2626', marginLeft: 8 }}
+                onClick={handleCancelSale}
+                disabled={cancelLoading || !cancelSaleId.trim()}
+                type="button"
+              >
+                {cancelLoading ? 'Cancelando...' : 'Cancelar Factura'}
+              </SearchButton>
+            </FormGroup>
+            <p style={{ color: '#b91c1c', fontSize: 13, marginTop: 8 }}>
+              Solo el administrador puede cancelar facturas. Esta acción es irreversible.
+            </p>
+          </Card>
+        )}
 
         <GridContainer>
           <SearchSection>
@@ -1670,17 +1741,11 @@ const SalesPOS: React.FC = () => {
               )}
             </NotificationIcon>
             <NotificationContent>
-              <NotificationTitle type={notification.type}>
-                {notification.title}
-              </NotificationTitle>
-              <NotificationMessage type={notification.type}>
-                {notification.message}
-              </NotificationMessage>
+              <NotificationTitle type={notification.type}>{notification.title}</NotificationTitle>
+              <NotificationMessage type={notification.type}>{notification.message}</NotificationMessage>
             </NotificationContent>
-            <NotificationCloseButton
-              onClick={() => closeNotification(notification.id)}
-            >
-              <X size={16} />
+            <NotificationCloseButton onClick={() => closeNotification(notification.id)}>
+              <X size={18} />
             </NotificationCloseButton>
           </Notification>
         ))}

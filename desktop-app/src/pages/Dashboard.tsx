@@ -189,6 +189,10 @@ const Main = styled.div<{ $collapsed: boolean; $isMobile: boolean }>`
 `;
 
 const Header = styled.header`
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #eee;
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;

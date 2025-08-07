@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
+// Corrige el import para Sales (no default export)
 import Sales from './pages/Sales';
 import Clients from './pages/Clients';
 import Reports from './pages/Reports';
