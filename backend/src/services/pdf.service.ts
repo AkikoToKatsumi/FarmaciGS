@@ -28,10 +28,12 @@ interface SaleItem {
 // Configuración de la empresa (deberías moverlo a un archivo de configuración)
 const EMPRESA_CONFIG = {
   nombre: 'Farmacia GS',
-  rnc: '1-01-12345-6', // RNC de la empresa
+  rnc: '#-01-12345-#', // RNC de la empresa
   direccion: 'Calle Duarte #12, Ciudad',
   telefono: '123-456-7890',
-  email: 'info@farmaciags.com'
+  email: 'info@farmaciags.com',
+  // Nuevo: tasa ITBIS configurable
+  itbis: process.env.ITBIS_RATE ? parseFloat(process.env.ITBIS_RATE) : 0.18
 };
 
 export const generateSalePDF = async (sale: Sale, items: SaleItem[]): Promise<Buffer> => {
@@ -126,8 +128,9 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mim
   const date = new Date(sale.created_at).toLocaleString('es-ES');
   
   // Cálculos para facturación RD
+  // Usar la tasa ITBIS configurable
+  const itbisRate = EMPRESA_CONFIG.itbis;
   const total = Number(sale.total);
-  const itbisRate = 0.18; // 18% ITBIS
   const subtotal = total / (1 + itbisRate);
   const itbis = total - subtotal;
 
@@ -148,7 +151,7 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mim
     `;
   }).join('');
 
-  // Generar número de comprobante fiscal (NCF) - esto debería venir de tu sistema
+  // Generar número de comprobante fiscal (NCF) 
   const ncf = `B0100000${String(sale.id).padStart(8, '0')}`;
 
   return `
@@ -237,7 +240,7 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mim
             <td style="text-align: right; width: 30%;">$${subtotal.toFixed(2)}</td>
           </tr>
           <tr>
-            <td style="text-align: right;">ITBIS (18%):</td>
+            <td style="text-align: right;">ITBIS (${(itbisRate * 100).toFixed(0)}%):</td>
             <td style="text-align: right;">$${itbis.toFixed(2)}</td>
           </tr>
           <tr>
