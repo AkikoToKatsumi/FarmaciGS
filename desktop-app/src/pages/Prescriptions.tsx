@@ -459,7 +459,7 @@ const Prescriptions = () => {
 
   return (
     <Container>
-      <BackButton onClick={() => window.history.back()}>← Volver</BackButton>
+      <BackButton onClick={() => window.history.back()}>← Volver a inicio</BackButton>
 
       <Title>Asignar Receta Médica</Title>
 

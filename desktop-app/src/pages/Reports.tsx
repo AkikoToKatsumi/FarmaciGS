@@ -16,7 +16,6 @@ import {
   FileSpreadsheet,
   FileText,
   FileBarChart2,
-  ArrowLeft,
   Download,
   Upload,
   FileX,
@@ -70,12 +69,27 @@ const IconButton = styled.button`
   }
 `;
 
-const BackButton = styled(IconButton)`
-  background: #6c757d;
-  color: #fff;
-  margin-bottom: 1.5rem;
+const BackToHomeButton = styled.button`
+  background-color: #f3f4f6;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
+  transition:
+    background 0.25s,
+    color 0.25s,
+    box-shadow 0.25s,
+    transform 0.15s;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.875rem;
+
   &:hover {
-    background: #27cf35ff;
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+    transform: translateY(-2px) scale(1.03);
   }
 `;
 
@@ -173,9 +187,9 @@ const Reports = () => {
   ) {
     return (
       <Container>
-        <BackButton onClick={() => navigate('/dashboard')}>
-          <ArrowLeft size={16} /> Volver al Dashboard
-        </BackButton>
+        <BackToHomeButton onClick={() => navigate('/dashboard')}>
+          ← Volver a inicio
+        </BackToHomeButton>
         <NoPerms>No tienes permisos para ver los reportes.</NoPerms>
       </Container>
     );
@@ -286,9 +300,9 @@ const Reports = () => {
 
   return (
     <Container>
-      <BackButton onClick={() => navigate('/dashboard')}>
-        <ArrowLeft size={16} /> ← Volver a inicio
-      </BackButton>
+      <BackToHomeButton onClick={() => navigate('/dashboard')}>
+        ← Volver a inicio
+      </BackToHomeButton>
       <Title>Reportes</Title>
 
       {/* Backup y Restore solo admin */}

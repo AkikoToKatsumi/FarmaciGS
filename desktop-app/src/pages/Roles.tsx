@@ -28,17 +28,23 @@ const Header = styled.div`
   margin-bottom: 30px;
 `;
 
-const BackButton = styled.button`
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
+const BackToHomeButton = styled.button`
+  background-color: #f3f4f6;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.5rem;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 14px;
-  
+  font-size: 0.875rem;
+
   &:hover {
-    background-color: #5a6268;
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+    transform: translateY(-2px) scale(1.03);
   }
 `;
 
@@ -456,9 +462,9 @@ const Roles = () => {
   return (
     <Container>
       <Header>
-        <BackButton onClick={() => window.history.back()}>
-        ← Volver a inicio
-        </BackButton>
+        <BackToHomeButton onClick={() => window.history.back()}>
+          ← Volver a inicio
+        </BackToHomeButton>
         <Title>Gestión de Roles</Title>
       </Header>
 

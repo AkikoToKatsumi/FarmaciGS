@@ -179,6 +179,26 @@ const ButtonStyled = styled.button`
   }
 `;
 
+const BackButton = styled.button`
+ background-color: #f3f4f6;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:hover {
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+    transform: translateY(-2px) scale(1.03);
+  }
+`;
+
 // Interfaces
 interface Role {
   id: number;
@@ -389,11 +409,9 @@ const UserRegistration: React.FC = () => {
 
   return (
     <Container>
-      <ButtonStyled
-        onClick={() => navigate('/dashboard')}
-      >
-       ← Volver a inicio
-      </ButtonStyled>
+      <BackButton onClick={() => navigate('/dashboard')}>
+        <span style={{ fontSize: '1.2rem' }}>←</span> Volver a inicio
+      </BackButton>
       <Title>Registro de Usuarios</Title>
       <Form onSubmit={handleSubmit}>
         <InputGroup>

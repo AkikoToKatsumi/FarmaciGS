@@ -38,10 +38,16 @@ const Header = styled.div`
 `;
 
 const BackButton = styled.button`
-   background-color: #f3f4f6;
+ background-color: #f3f4f6;
   color: #374151;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
   transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.875rem;
 
   &:hover {
     background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
@@ -599,7 +605,7 @@ const Admin = () => {
         <p>No tienes permisos para acceder a esta página</p>
         <p>Tu rol actual: {user?.role_name || 'No definido'}</p>
         <BackButton onClick={() => navigate('/dashboard')}>
-          Volver al Dashboard
+          <span style={{ fontSize: '1.2rem' }}>←</span> Volver a inicio
         </BackButton>
       </Container>
     );
@@ -641,7 +647,7 @@ const Admin = () => {
       )}
       <Header>
         <BackButton onClick={() => navigate('/dashboard')}>
-          ← Volver a inicio
+          <span style={{ fontSize: '1.2rem' }}>←</span> Volver a inicio
         </BackButton>
         <Title>Panel de Administración de Empleados</Title>
       </Header>

@@ -556,7 +556,7 @@ const Clients = () => {
         ))}
       </NotificationsContainer>
       <BackButton onClick={() => navigate('/dashboard')}>
-        Volver a Inicio
+        ← Volver a Inicio
       </BackButton>
       <Card>
         <Title>Clientes</Title>

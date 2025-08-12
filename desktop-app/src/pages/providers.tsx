@@ -34,10 +34,16 @@ const Header = styled.div`
 `;
 
 const BackButton = styled.button`
-  background-color: #f3f4f6;
+background-color: #f3f4f6;
   color: #374151;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
   transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.875rem;
 
   &:hover {
     background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
