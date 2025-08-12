@@ -392,7 +392,7 @@ const UserRegistration: React.FC = () => {
       <ButtonStyled
         onClick={() => navigate('/dashboard')}
       >
-        Volver al Inicio
+       ← Volver a inicio
       </ButtonStyled>
       <Title>Registro de Usuarios</Title>
       <Form onSubmit={handleSubmit}>

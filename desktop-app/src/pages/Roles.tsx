@@ -457,7 +457,7 @@ const Roles = () => {
     <Container>
       <Header>
         <BackButton onClick={() => window.history.back()}>
-          ← Volver
+        ← Volver a inicio
         </BackButton>
         <Title>Gestión de Roles</Title>
       </Header>

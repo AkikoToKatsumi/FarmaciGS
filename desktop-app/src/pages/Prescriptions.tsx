@@ -15,30 +15,16 @@ const Container = styled.div`
 `;
 
 const BackButton = styled.button`
-position: top-right;
-
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: color: #007bff;
-  color: black;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #f3f4f6;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
 
   &:hover {
-    background: #0056b3;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &:active {
-    transform: translateY(0);
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+    transform: translateY(-2px) scale(1.03);
   }
 `;
 

@@ -287,7 +287,7 @@ const Reports = () => {
   return (
     <Container>
       <BackButton onClick={() => navigate('/dashboard')}>
-        <ArrowLeft size={16} /> Volver a Inicio
+        <ArrowLeft size={16} /> ← Volver a inicio
       </BackButton>
       <Title>Reportes</Title>
 

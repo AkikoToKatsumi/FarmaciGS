@@ -1360,7 +1360,7 @@ const SalesPOS: React.FC = () => {
             Ventas
           </Title>
           <BackButton onClick={() => navigate('/dashboard')}>
-            Volver al inicio
+         ← Volver a inicio
           </BackButton>
         </Header>
 

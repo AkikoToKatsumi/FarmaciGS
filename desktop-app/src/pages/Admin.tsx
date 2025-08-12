@@ -38,16 +38,16 @@ const Header = styled.div`
 `;
 
 const BackButton = styled.button`
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  
+   background-color: #f3f4f6;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
+
   &:hover {
-    background-color: #337ab1ff;
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+    transform: translateY(-2px) scale(1.03);
   }
 `;
 
