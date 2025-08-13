@@ -18,7 +18,8 @@ export const createPrescription = async (
 };
 
 export const getPrescriptionsByClient = async (clientId: number, token: string, ) => {
-  const res = await axios.get(`${'http://localhost:4004/api/prescriptions'}/client/${clientId}`, {
+  // El backend espera /client/:id, así que el param debe ser id
+  const res = await axios.get(`http://localhost:4004/api/prescriptions/client/${clientId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

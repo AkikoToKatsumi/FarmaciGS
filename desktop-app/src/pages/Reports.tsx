@@ -25,6 +25,7 @@ import {
 
 // Styled Components
 const Container = styled.div`
+background: #fafafa;
   max-width: 900px;
   margin: 2rem auto;
   padding: 2rem;

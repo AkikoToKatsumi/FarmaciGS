@@ -16,6 +16,7 @@ interface FormData {
 
 // Styled Components
 const Container = styled.div`
+ background: #fafafa;
   padding: 20px;
   max-width: 1000px;
   margin: 0 auto;

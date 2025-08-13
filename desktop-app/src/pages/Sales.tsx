@@ -3,7 +3,8 @@ import axios from 'axios';
 import styled, { keyframes } from 'styled-components';
 import { Search, Info, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCircle, X, AlertCircle, CheckCircle2, User, Phone, Mail } from 'lucide-react';
 import { getMedicine, getMedicineByBarcode, Medicine as MedicineType } from '../services/inventory.service';
-import { createSale, getClientById, getPrescriptionsByClientId } from '../services/sales.service';
+import { createSale, getClientById } from '../services/sales.service';
+import { getPrescriptionsByClient } from '../services/prescription.service';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/user';
 
@@ -1007,8 +1008,8 @@ const SalesPOS: React.FC = () => {
           setRnc(clientData.rnc);
         }
 
-        // Cargar todas las recetas del cliente
-        const prescriptions = await getPrescriptionsByClientId(selectedClientId, token!);
+        // Cargar todas las recetas del cliente usando prescription.service
+        const prescriptions = await getPrescriptionsByClient(selectedClientId, token!);
         setClientPrescriptions(prescriptions);
 
         // Si hay recetas, seleccionar la más reciente por defecto
