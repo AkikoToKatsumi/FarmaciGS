@@ -994,16 +994,17 @@ const SalesPOS: React.FC = () => {
         setClientPrescriptions([]);
         setSelectedProducts([]);
         setRnc('');
+        setSelectedPrescriptionId(null);
         return;
       }
 
       try {
         setLoading(true);
-        
+
         // Cargar información completa del cliente
         const clientData = await getClientById(selectedClientId, token!);
         setSelectedClient(clientData);
-        
+
         // Llenar automáticamente el RNC si el cliente lo tiene
         if (clientData.rnc) {
           setRnc(clientData.rnc);
@@ -1013,24 +1014,25 @@ const SalesPOS: React.FC = () => {
         const prescriptions = await getPrescriptionsByClient(selectedClientId, token!);
         setClientPrescriptions(prescriptions);
 
-        // Si hay recetas, seleccionar la más reciente por defecto
-        // if (prescriptions.length > 0) {
-        //   const latestPrescription = prescriptions[0]; // Ya están ordenadas por fecha DESC
-        //   setSelectedPrescriptionId(latestPrescription.id); 
-        //   setSelectedProducts(latestPrescription.medicines || []);
-        // }
-        setSelectedPrescriptionId(null);
-        setSelectedProducts([]);
-        
+        // Selección automática si solo hay una receta
+        if (prescriptions.length === 1) {
+          setSelectedPrescriptionId(prescriptions[0].id);
+          setSelectedProducts(prescriptions[0].medicines || []);
+        } else {
+          setSelectedPrescriptionId(null);
+          setSelectedProducts([]);
+        }
+
         showNotification('success', 'Cliente seleccionado', 
           `Se cargó la información de ${clientData.name}${prescriptions.length > 0 ? ` con ${prescriptions.length} receta(s)` : ''}`);
-        
+
       } catch (error) {
         console.error('Error al cargar datos del cliente:', error);
         showNotification('error', 'Error', 'No se pudo cargar la información del cliente');
         setSelectedClient(null);
         setClientPrescriptions([]);
         setSelectedProducts([]);
+        setSelectedPrescriptionId(null);
       } finally {
         setLoading(false);
       }
@@ -1622,11 +1624,12 @@ const SalesPOS: React.FC = () => {
                 </FormGroup>
               )}
 
+              {/* Mostrar medicamentos de la receta seleccionada o única */}
               {selectedProducts.length > 0 && (
                 <PrescriptionSection>
                   <PrescriptionTitle>
                     <Package size={18} color="#16a34a" />
-                    Medicamentos Recetados - Receta #{selectedPrescriptionId} ({selectedProducts.length})
+                    Medicamentos Recetados - Receta #{selectedPrescriptionId || (clientPrescriptions.length === 1 ? clientPrescriptions[0].id : '')} ({selectedProducts.length})
                   </PrescriptionTitle>
 
                   <PrescriptionList>
