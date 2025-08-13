@@ -1,25 +1,14 @@
-
-body, html {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
-  background-image: url('path/to/image');
- /* background: linear-gradient(120deg, #e0d7fa 0%, #b5c6e0 100%); */
-  background-image: url('../imagenes/partes-de-una-farmacia.jpg');
-  background-size: cover;
-}
-
 .login-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 90vh;
-    height: 90vh;
-  width: 90vw;
-  background: none;
-  /*background: linear-gradient(120deg, #e0d7fa 0%, #b5c6e0 100%);*/
-
+  /* Hacemos que el contenedor ocupe toda la pantalla */
+  min-height: 100vh;
+  width: 100%;
+  /* Aplicamos el fondo aquí en lugar de en el body */
+  background-image: url('../imagenes/partes-de-una-farmacia.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 .login-card {

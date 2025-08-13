@@ -38,7 +38,7 @@ const Header = styled.div`
 `;
 
 const BackButton = styled.button`
- background-color: #f3f4f6;
+  background-color: #f3f4f6;
   color: #374151;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.04);
   transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;

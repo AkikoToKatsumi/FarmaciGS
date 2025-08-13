@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Styled Components
 const Container = styled.div`
+background-color: #fff;
   max-width: 500px;
   margin: 2rem auto;
   padding: 2rem;
