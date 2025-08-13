@@ -84,3 +84,29 @@ export const deleteUser = async (req: Request, res: Response) => {
   // Respondemos con un estado 204 (Sin Contenido), indicando que la operación fue exitosa pero no hay nada que devolver.
   res.status(204).send();
 };
+
+// Restablecer la contraseña de un usuario por email
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: 'Email y nueva contraseña son requeridos.' });
+    }
+
+    // Verifica si el usuario existe
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+
+    // Hashea la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Actualiza la contraseña
+    await pool.query('UPDATE users SET password = $1 WHERE email = $2', [hashedPassword, email]);
+    res.json({ message: 'Contraseña actualizada exitosamente.' });
+  } catch (error) {
+    console.error('Error al restablecer la contraseña:', error);
+    res.status(500).json({ message: 'Error al restablecer la contraseña.' });
+  }
+}

@@ -10,6 +10,7 @@ router.get('/:id', verifyToken, userController.getUserById);
 router.post('/', verifyToken, authorizeRolesById(1), userController.createUser);
 router.put('/:id', verifyToken, authorizeRolesById(1), userController.updateUser);
 router.delete('/:id', verifyToken, authorizeRolesById(1), userController.deleteUser);
+router.post('/reset-password', userController.resetPassword);
 
 export default router;
 
