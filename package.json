@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@tanstack/react-query": "^5.85.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "json2csv": "^6.0.0-alpha.2",

@@ -180,13 +180,38 @@ const Main = styled.div<{ $collapsed: boolean; $isMobile: boolean }>`
   transition: margin-left 0.3s ease;
   padding: 2rem;
   background: #f7f9fb;
-
-  
   min-height: 100vh;
+  position: relative;
+
+  // Logo de fondo
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 340px;
+    height: 340px;
+    background: url('/imagenes/logo.png') no-repeat center center;
+    background-size: contain;
+    opacity: 0.08;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 
   @media (max-width: 768px) {
     margin-left: 0;
     padding: 1rem;
+    &::before {
+      width: 180px;
+      height: 180px;
+      top: 60%;
+    }
   }
 `;
 
@@ -719,237 +744,260 @@ const Dashboard = () => {
         ) : stats ? (
           <>
             <DashboardGrid>
-              <DashboardCard>
-                <h3><DollarSign size={20} color="#27ae60" /> Ventas del Día</h3>
-                <DashboardStat style={{ color: "#27ae60" }}>
-                  ${stats.dailySales.toLocaleString("es-ES", { minimumFractionDigits: 2 })}
-                </DashboardStat>
-              </DashboardCard>
-              <DashboardCard>
-                <h3><ShoppingCart size={20} color="#3498db" /> Productos Vendidos</h3>
-                <DashboardStat style={{ color: stats.productsSold < 100 ? "#e74c3c" : stats.productsSold < 200 ? "#f39c12" : "#27ae60" }}>
-                  {stats.productsSold}
-                </DashboardStat>
-              </DashboardCard>
-              <DashboardCard>
-                <h3><Users size={20} color="#8e44ad" /> Clientes Atendidos</h3>
-                <DashboardStat style={{ color: stats.clientsServed < 50 ? "#e74c3c" : stats.clientsServed < 100 ? "#f39c12" : "#27ae60" }}>
-                  {stats.clientsServed}
-                </DashboardStat>
-              </DashboardCard>
-              <DashboardCard>
-                <h3><Package size={20} color="#e67e22" /> Stock Bajo</h3>
-                <DashboardStat style={{ color: stats.lowStockCount > 10 ? "#e74c3c" : stats.lowStockCount > 5 ? "#f39c12" : "#27ae60" }}>
-                  {stats.lowStockCount}
-                </DashboardStat>
-              </DashboardCard>
+              {/* Ventas del Día: Visible para Admin, Cajero y Farmacéutico */}
+              {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+                <DashboardCard>
+                  <h3><DollarSign size={20} color="#27ae60" /> Ventas del Día</h3>
+                  <DashboardStat style={{ color: "#27ae60" }}>
+                    ${stats.dailySales.toLocaleString("es-ES", { minimumFractionDigits: 2 })}
+                  </DashboardStat>
+                </DashboardCard>
+              )}
+
+              {/* Productos Vendidos: Visible para Admin, Cajero y Farmacéutico */}
+              {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+                <DashboardCard>
+                  <h3><ShoppingCart size={20} color="#3498db" /> Productos Vendidos</h3>
+                  <DashboardStat style={{ color: stats.productsSold < 100 ? "#e74c3c" : stats.productsSold < 200 ? "#f39c12" : "#27ae60" }}>
+                    {stats.productsSold}
+                  </DashboardStat>
+                </DashboardCard>
+              )}
+
+              {/* Clientes Atendidos: Visible para Admin y Cajero */}
+              {(user?.role_name === 'admin' || user?.role_name === 'cashier') && (
+                <DashboardCard>
+                  <h3><Users size={20} color="#8e44ad" /> Clientes Atendidos</h3>
+                  <DashboardStat style={{ color: stats.clientsServed < 50 ? "#e74c3c" : stats.clientsServed < 100 ? "#f39c12" : "#27ae60" }}>
+                    {stats.clientsServed}
+                  </DashboardStat>
+                </DashboardCard>
+              )}
+
+              {/* Stock Bajo: Visible para Admin y Farmacéutico */}
+              {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+                <DashboardCard>
+                  <h3><Package size={20} color="#e67e22" /> Stock Bajo</h3>
+                  <DashboardStat style={{ color: stats.lowStockCount > 10 ? "#e74c3c" : stats.lowStockCount > 5 ? "#f39c12" : "#27ae60" }}>
+                    {stats.lowStockCount}
+                  </DashboardStat>
+                </DashboardCard>
+              )}
             </DashboardGrid>
 
-            {/* Selector de tendencia */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-              <label style={{ fontWeight: 600, color: '#2563eb' }}>Ver tendencia por:</label>
-              <select
-                value={trendType}
-                onChange={e => setTrendType(e.target.value as 'semana' | 'mes' | 'año')}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  border: '1px solid #d1d5db',
-                  fontSize: '1rem',
-                  background: 'white',
-                  color: '#2563eb',
-                  fontWeight: 600,
-                  outline: 'none'
-                }}
-              >
-                <option value="semana">Semana</option>
-                <option value="mes">Mes</option>
-                <option value="año">Año</option>
-              </select>
-              <span style={{ marginLeft: 24, fontWeight: 600, color: '#2563eb' }}>Histórico:</span>
-              <select
-                value={historicalTrendType}
-                onChange={e => setHistoricalTrendType(e.target.value as 'semana' | 'mes' | 'año')}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  border: '1px solid #d1d5db',
-                  fontSize: '1rem',
-                  background: 'white',
-                  color: '#128ef3',
-                  fontWeight: 600,
-                  outline: 'none'
-                }}
-              >
-                <option value="semana">Semana</option>
-                <option value="mes">Mes</option>
-                <option value="año">Año</option>
-              </select>
-            </div>
+            {/* Mostrar gráficos solo si el usuario es admin */}
+            {user?.role_name === 'admin' && (
+              <>
+                {/* Selector de tendencia */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+                  <label style={{ fontWeight: 600, color: '#2563eb' }}>Ver tendencia por:</label>
+                  <select
+                    value={trendType}
+                    onChange={e => setTrendType(e.target.value as 'semana' | 'mes' | 'año')}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #d1d5db',
+                      fontSize: '1rem',
+                      background: 'white',
+                      color: '#2563eb',
+                      fontWeight: 600,
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="semana">Semana</option>
+                    <option value="mes">Mes</option>
+                    <option value="año">Año</option>
+                  </select>
+                  <span style={{ marginLeft: 24, fontWeight: 600, color: '#2563eb' }}>Histórico:</span>
+                  <select
+                    value={historicalTrendType}
+                    onChange={e => setHistoricalTrendType(e.target.value as 'semana' | 'mes' | 'año')}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #d1d5db',
+                      fontSize: '1rem',
+                      background: 'white',
+                      color: '#128ef3',
+                      fontWeight: 600,
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="semana">Semana</option>
+                    <option value="mes">Mes</option>
+                    <option value="año">Año</option>
+                  </select>
+                </div>
 
-            {/* Gráfica de tendencia */}
-            <ChartSection>
-              <ChartTitle>
-                <TrendingUp size={20} color="#27ae60" style={{ marginRight: 8 }} />
-                {trendType === 'semana'
-                  ? 'Tendencia Semanal de Ventas Netas'
-                  : trendType === 'mes'
-                  ? 'Tendencia Mensual de Ventas Netas'
-                  : 'Tendencia Anual de Ventas Netas'}
-              </ChartTitle>
-              <ResponsiveContainer width="100%" height={220}>
-                {trendType === 'semana' ? (
-                  <BarChart data={trendData} barCategoryGap={32}>
-                    <XAxis dataKey="week" label={{ value: "Semana", position: "insideBottom", offset: -5 }} />
-                    <YAxis
-                      tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
-                      label={{ value: "Ventas", angle: -90, position: "insideLeft" }}
-                    />
-                    <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
-                    <Bar
-                      dataKey="sales"
-                      fill="#128ef3"
-                      barSize={28}
-                      // @ts-ignore: recharts types don't acept array but it works for rounded bars
-                      radius={[8, 8, 8, 8]}
-                    >
-                      {trendData.map((entry, idx) => (
-                        <Cell
-                          // @ts-ignore
-                          key={`cell-${idx}`}
-                          fill={idx % 2 === 0 ? "#128ef3" : "#0f13f1"}
-                          // @ts-ignore
-                          radius={[8, 8, 8, 8]}
+                {/* Gráfica de tendencia */}
+                <ChartSection>
+                  <ChartTitle>
+                    <TrendingUp size={20} color="#27ae60" style={{ marginRight: 8 }} />
+                    {trendType === 'semana'
+                      ? 'Tendencia Semanal de Ventas Netas'
+                      : trendType === 'mes'
+                      ? 'Tendencia Mensual de Ventas Netas'
+                      : 'Tendencia Anual de Ventas Netas'}
+                  </ChartTitle>
+                  <ResponsiveContainer width="100%" height={220}>
+                    {trendType === 'semana' ? (
+                      <BarChart data={trendData} barCategoryGap={32}>
+                        <XAxis dataKey="week" label={{ value: "Semana", position: "insideBottom", offset: -5 }} />
+                        <YAxis
+                          tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
+                          label={{ value: "Ventas", angle: -90, position: "insideLeft" }}
                         />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                ) : (
-                  <LineChart data={trendData}>
-                    <XAxis dataKey={trendType === 'mes' ? 'month' : 'year'} label={{ value: trendType === 'mes' ? "Mes" : "Año", position: "insideBottom", offset: -5 }} />
-                    <YAxis
-                      tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
-                      label={{ value: "Monto", angle: -90, position: "insideLeft" }}
-                    />
-                    <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
-                    <CartesianGrid stroke="#e1e8ed" />
-                    <Legend
-                      formatter={value => {
-                        if (value === "sales") return "Ventas Netas";
-                        if (value === "returns") return "Devoluciones";
-                        if (value === "discounts") return "Descuentos";
-                        return value;
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="sales"
-                      stroke="#128ef3"
-                      name="Ventas Netas"
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: "#128ef3" }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="returns"
-                      stroke="#0f13f1"
-                      name="Devoluciones"
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: "#0f13f1" }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="discounts"
-                      stroke="#2563eb"
-                      name="Descuentos"
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: "#2563eb" }}
-                    />
-                  </LineChart>
-                )}
-              </ResponsiveContainer>
-            </ChartSection>
+                        <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
+                        <Bar
+                          dataKey="sales"
+                          fill="#128ef3"
+                          barSize={28}
+                          // @ts-ignore: recharts types don't acept array but it works for rounded bars
+                          radius={[8, 8, 8, 8]}
+                        >
+                          {trendData.map((entry, idx) => (
+                            <Cell
+                              // @ts-ignore
+                              key={`cell-${idx}`}
+                              fill={idx % 2 === 0 ? "#128ef3" : "#0f13f1"}
+                              // @ts-ignore
+                              radius={[8, 8, 8, 8]}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    ) : (
+                      <LineChart data={trendData}>
+                        <XAxis dataKey={trendType === 'mes' ? 'month' : 'year'} label={{ value: trendType === 'mes' ? "Mes" : "Año", position: "insideBottom", offset: -5 }} />
+                        <YAxis
+                          tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
+                          label={{ value: "Monto", angle: -90, position: "insideLeft" }}
+                        />
+                        <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
+                        <CartesianGrid stroke="#e1e8ed" />
+                        <Legend
+                          formatter={value => {
+                            if (value === "sales") return "Ventas Netas";
+                            if (value === "returns") return "Devoluciones";
+                            if (value === "discounts") return "Descuentos";
+                            return value;
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="sales"
+                          stroke="#128ef3"
+                          name="Ventas Netas"
+                          strokeWidth={3}
+                          dot={{ r: 4, fill: "#128ef3" }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="returns"
+                          stroke="#0f13f1"
+                          name="Devoluciones"
+                          strokeWidth={3}
+                          dot={{ r: 4, fill: "#0f13f1" }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="discounts"
+                          stroke="#2563eb"
+                          name="Descuentos"
+                          strokeWidth={3}
+                          dot={{ r: 4, fill: "#2563eb" }}
+                        />
+                      </LineChart>
+                    )}
+                  </ResponsiveContainer>
+                </ChartSection>
 
-            {/* Gráfico de líneas clásico: Ventas, Devoluciones y Descuentos */}
-            <ChartSection>
-              <ChartTitle>
-                <TrendingUp size={20} color="#128ef3" style={{ marginRight: 8 }} />
-                Ventas, Devoluciones y Descuentos (Histórico)
-              </ChartTitle>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={historicalTrendData}>
-                  <XAxis
-                    dataKey={
-                      historicalTrendType === 'año'
-                        ? 'year'
-                        : historicalTrendType === 'mes'
-                        ? 'month'
-                        : 'week'
-                    }
-                    label={{
-                      value:
-                        historicalTrendType === 'año'
-                          ? 'Año'
-                          : historicalTrendType === 'mes'
-                          ? 'Mes'
-                          : 'Semana',
-                      position: 'insideBottom',
-                      offset: -5
-                    }}
-                  />
-                  <YAxis
-                    tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
-                    label={{ value: "Monto", angle: -90, position: "insideLeft" }}
-                  />
-                  <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
-                  <CartesianGrid stroke="#e1e8ed" />
-                  <Legend
-                    formatter={value => {
-                      if (value === "sales") return "Ventas Netas";
-                      if (value === "returns") return "Devoluciones";
-                      if (value === "discounts") return "Descuentos";
-                      return value;
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="sales"
-                    stroke="#128ef3"
-                    name="Ventas Netas"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: "#128ef3" }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="returns"
-                    stroke="#f10f0fff"
-                    name="Devoluciones"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: "#f10f35ff" }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="discounts"
-                    stroke="#5deb25ff"
-                    name="Descuentos"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: "#25eb25ff" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartSection>
+                {/* Gráfico de líneas clásico: Ventas, Devoluciones y Descuentos */}
+                <ChartSection>
+                  <ChartTitle>
+                    <TrendingUp size={20} color="#128ef3" style={{ marginRight: 8 }} />
+                    Ventas, Devoluciones y Descuentos (Histórico)
+                  </ChartTitle>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={historicalTrendData}>
+                      <XAxis
+                        dataKey={
+                          historicalTrendType === 'año'
+                            ? 'year'
+                            : historicalTrendType === 'mes'
+                            ? 'month'
+                            : 'week'
+                        }
+                        label={{
+                          value:
+                            historicalTrendType === 'año'
+                              ? 'Año'
+                              : historicalTrendType === 'mes'
+                              ? 'Mes'
+                              : 'Semana',
+                          position: 'insideBottom',
+                          offset: -5
+                        }}
+                      />
+                      <YAxis
+                        tickFormatter={v => `$${(v / 1e6).toFixed(1)}M`}
+                        label={{ value: "Monto", angle: -90, position: "insideLeft" }}
+                      />
+                      <Tooltip formatter={v => `$${Number(v).toLocaleString("es-ES")}`} />
+                      <CartesianGrid stroke="#e1e8ed" />
+                      <Legend
+                        formatter={value => {
+                          if (value === "sales") return "Ventas Netas";
+                          if (value === "returns") return "Devoluciones";
+                          if (value === "discounts") return "Descuentos";
+                          return value;
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="sales"
+                        stroke="#128ef3"
+                        name="Ventas Netas"
+                        strokeWidth={3}
+                        dot={{ r: 4, fill: "#128ef3" }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="returns"
+                        stroke="#f10f0fff"
+                        name="Devoluciones"
+                        strokeWidth={3}
+                        dot={{ r: 4, fill: "#f10f35ff" }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="discounts"
+                        stroke="#5deb25ff"
+                        name="Descuentos"
+                        strokeWidth={3}
+                        dot={{ r: 4, fill: "#25eb25ff" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartSection>
+              </>
+            )}
 
-            <RecentActivities>
-              <h3>Actividades Recientes</h3>
-              <ul>
-                {stats.recentActivities.map((activity) => (
-                  <li key={activity.id}>
-                    <span style={{ fontWeight: 'bold' }}>{activity.action}</span> — por <em>{activity.user?.name || 'Sistema'}</em><br />
-                    <small style={{ color: '#666' }}>{new Date(activity.created_at).toLocaleString("es-ES")}</small>
-                  </li>
-                ))}
-              </ul>
-            </RecentActivities>
+            {/* Actividades recientes solo para admin */}
+            {user?.role_name === 'admin' && (
+              <RecentActivities>
+                <h3>Actividades Recientes</h3>
+                <ul>
+                  {stats.recentActivities.map((activity) => (
+                    <li key={activity.id}>
+                      <span style={{ fontWeight: 'bold' }}>{activity.action}</span> — por <em>{activity.user?.name || 'Sistema'}</em><br />
+                      <small style={{ color: '#666' }}>{new Date(activity.created_at).toLocaleString("es-ES")}</small>
+                    </li>
+                  ))}
+                </ul>
+              </RecentActivities>
+            )}
           </>
         ) : null}
       </Main>

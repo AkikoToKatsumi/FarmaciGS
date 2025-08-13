@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { 
   getMedicine, 
@@ -680,17 +681,15 @@ const Notification: React.FC<NotificationProps> = ({
 
 // Component
 const Inventory = () => {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Estados principales
-  const [products, setProducts] = useState<MedicineType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<MedicineType | null>(null);
   const [showAlerts, setShowAlerts] = useState(false);
-  const [stockAlerts, setStockAlerts] = useState<MedicineType[]>([]);
   
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -714,6 +713,16 @@ const Inventory = () => {
   const [pageSize, setPageSize] = useState(10); // Items per page
 
     // Funciones de filtrado y ordenamiento
+  const { data: products = [], isLoading: loading, error: fetchError } = useQuery<MedicineType[]>({
+    queryKey: ['products'],
+    queryFn: getMedicine
+  });
+
+  const { data: stockAlerts = [] } = useQuery<MedicineType[]>({
+    queryKey: ['stockAlerts'],
+    queryFn: getStockAlerts
+  });
+
   const sortedProducts = useMemo(() => {
     return products
       .filter(product => {
@@ -757,34 +766,12 @@ const Inventory = () => {
   }, [sortedProducts, currentPage, pageSize]);
 
 
-  useEffect(() => {
-    fetchProducts();
-    fetchStockAlerts();
-  }, []);
-
   // Funciones de carga de datos
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const data = await getMedicine();
-      setProducts(data);
-      setErrorMessage(null);
-    } catch (err) {
+  useEffect(() => {
+    if (fetchError) {
       setErrorMessage('Error al cargar productos. Por favor, intenta de nuevo.');
-      console.error('Error fetching products:', err);
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const fetchStockAlerts = async () => {
-    try {
-      const alerts = await getStockAlerts();
-      setStockAlerts(alerts);
-    } catch (err) {
-      console.error('Error fetching stock alerts:', err);
-    }
-  };
+  }, [fetchError]);
 
   // Generador automático de código de producto
   const generateProductCode = () => {
@@ -818,10 +805,26 @@ const Inventory = () => {
     setShowForm(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const mutation = useMutation({
+    mutationFn: (medicineData: CreateMedicineData) => {
+      return editingProduct 
+        ? updateMedicine(editingProduct.id, medicineData)
+        : createMedicine(medicineData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stockAlerts'] });
+      setSuccessMessage(editingProduct ? 'Producto actualizado correctamente.' : 'Producto agregado correctamente.');
+      resetForm();
+    },
+    onError: (err) => {
+      setErrorMessage(editingProduct ? 'Error al actualizar el producto.' : 'Error al crear el producto.');
+      console.error('Error submitting form:', err);
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    try {
       const medicineData: CreateMedicineData = {
         name: formData.name,
         description: formData.description,
@@ -832,26 +835,7 @@ const Inventory = () => {
         category: formData.category || undefined,
         barcode: formData.barcode || generateProductCode()
       };
-
-      if (editingProduct) {
-        await updateMedicine(editingProduct.id, medicineData);
-        setSuccessMessage('Producto actualizado correctamente.');
-      } else {
-        await createMedicine(medicineData);
-        setSuccessMessage('Producto agregado correctamente.');
-      }
-
-      await fetchProducts();
-      await fetchStockAlerts();
-      resetForm();
-      setErrorMessage(null);
-    } catch (err) {
-      const errorMsg = editingProduct 
-        ? 'Error al actualizar el producto. Verifica los datos e intenta de nuevo.' 
-        : 'Error al crear el producto. Verifica los datos e intenta de nuevo.';
-      setErrorMessage(errorMsg);
-      console.error('Error submitting form:', err);
-    }
+      mutation.mutate(medicineData);
   };
 
   const handleEdit = (product: MedicineType) => {
@@ -870,23 +854,29 @@ const Inventory = () => {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const deleteMutation = useMutation({
+    mutationFn: deleteMedicine,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stockAlerts'] });
+      setSuccessMessage('Producto eliminado correctamente.');
+    },
+    onError: (err) => {
+      setErrorMessage('Error al eliminar el producto.');
+      console.error('Error deleting product:', err);
+    }
+  });
+
+  const handleDelete = (id: number) => {
     if (window.confirm('¿Está seguro de que desea eliminar este producto?')) {
-      try {
-        await deleteMedicine(id);
-        await fetchProducts();
-        await fetchStockAlerts();
-        setSuccessMessage('Producto eliminado correctamente.');
-        setErrorMessage(null);
-      } catch (err) {
-        setErrorMessage('Error al eliminar el producto. Intenta de nuevo.');
-        console.error('Error deleting product:', err);
-      }
+      deleteMutation.mutate(id);
     }
   };
 
   // Obtener categorías únicas para el filtro
-  const categories = useMemo(() => [...new Set(products.map(p => p.category).filter(Boolean))], [products]);
+  const categories = useMemo(() => (
+    products.map(p => p.category).filter((cat): cat is string => typeof cat === 'string' && !!cat)
+  ), [products]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES');
@@ -994,7 +984,7 @@ const Inventory = () => {
               onChange={(e) => setFilterCategory(e.target.value)}
             >
               <option value="">Todas las categorías</option>
-              {categories.map(category => (
+              {categories.map((category) => (
                 <option key={category} value={category}>{category}</option>
               ))}
             </Select>

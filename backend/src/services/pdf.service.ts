@@ -128,11 +128,11 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mim
   const date = new Date(sale.created_at).toLocaleString('es-ES');
   
   // Cálculos para facturación RD
-  // Usar la tasa ITBIS configurable
-  const itbisRate = EMPRESA_CONFIG.itbis;
+  // Usar la tasa ITBIS configurable, pero para RD medicamentos no pagan ITBIS
+  const itbisRate = 0; // Medicamentos exentos de ITBIS en RD
   const total = Number(sale.total);
-  const subtotal = total / (1 + itbisRate);
-  const itbis = total - subtotal;
+  const subtotal = total; // El subtotal es igual al total
+  const itbis = 0; // ITBIS es 0
 
   const rows = items.map(item => {
     const unitPrice = Number(item.unit_price);
@@ -240,8 +240,8 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mim
             <td style="text-align: right; width: 30%;">$${subtotal.toFixed(2)}</td>
           </tr>
           <tr>
-            <td style="text-align: right;">ITBIS (${(itbisRate * 100).toFixed(0)}%):</td>
-            <td style="text-align: right;">$${itbis.toFixed(2)}</td>
+            <td style="text-align: right;">ITBIS (0%):</td>
+            <td style="text-align: right;">$0.00</td>
           </tr>
           <tr>
             <td style="text-align: right;">PROPINA:</td>

@@ -1307,9 +1307,9 @@ const SalesPOS: React.FC = () => {
     return items.reduce((sum, item) => sum + item.productInfo.price * item.quantity, 0);
   };
 
-  const getItbis = () => { 
-    const subtotal = getSubtotal();
-    return subtotal * 0.18;
+  // En RD, medicamentos están exentos de ITBIS
+  const getItbis = () => {
+    return 0;
   };
 
   const getTotal = () => {
