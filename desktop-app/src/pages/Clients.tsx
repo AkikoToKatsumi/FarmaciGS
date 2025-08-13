@@ -6,8 +6,8 @@ import { useUserStore } from '../store/user';
 
 // Styled Components
 const Container = styled.div`
-background-color: #f0f4f8;
-min-height: 100vh;
+  background-color: #fff;
+  min-height: 100vh;
   padding: 20px;
 `;
 

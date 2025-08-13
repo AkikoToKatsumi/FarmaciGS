@@ -152,9 +152,9 @@ function buildInvoiceHtml(sale: Sale, items: SaleItem[], logoBase64: string, mim
   }).join('');
 
   // Generar número de comprobante fiscal (NCF) 
-  const ncf = `B0100000${String(sale.id).padStart(8, '0')}`;
+  const ncf = `B0200000${String(sale.id).padStart(8, '0')}`;
 
-  return `
+  return `      
     <!DOCTYPE html>
     <html lang="es">
     <head>

@@ -113,6 +113,7 @@ const GridContainer = styled.div`
 
   @media (min-width: 1024px) {
     grid-template-columns: 2fr 1fr;
+    align-items: flex-start;
   }
 `;
 
@@ -1400,7 +1401,148 @@ const SalesPOS: React.FC = () => {
         )}
 
         <GridContainer>
-          <SearchSection>
+          {/* Columna izquierda: búsqueda y selección de productos */}
+          <div>
+            <Card>
+              <CardTitle>Buscar Producto</CardTitle>
+              <RadioGroup>
+                <RadioLabel>
+                  <RadioInput
+                    type="radio"
+                    name="searchType"
+                    value="barcode"
+                    checked={searchType === 'barcode'}
+                    onChange={(e) => setSearchType(e.target.value as 'barcode' | 'name')}
+                  />
+                  <Hash size={16} />
+                  Código de barras
+                </RadioLabel>
+                <RadioLabel>
+                  <RadioInput
+                    type="radio"
+                    name="searchType"
+                    value="name"
+                    checked={searchType === 'name'}
+                    onChange={(e) => setSearchType(e.target.value as 'barcode' | 'name')}
+                  />
+                  <Package size={16} />
+                  Nombre del producto
+                </RadioLabel>
+              </RadioGroup>
+              <SearchContainer>
+                <SearchInputContainer>
+                  <SearchIcon />
+                  <SearchInput
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={searchType === 'barcode' ? 'Escanear o escribir código de barras' : 'Buscar por nombre del producto'}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                </SearchInputContainer>
+                <SearchButton
+                  onClick={handleSearch}
+                  disabled={loading || !searchTerm.trim()}
+                >
+                  {loading ? 'Buscando...' : 'Buscar'}
+                </SearchButton>
+              </SearchContainer>
+            </Card>
+
+            {searchResults.length > 0 && (
+              <Card>
+                <CardTitle>Resultados de búsqueda</CardTitle>
+                <ResultsContainer>
+                  {searchResults.map((medicine) => (
+                    <ResultItem
+                      key={medicine.id}
+                      onClick={() => handleSelectFromResults(medicine)}
+                    >
+                      <ResultItemContent>
+                        <ResultItemInfo>
+                          <ResultItemName>{medicine.name}</ResultItemName>
+                          <ResultItemDescription>{medicine.description}</ResultItemDescription>
+                        </ResultItemInfo>
+                        <ResultItemPrice>
+                          <Price>${Number(medicine.price).toFixed(2)}</Price>
+                          <Stock>Stock: {medicine.stock}</Stock>
+                        </ResultItemPrice>
+                      </ResultItemContent>
+                    </ResultItem>
+                  ))}
+                </ResultsContainer>
+              </Card>
+            )}
+
+            {product && (
+              <Card>
+                <CardTitle>Producto Seleccionado</CardTitle>
+                <ProductGrid>
+                  <ProductInfoSection>
+                    <ProductInfoItem>
+                      <Package size={20} color="#2563eb" />
+                      <div>
+                        <ProductInfoLabel>Nombre</ProductInfoLabel>
+                        <ProductInfoValue>{product.name}</ProductInfoValue>
+                      </div>
+                    </ProductInfoItem>
+                    <ProductInfoItem>
+                      <Hash size={20} color="#2563eb" />
+                      <div>
+                        <ProductInfoLabel>Código de barras</ProductInfoLabel>
+                        <ProductInfoValue style={{ fontFamily: 'monospace' }}>
+                          {product.barcode || 'N/A'}
+                        </ProductInfoValue>
+                      </div>
+                    </ProductInfoItem>
+                  </ProductInfoSection>
+                  <ProductInfoSection>
+                    <ProductInfoItem>
+                      <DollarSign size={20} color="#16a34a" />
+                      <div>
+                        <ProductInfoLabel>Precio</ProductInfoLabel>
+                        <ProductPriceValue>${Number(product.price).toFixed(2)}</ProductPriceValue>
+                      </div>
+                    </ProductInfoItem>
+                    <div>
+                      <ProductInfoLabel>Stock disponible</ProductInfoLabel>
+                      <ProductStockValue low={product.stock < 10}>
+                        {product.stock} unidades
+                      </ProductStockValue>
+                    </div>
+                  </ProductInfoSection>
+                </ProductGrid>
+
+                <ProductDescription>
+                  <ProductInfoLabel>Descripción</ProductInfoLabel>
+                  <ProductInfoValue>{product.description}</ProductInfoValue>
+                </ProductDescription>
+
+                <QuantityContainer>
+                  <div>
+                    <ProductInfoLabel>Cantidad</ProductInfoLabel>
+                    <QuantityInput
+                      type="number"
+                      value={quantity}
+                      min={1}
+                      max={product.stock}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
+                    />
+                  </div>
+                  <AddButton
+                    onClick={handleAddItem}
+                    disabled={quantity < 1 || quantity > product.stock}
+                  >
+                    <Plus size={16} />
+                    Agregar al carrito
+                  </AddButton>
+                </QuantityContainer>
+              </Card>
+            )}
+          </div>
+
+          {/* Columna derecha: cliente, recetas y carrito */}
+          <div>
             <Card>
               <CardTitle>Información del cliente</CardTitle>
 
@@ -1530,201 +1672,65 @@ const SalesPOS: React.FC = () => {
                   </PrescriptionTotalSection>
                 </PrescriptionSection>
               )}
-
-              <CardTitle>Buscar Producto</CardTitle>
-              <RadioGroup>
-                <RadioLabel>
-                  <RadioInput
-                    type="radio"
-                    name="searchType"
-                    value="barcode"
-                    checked={searchType === 'barcode'}
-                    onChange={(e) => setSearchType(e.target.value as 'barcode' | 'name')}
-                  />
-                  <Hash size={16} />
-                  Código de barras
-                </RadioLabel>
-                <RadioLabel>
-                  <RadioInput
-                    type="radio"
-                    name="searchType"
-                    value="name"
-                    checked={searchType === 'name'}
-                    onChange={(e) => setSearchType(e.target.value as 'barcode' | 'name')}
-                  />
-                  <Package size={16} />
-                  Nombre del producto
-                </RadioLabel>
-              </RadioGroup>
-
-              <SearchContainer>
-                <SearchInputContainer>
-                  <SearchIcon />
-                  <SearchInput
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={searchType === 'barcode' ? 'Escanear o escribir código de barras' : 'Buscar por nombre del producto'}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  />
-                </SearchInputContainer>
-                <SearchButton
-                  onClick={handleSearch}
-                  disabled={loading || !searchTerm.trim()}
-                >
-                  {loading ? 'Buscando...' : 'Buscar'}
-                </SearchButton>
-              </SearchContainer>
             </Card>
 
-            {searchResults.length > 0 && (
-              <Card>
-                <CardTitle>Resultados de búsqueda</CardTitle>
-                <ResultsContainer>
-                  {searchResults.map((medicine) => (
-                    <ResultItem
-                      key={medicine.id}
-                      onClick={() => handleSelectFromResults(medicine)}
+            <CartCard>
+              <CartTitle>
+                <ShoppingCart size={20} />
+                Carrito ({items.length})
+              </CartTitle>
+
+              {items.length === 0 ? (
+                <EmptyCart>El carrito está vacío</EmptyCart>
+              ) : (
+                <>
+                  <CartItems>
+                    {items.map((item, index) => (
+                      <CartItem key={index}>
+                        <CartItemInfo>
+                          <CartItemName>{item.productInfo.name}</CartItemName>
+                          <CartItemDetails>
+                            {item.quantity} × ${Number(item.productInfo.price).toFixed(2)}
+                          </CartItemDetails>
+                        </CartItemInfo>
+                        <CartItemActions>
+                          <CartItemPrice>
+                            ${(item.quantity * Number(item.productInfo.price)).toFixed(2)}
+                          </CartItemPrice>
+                          <RemoveButton onClick={() => handleRemoveItem(index)}>
+                            <Trash2 size={16} />
+                          </RemoveButton>
+                        </CartItemActions>
+                      </CartItem>
+                    ))}
+                  </CartItems>
+
+                  <CartTotal>
+                    <TotalRow>
+                      <TotalLabel>Subtotal:</TotalLabel>
+                      <TotalAmount>${getSubtotal().toFixed(2)}</TotalAmount>
+                    </TotalRow>
+                    <TotalRow>
+                      <TotalLabel>ITBIS (18%):</TotalLabel>
+                      <TotalAmount>${getItbis().toFixed(2)}</TotalAmount>
+                    </TotalRow>
+                    <TotalRow>
+                      <TotalLabel>Total a pagar:</TotalLabel>
+                      <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
+                    </TotalRow>
+
+                    <ConfirmButton
+                      onClick={handleConfirmSale}
+                      disabled={loading || items.length === 0}
                     >
-                      <ResultItemContent>
-                        <ResultItemInfo>
-                          <ResultItemName>{medicine.name}</ResultItemName>
-                          <ResultItemDescription>{medicine.description}</ResultItemDescription>
-                        </ResultItemInfo>
-                        <ResultItemPrice>
-                          <Price>${Number(medicine.price).toFixed(2)}</Price>
-                          <Stock>Stock: {medicine.stock}</Stock>
-                        </ResultItemPrice>
-                      </ResultItemContent>
-                    </ResultItem>
-                  ))}
-                </ResultsContainer>
-              </Card>
-            )}
-
-            {product && (
-              <Card>
-                <CardTitle>Producto Seleccionado</CardTitle>
-                <ProductGrid>
-                  <ProductInfoSection>
-                    <ProductInfoItem>
-                      <Package size={20} color="#2563eb" />
-                      <div>
-                        <ProductInfoLabel>Nombre</ProductInfoLabel>
-                        <ProductInfoValue>{product.name}</ProductInfoValue>
-                      </div>
-                    </ProductInfoItem>
-                    <ProductInfoItem>
-                      <Hash size={20} color="#2563eb" />
-                      <div>
-                        <ProductInfoLabel>Código de barras</ProductInfoLabel>
-                        <ProductInfoValue style={{ fontFamily: 'monospace' }}>
-                          {product.barcode || 'N/A'}
-                        </ProductInfoValue>
-                      </div>
-                    </ProductInfoItem>
-                  </ProductInfoSection>
-                  <ProductInfoSection>
-                    <ProductInfoItem>
-                      <DollarSign size={20} color="#16a34a" />
-                      <div>
-                        <ProductInfoLabel>Precio</ProductInfoLabel>
-                        <ProductPriceValue>${Number(product.price).toFixed(2)}</ProductPriceValue>
-                      </div>
-                    </ProductInfoItem>
-                    <div>
-                      <ProductInfoLabel>Stock disponible</ProductInfoLabel>
-                      <ProductStockValue low={product.stock < 10}>
-                        {product.stock} unidades
-                      </ProductStockValue>
-                    </div>
-                  </ProductInfoSection>
-                </ProductGrid>
-
-                <ProductDescription>
-                  <ProductInfoLabel>Descripción</ProductInfoLabel>
-                  <ProductInfoValue>{product.description}</ProductInfoValue>
-                </ProductDescription>
-
-                <QuantityContainer>
-                  <div>
-                    <ProductInfoLabel>Cantidad</ProductInfoLabel>
-                    <QuantityInput
-                      type="number"
-                      value={quantity}
-                      min={1}
-                      max={product.stock}
-                      onChange={(e) => setQuantity(Number(e.target.value))}
-                    />
-                  </div>
-                  <AddButton
-                    onClick={handleAddItem}
-                    disabled={quantity < 1 || quantity > product.stock}
-                  >
-                    <Plus size={16} />
-                    Agregar al carrito
-                  </AddButton>
-                </QuantityContainer>
-              </Card>
-            )}
-          </SearchSection>
-
-          <CartCard>
-            <CartTitle>
-              <ShoppingCart size={20} />
-              Carrito ({items.length})
-            </CartTitle>
-
-            {items.length === 0 ? (
-              <EmptyCart>El carrito está vacío</EmptyCart>
-            ) : (
-              <>
-                <CartItems>
-                  {items.map((item, index) => (
-                    <CartItem key={index}>
-                      <CartItemInfo>
-                        <CartItemName>{item.productInfo.name}</CartItemName>
-                        <CartItemDetails>
-                          {item.quantity} × ${Number(item.productInfo.price).toFixed(2)}
-                        </CartItemDetails>
-                      </CartItemInfo>
-                      <CartItemActions>
-                        <CartItemPrice>
-                          ${(item.quantity * Number(item.productInfo.price)).toFixed(2)}
-                        </CartItemPrice>
-                        <RemoveButton onClick={() => handleRemoveItem(index)}>
-                          <Trash2 size={16} />
-                        </RemoveButton>
-                      </CartItemActions>
-                    </CartItem>
-                  ))}
-                </CartItems>
-
-                <CartTotal>
-                  <TotalRow>
-                    <TotalLabel>Subtotal:</TotalLabel>
-                    <TotalAmount>${getSubtotal().toFixed(2)}</TotalAmount>
-                  </TotalRow>
-                  <TotalRow>
-                    <TotalLabel>ITBIS (18%):</TotalLabel>
-                    <TotalAmount>${getItbis().toFixed(2)}</TotalAmount>
-                  </TotalRow>
-                  <TotalRow>
-                    <TotalLabel>Total a pagar:</TotalLabel>
-                    <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
-                  </TotalRow>
-
-                  <ConfirmButton
-                    onClick={handleConfirmSale}
-                    disabled={loading || items.length === 0}
-                  >
-                    <CheckCircle size={20} />
-                    {loading ? 'Procesando...' : 'Confirmar Venta'}
-                  </ConfirmButton>
-                </CartTotal>
-              </>
-            )}
-          </CartCard>
+                      <CheckCircle size={20} />
+                      {loading ? 'Procesando...' : 'Confirmar Venta'}
+                    </ConfirmButton>
+                  </CartTotal>
+                </>
+              )}
+            </CartCard>
+          </div>
         </GridContainer>
       </MaxWidthContainer>
 
