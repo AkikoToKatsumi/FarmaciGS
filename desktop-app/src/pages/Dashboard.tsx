@@ -1,7 +1,7 @@
 // src/pages/Dashboard.tsx
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardStats, DashboardStats } from '../services/dashboard.service';
 import {
@@ -577,6 +577,8 @@ const Dashboard = () => {
     { label: 'Roles', icon: <Layers />, onClick: () => navigate('/roles'), show: user?.role_name === 'admin' },
     // Proveedores
     { label: 'Proveedores', icon: <Truck />, onClick: () => navigate('/providers'), show: user?.role_name === 'admin' },
+    // Categorías
+    { label: 'Categorías', icon: <Layers />, onClick: () => navigate('/categories'), show: user?.role_name === 'admin' },
     // { label: 'Auditoría', icon: <Activity />, onClick: () => navigate('/audit'), show: user?.role_name === 'admin' },
   ];
 

@@ -61,6 +61,8 @@ export interface Medicine {
   lot: string;
   category?: string;
   barcode?: string;
+  provider_id?: number;
+  provider_name?: string;
 }
 
 // Interfaz para los datos que se envían al backend para crear un medicamento.
@@ -73,6 +75,7 @@ export interface CreateMedicineData {
   lot: string;
   category?: string;
   barcode?: string;
+  provider_id: number;
 }
 
 // La actualización usa un subconjunto de los campos de creación.
@@ -389,6 +392,14 @@ export const inventoryUtils = {
 
 export const getMedicineByBarcode = async (barcode: string): Promise<Medicine> => {
   const response = await API.get(`/inventory/barcode/${encodeURIComponent(barcode)}`);
+  return response.data;
+};
+
+/**
+ * Obtiene la lista de proveedores
+ */
+export const getProviders = async (): Promise<{ id: number; name: string }[]> => {
+  const response = await API.get('/inventory/providers');
   return response.data;
 };
 

@@ -1,6 +1,6 @@
 // src/App.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useUserStore } from './store/user';
+import { useUserStore } from './store/User';
 import { useEffect } from 'react';
 
 // Importar páginas
@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 // Corrige el import para Sales (no default export)
+import CategoryManager from './pages/CategoryManager';
 import Sales from './pages/Sales';
 import Clients from './pages/Clients';
 import Reports from './pages/Reports';
@@ -49,6 +50,7 @@ export default function App() {
       {/* Rutas protegidas */}
       {user ? (
         <>
+          <Route path="/categories" element={<CategoryManager />} />
          <Route path="/providers" element={<Providers />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/inventory" element={<Inventory />} />

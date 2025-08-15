@@ -10,6 +10,7 @@ import {
   updateMedicine, 
   deleteMedicine, 
   getStockAlerts,
+  getProviders, // <-- nuevo import
   Medicine as MedicineType, 
   CreateMedicineData, 
   UpdateMedicineData 
@@ -691,6 +692,9 @@ const Inventory = () => {
   const [editingProduct, setEditingProduct] = useState<MedicineType | null>(null);
   const [showAlerts, setShowAlerts] = useState(false);
   
+  const [providers, setProviders] = useState<{ id: number; name: string }[]>([]);
+  const [providersLoading, setProvidersLoading] = useState(false);
+
   // Estado del formulario
   const [formData, setFormData] = useState({
     name: '',
@@ -700,8 +704,8 @@ const Inventory = () => {
     category: '',
     expirationDate: '',
     lot: '',
-    supplier: '',
-    barcode: ''
+    barcode: '',
+    provider_id: '',
   });
 
   // Estados para filtros y búsqueda
@@ -712,7 +716,7 @@ const Inventory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10); // Items per page
 
-    // Funciones de filtrado y ordenamiento
+  // Funciones de filtrado y ordenamiento
   const { data: products = [], isLoading: loading, error: fetchError } = useQuery<MedicineType[]>({
     queryKey: ['products'],
     queryFn: getMedicine
@@ -773,6 +777,23 @@ const Inventory = () => {
     }
   }, [fetchError]);
 
+  // Obtener proveedores al montar
+  useEffect(() => {
+    const fetchProviders = async () => {
+      setProvidersLoading(true);
+      try {
+        const data = await getProviders();
+        setProviders(data);
+      } catch (error) {
+        setErrorMessage('Error al cargar proveedores. Por favor, intenta de nuevo.');
+        setProviders([]);
+      } finally {
+        setProvidersLoading(false);
+      }
+    };
+    fetchProviders();
+  }, []);
+
   // Generador automático de código de producto
   const generateProductCode = () => {
     const timestamp = Date.now().toString().slice(-6);
@@ -798,8 +819,8 @@ const Inventory = () => {
       category: '',
       expirationDate: '',
       lot: '',
-      supplier: '',
-      barcode: ''
+      barcode: '',
+      provider_id: '',
     });
     setEditingProduct(null);
     setShowForm(false);
@@ -825,17 +846,31 @@ const Inventory = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-      const medicineData: CreateMedicineData = {
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        expirationDate: formData.expirationDate,
-        lot: formData.lot,
-        category: formData.category || undefined,
-        barcode: formData.barcode || generateProductCode()
-      };
-      mutation.mutate(medicineData);
+    // Validación de campos obligatorios
+    if (
+      !formData.name.trim() ||
+      !formData.description.trim() ||
+      !formData.price ||
+      !formData.stock ||
+      !formData.lot.trim() ||
+      !formData.expirationDate ||
+      !formData.provider_id
+    ) {
+      setErrorMessage('Por favor, complete todos los campos obligatorios.');
+      return;
+    }
+    const medicineData: CreateMedicineData = {
+      name: formData.name,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      stock: parseInt(formData.stock),
+      expirationDate: formData.expirationDate,
+      lot: formData.lot,
+      category: formData.category || undefined,
+      barcode: formData.barcode || generateProductCode(),
+      provider_id: Number(formData.provider_id),
+    };
+    mutation.mutate(medicineData);
   };
 
   const handleEdit = (product: MedicineType) => {
@@ -848,8 +883,8 @@ const Inventory = () => {
       category: product.category || '',
       expirationDate: product.expiration_date ? product.expiration_date.split('T')[0] : '',
       lot: product.lot || '',
-      supplier: '', // No tenemos supplier en el tipo Medicine
-      barcode: product.barcode || ''
+      barcode: product.barcode || '',
+      provider_id: product.provider_id ? String(product.provider_id) : '',
     });
     setShowForm(true);
   };
@@ -1128,13 +1163,23 @@ const Inventory = () => {
               </FormGrid>
               
               <FilterGroup>
-                <Label>Proveedor</Label>
-                <Input
-                  type="text"
-                  name="supplier"
-                  value={formData.supplier}
+                <Label>Proveedor *</Label>
+                <Select
+                  name="provider_id"
+                  value={formData.provider_id}
                   onChange={handleInputChange}
-                />
+                  required
+                  disabled={providersLoading}
+                >
+                  <option value="">Seleccione proveedor</option>
+                  {providers.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </Select>
+                {providersLoading && <span style={{ color: '#888', fontSize: '0.85rem' }}>Cargando proveedores...</span>}
+                {!providersLoading && providers.length === 0 && (
+                  <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>No hay proveedores disponibles.</span>
+                )}
               </FilterGroup>
               
               <FormActions>
@@ -1166,6 +1211,7 @@ const Inventory = () => {
                 <th>Lote</th>
                 <th>Vencimiento</th>
                 <th>Código</th>
+                <th>Proveedor</th> {/* <-- nueva columna */}
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -1201,6 +1247,9 @@ const Inventory = () => {
                   </td>
                   <td>
                     {product.barcode || 'N/A'}
+                  </td>
+                  <td>
+                    {product.provider_name || 'Sin proveedor'}
                   </td>
                   <td>
                     <ActionContainer>

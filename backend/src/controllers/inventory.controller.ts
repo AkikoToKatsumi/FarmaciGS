@@ -38,7 +38,11 @@ const validateMedicineInput = (data: any) => {
 export const getAllMedicine = async (req: Request, res: Response) => {
     try {
         const { category, search } = req.query;
-        let query = 'SELECT * FROM medicine';
+        let query = `
+            SELECT m.*, p.name as provider_name 
+            FROM medicine m 
+            LEFT JOIN providers p ON m.provider_id = p.id
+        `;
         const params: any[] = [];
         const conditions: string[] = [];
         
@@ -55,9 +59,7 @@ export const getAllMedicine = async (req: Request, res: Response) => {
         if (conditions.length > 0) {
             query += ' WHERE ' + conditions.join(' AND ');
         }
-        
-        query += ' ORDER BY name ASC';
-        
+        query += ' ORDER BY m.name ASC';
         const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
@@ -91,12 +93,21 @@ export const getMedicineById = async (req: Request, res: Response) => {
 // Crear un nuevo medicamento
 export const createMedicine = async (req: Request, res: Response) => {
     try {
-        let { name, description, stock, price, expirationDate, lot, category, barcode } = req.body;
+        let { name, description, stock, price, expirationDate, lot, category, barcode, provider_id } = req.body;
 
         // Validar los datos de entrada
         const validation = validateMedicineInput(req.body);
         if (!validation.isValid) {
             return res.status(400).json({ message: validation.message });
+        }
+
+        // Validar provider_id
+        if (!provider_id || isNaN(Number(provider_id))) {
+            return res.status(400).json({ message: 'Debe seleccionar un proveedor válido.' });
+        }
+        const providerCheck = await pool.query('SELECT id FROM providers WHERE id = $1', [provider_id]);
+        if (providerCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Proveedor no encontrado.' });
         }
 
         // Generar código de barras automático si no se proporciona
@@ -112,10 +123,10 @@ export const createMedicine = async (req: Request, res: Response) => {
             return res.status(409).json({ message: 'Ya existe un medicamento con ese código de barras.' });
         }
 
-        // Insertar el nuevo medicamento
+        // Insertar el nuevo medicamento con provider_id
         const result = await pool.query(
-            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot, category, barcode) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-            [name, description, stock, price, expirationDate, lot, category, barcode]
+            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot, category, barcode, provider_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+            [name, description, stock, price, expirationDate, lot, category, barcode, provider_id]
         );
 
         res.status(201).json(result.rows[0]);
@@ -129,7 +140,7 @@ export const createMedicine = async (req: Request, res: Response) => {
 export const updateMedicine = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, description, stock, price, expirationDate, lot, category, barcode } = req.body;
+        const { name, description, stock, price, expirationDate, lot, category, barcode, provider_id } = req.body;
 
         if (!id || isNaN(Number(id))) {
             return res.status(400).json({ message: 'ID de medicamento inválido.' });
@@ -168,6 +179,17 @@ export const updateMedicine = async (req: Request, res: Response) => {
             }
         }
 
+        // Validar provider_id si se envía
+        if (provider_id !== undefined) {
+            if (!provider_id || isNaN(Number(provider_id))) {
+                return res.status(400).json({ message: 'Debe seleccionar un proveedor válido.' });
+            }
+            const providerCheck = await pool.query('SELECT id FROM providers WHERE id = $1', [provider_id]);
+            if (providerCheck.rows.length === 0) {
+                return res.status(404).json({ message: 'Proveedor no encontrado.' });
+            }
+        }
+
         // Construir la consulta de actualización dinámicamente
         const fields: string[] = [];
         const values: any[] = [];
@@ -181,6 +203,7 @@ export const updateMedicine = async (req: Request, res: Response) => {
         if (lot !== undefined) { fields.push(`lot = $${queryIndex++}`); values.push(lot); }
         if (category !== undefined) { fields.push(`category = $${queryIndex++}`); values.push(category); }
         if (barcode !== undefined) { fields.push(`barcode = $${queryIndex++}`); values.push(barcode); }
+        if (provider_id !== undefined) { fields.push(`provider_id = $${queryIndex++}`); values.push(provider_id); }
 
         if (fields.length === 0) {
             return res.status(400).json({ message: 'No se proporcionaron campos para actualizar.' });

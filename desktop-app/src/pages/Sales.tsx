@@ -6,7 +6,7 @@ import { getMedicine, getMedicineByBarcode, Medicine as MedicineType } from '../
 import { createSale, getClientById } from '../services/sales.service';
 import { getPrescriptionsByClient } from '../services/prescription.service';
 import { useNavigate } from 'react-router-dom';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 
 // Animaciones suaves y minimalistas
 const fadeIn = keyframes`
