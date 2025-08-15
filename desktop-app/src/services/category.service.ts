@@ -10,16 +10,22 @@ export interface Category {
   name: string;
 }
 
-export const getCategories = async (): Promise<Category[]> => {
-  const response = await API.get('');
+export const getCategories = async (token: string): Promise<Category[]> => {
+  const response = await API.get('/', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data; // [{id, name}]
+};
+
+export const createCategory = async (name: string, token: string): Promise<Category> => {
+  const response = await API.post('/', { name }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
   return response.data;
 };
 
-export const createCategory = async (name: string): Promise<Category> => {
-  const response = await API.post('', { name });
-  return response.data;
-};
-
-export const deleteCategory = async (id: number): Promise<void> => {
-  await API.delete(`/${id}`);
+export const deleteCategory = async (id: number, token: string): Promise<void> => {
+  await API.delete(`/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 };

@@ -3,6 +3,7 @@ import { getCategories, createCategory, deleteCategory, Category } from '../serv
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { Layers, Trash2, Plus } from 'lucide-react';
+import { useUserStore } from '../store/User';
 
 const Container = styled.div`
   max-width: 480px;
@@ -159,10 +160,11 @@ const CategoryManager: React.FC = () => {
   const [newCategory, setNewCategory] = useState('');
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { token } = useUserStore();
 
   const fetchCategories = async () => {
     try {
-      setCategories(await getCategories());
+      setCategories(await getCategories(token ?? ''));
     } catch {
       setError('Error al cargar categorías');
     }
@@ -176,7 +178,7 @@ const CategoryManager: React.FC = () => {
     e.preventDefault();
     if (!newCategory.trim()) return;
     try {
-      await createCategory(newCategory.trim());
+      await createCategory(newCategory.trim(), token ?? '');
       setNewCategory('');
       fetchCategories();
     } catch (err: any) {
@@ -187,7 +189,7 @@ const CategoryManager: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Eliminar esta categoría?')) return;
     try {
-      await deleteCategory(id);
+      await deleteCategory(id, token ?? '');
       fetchCategories();
     } catch {
       setError('Error al eliminar categoría');

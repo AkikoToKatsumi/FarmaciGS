@@ -16,14 +16,5 @@ router.delete('/:id', inventoryController.deleteMedicine);
 router.get('/alerts/stock', inventoryController.getAlerts);
 router.get('/stats/all', inventoryController.getInventoryStats);
 router.get('/barcode/:barcode', inventoryController.getMedicineByBarcode);
-router.get('/providers', async (req, res) => {
-  try {
-    const result = await require('../config/db').default.query('SELECT id, name FROM providers ORDER BY name');
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ message: 'Error al obtener proveedores.' });
-  }
-});
-
-
+router.get('/providers', inventoryController.getProviders);
 export default router;

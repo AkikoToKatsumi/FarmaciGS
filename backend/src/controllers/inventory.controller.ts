@@ -38,24 +38,26 @@ const validateMedicineInput = (data: any) => {
 export const getAllMedicine = async (req: Request, res: Response) => {
     try {
         const { category, search } = req.query;
+        console.log('[GET] /api/inventory', { category, search });
         let query = `
-            SELECT m.*, p.name as provider_name 
-            FROM medicine m 
+            SELECT m.*, p.name as provider_name, c.name as category_name
+            FROM medicine m
             LEFT JOIN providers p ON m.provider_id = p.id
+            LEFT JOIN categories c ON m.category_id = c.id
         `;
         const params: any[] = [];
         const conditions: string[] = [];
-        
+
         if (category) {
-            conditions.push(`category = $${params.length + 1}`);
+            conditions.push(`m.category_id = $${params.length + 1}`);
             params.push(category);
         }
-        
+
         if (search) {
-            conditions.push(`(name ILIKE $${params.length + 1} OR description ILIKE $${params.length + 1})`);
+            conditions.push(`(m.name ILIKE $${params.length + 1} OR m.description ILIKE $${params.length + 1})`);
             params.push(`%${search}%`);
         }
-        
+
         if (conditions.length > 0) {
             query += ' WHERE ' + conditions.join(' AND ');
         }
@@ -101,6 +103,15 @@ export const createMedicine = async (req: Request, res: Response) => {
             return res.status(400).json({ message: validation.message });
         }
 
+        // Validar category
+        if (!category || isNaN(Number(category))) {
+            return res.status(400).json({ message: 'Debe seleccionar una categoría válida.' });
+        }
+        const categoryCheck = await pool.query('SELECT id FROM categories WHERE id = $1', [category]);
+        if (categoryCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Categoría no encontrada.' });
+        }
+
         // Validar provider_id
         if (!provider_id || isNaN(Number(provider_id))) {
             return res.status(400).json({ message: 'Debe seleccionar un proveedor válido.' });
@@ -123,9 +134,9 @@ export const createMedicine = async (req: Request, res: Response) => {
             return res.status(409).json({ message: 'Ya existe un medicamento con ese código de barras.' });
         }
 
-        // Insertar el nuevo medicamento con provider_id
+        // Insertar el nuevo medicamento con provider_id y category_id
         const result = await pool.query(
-            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot, category, barcode, provider_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot, category_id, barcode, provider_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
             [name, description, stock, price, expirationDate, lot, category, barcode, provider_id]
         );
 
@@ -165,17 +176,14 @@ export const updateMedicine = async (req: Request, res: Response) => {
             }
         }
 
-        // Verificar si el medicamento existe
-        const existingMedicine = await pool.query('SELECT id FROM medicine WHERE id = $1', [Number(id)]);
-        if (existingMedicine.rows.length === 0) {
-            return res.status(404).json({ message: 'Medicamento no encontrado.' });
-        }
-
-        // Verificar código de barras único si se está actualizando
-        if (barcode) {
-            const existingBarcode = await pool.query('SELECT id FROM medicine WHERE barcode = $1 AND id != $2', [barcode, Number(id)]);
-            if (existingBarcode.rows.length > 0) {
-                return res.status(409).json({ message: 'Ya existe un medicamento con ese código de barras.' });
+        // Validar category si se envía
+        if (category !== undefined) {
+            if (!category || isNaN(Number(category))) {
+                return res.status(400).json({ message: 'Debe seleccionar una categoría válida.' });
+            }
+            const categoryCheck = await pool.query('SELECT id FROM categories WHERE id = $1', [category]);
+            if (categoryCheck.rows.length === 0) {
+                return res.status(404).json({ message: 'Categoría no encontrada.' });
             }
         }
 
@@ -190,6 +198,20 @@ export const updateMedicine = async (req: Request, res: Response) => {
             }
         }
 
+        // Verificar si el medicamento existe
+        const existingMedicine = await pool.query('SELECT id FROM medicine WHERE id = $1', [Number(id)]);
+        if (existingMedicine.rows.length === 0) {
+            return res.status(404).json({ message: 'Medicamento no encontrado.' });
+        }
+
+        // Verificar código de barras único si se está actualizando
+        if (barcode) {
+            const existingBarcode = await pool.query('SELECT id FROM medicine WHERE barcode = $1 AND id != $2', [barcode, Number(id)]);
+            if (existingBarcode.rows.length > 0) {
+                return res.status(409).json({ message: 'Ya existe un medicamento con ese código de barras.' });
+            }
+        }
+
         // Construir la consulta de actualización dinámicamente
         const fields: string[] = [];
         const values: any[] = [];
@@ -201,7 +223,7 @@ export const updateMedicine = async (req: Request, res: Response) => {
         if (price !== undefined) { fields.push(`price = $${queryIndex++}`); values.push(price); }
         if (expirationDate !== undefined) { fields.push(`expiration_date = $${queryIndex++}`); values.push(expirationDate); }
         if (lot !== undefined) { fields.push(`lot = $${queryIndex++}`); values.push(lot); }
-        if (category !== undefined) { fields.push(`category = $${queryIndex++}`); values.push(category); }
+        if (category !== undefined) { fields.push(`category_id = $${queryIndex++}`); values.push(category); }
         if (barcode !== undefined) { fields.push(`barcode = $${queryIndex++}`); values.push(barcode); }
         if (provider_id !== undefined) { fields.push(`provider_id = $${queryIndex++}`); values.push(provider_id); }
 
@@ -292,8 +314,8 @@ export const getInventoryStats = async (req: Request, res: Response) => {
 // Obtener categorías únicas
 export const getCategories = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query('SELECT DISTINCT category FROM medicine WHERE category IS NOT NULL ORDER BY category ASC');
-        res.json(result.rows.map(row => row.category));
+        const result = await pool.query('SELECT id, name FROM categories ORDER BY name ASC');
+        res.json(result.rows); // [{id, name}]
     } catch (error) {
         console.error('Error al obtener categorías:', error);
         res.status(500).json({ message: 'Error interno del servidor.' });
@@ -321,4 +343,15 @@ export const getMedicineByBarcode = async (req: Request, res: Response) => {
     console.error('Error al buscar medicamento por código de barras:', error);
     res.status(500).json({ message: 'Error interno del servidor.' });
   }
+};
+
+// Obtener todos los proveedores
+export const getProviders = async (_req: Request, res: Response) => {
+    try {
+        const result = await pool.query('SELECT id, name FROM providers ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener proveedores:', error);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
 };

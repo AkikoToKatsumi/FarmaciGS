@@ -402,4 +402,3 @@ export const getProviders = async (): Promise<{ id: number; name: string }[]> =>
   const response = await API.get('/inventory/providers');
   return response.data;
 };
-

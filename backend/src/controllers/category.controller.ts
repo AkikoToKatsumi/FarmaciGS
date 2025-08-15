@@ -3,6 +3,7 @@ import pool from '../config/db';
 
 // Obtener todas las categorías
 export const getCategories = async (_req: Request, res: Response) => {
+  console.log('[GET] /api/categories');
   try {
     const result = await pool.query('SELECT * FROM categories ORDER BY name');
     res.json(result.rows);
@@ -13,6 +14,7 @@ export const getCategories = async (_req: Request, res: Response) => {
 
 // Crear una nueva categoría
 export const createCategory = async (req: Request, res: Response) => {
+  console.log('[POST] /api/categories', req.body);
   try {
     const { name } = req.body;
     if (!name || !name.trim()) {
@@ -31,6 +33,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
 // Eliminar una categoría
 export const deleteCategory = async (req: Request, res: Response) => {
+  console.log('[DELETE] /api/categories/' + req.params.id);
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM categories WHERE id = $1', [Number(id)]);

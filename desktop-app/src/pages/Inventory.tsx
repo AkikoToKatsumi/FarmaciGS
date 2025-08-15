@@ -15,6 +15,7 @@ import {
   CreateMedicineData, 
   UpdateMedicineData 
 } from '../services/inventory.service';
+import { getCategories as getCategoryList } from '../services/category.service';
 
 // --- Styled Components ---
 
@@ -694,6 +695,8 @@ const Inventory = () => {
   
   const [providers, setProviders] = useState<{ id: number; name: string }[]>([]);
   const [providersLoading, setProvidersLoading] = useState(false);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -792,6 +795,25 @@ const Inventory = () => {
       }
     };
     fetchProviders();
+  }, []);
+
+  // Obtener categorías desde la base de datos
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setCategoriesLoading(true);
+      try {
+        // getCategories debe retornar [{id, name}]
+        const token = ""; // Si requiere token, pásalo aquí
+        const data = await getCategoryList(token);
+        setCategories(data);
+      } catch (error) {
+        setErrorMessage('Error al cargar categorías. Por favor, intenta de nuevo.');
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
   }, []);
 
   // Generador automático de código de producto
@@ -908,11 +930,6 @@ const Inventory = () => {
     }
   };
 
-  // Obtener categorías únicas para el filtro
-  const categories = useMemo(() => (
-    products.map(p => p.category).filter((cat): cat is string => typeof cat === 'string' && !!cat)
-  ), [products]);
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES');
   };
@@ -1020,7 +1037,7 @@ const Inventory = () => {
             >
               <option value="">Todas las categorías</option>
               {categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category.id} value={category.id}>{category.name}</option>
               ))}
             </Select>
           </FilterGroup>
@@ -1078,14 +1095,23 @@ const Inventory = () => {
                 </FilterGroup>
                 
                 <FilterGroup>
-                  <Label>Categoría</Label>
-                  <Input
-                    type="text"
+                  <Label>Categoría *</Label>
+                  <Select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    placeholder="Ej: Analgésicos, Antibióticos..."
-                  />
+                    required
+                    disabled={categoriesLoading}
+                  >
+                    <option value="">Seleccione categoría</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </Select>
+                  {categoriesLoading && <span style={{ color: '#888', fontSize: '0.85rem' }}>Cargando categorías...</span>}
+                  {!categoriesLoading && categories.length === 0 && (
+                    <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>No hay categorías disponibles.</span>
+                  )}
                 </FilterGroup>
               </FormGrid>
               
@@ -1225,7 +1251,7 @@ const Inventory = () => {
                     </div>
                   </td>
                   <td>
-                    {product.category || 'Sin categoría'}
+                    {categories.find(cat => String(cat.id) === String(product.category))?.name || 'Sin categoría'}
                   </td>
                   <td>
                     <Price>
