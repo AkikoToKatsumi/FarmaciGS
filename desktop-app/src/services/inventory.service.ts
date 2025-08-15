@@ -1,6 +1,5 @@
 // src/services/inventory.service.ts
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 // Create axios instance with base configuration
 const API = axios.create({ 
@@ -40,11 +39,8 @@ API.interceptors.response.use(
       sessionStorage.removeItem('authToken');
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
-      
-      // Redirect to login or emit an event
-      
-const navigate = useNavigate();
-navigate('/login');
+      // Redirect to login without using hooks
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -398,7 +394,8 @@ export const getMedicineByBarcode = async (barcode: string): Promise<Medicine> =
 /**
  * Obtiene la lista de proveedores
  */
-export const getProviders = async (): Promise<{ id: number; name: string }[]> => {
-  const response = await API.get('/inventory/providers');
-  return response.data;
+export const getProviders = async (token?: string): Promise<{ id: number; name: string }[]> => {
+  const response = await API.get('/providers');
+  const data = Array.isArray(response.data) ? response.data : [];
+  return data.map((p: any) => ({ id: p.id, name: p.name }));
 };

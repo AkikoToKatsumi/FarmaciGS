@@ -9,6 +9,40 @@ const API = axios.create({
   }
 });
 
+// Add request interceptor to include authentication token
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken') || 
+                  sessionStorage.getItem('authToken') ||
+                  localStorage.getItem('token') ||
+                  sessionStorage.getItem('token');
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle authentication errors
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface Provider {
   id: number;
   name: string;
@@ -34,13 +68,9 @@ export interface UpdateProviderData {
 }
 
 // Obtener todos los proveedores
-export const getProviders = async (token: string): Promise<Provider[]> => {
+export const getProviders = async (token?: string): Promise<Provider[]> => {
   try {
-    const response = await API.get('/providers', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    const response = await API.get('/providers');
     return response.data;
   } catch (error: any) {
     console.error('Error fetching providers:', error);
@@ -49,13 +79,9 @@ export const getProviders = async (token: string): Promise<Provider[]> => {
 };
 
 // Obtener un proveedor por ID
-export const getProviderById = async (id: number, token: string): Promise<Provider> => {
+export const getProviderById = async (id: number, token?: string): Promise<Provider> => {
   try {
-    const response = await API.get(`/providers/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    const response = await API.get(`/providers/${id}`);
     return response.data;
   } catch (error: any) {
     console.error('Error fetching provider:', error);
@@ -67,13 +93,9 @@ export const getProviderById = async (id: number, token: string): Promise<Provid
 };
 
 // Crear un nuevo proveedor
-export const createProvider = async (providerData: CreateProviderData, token: string): Promise<Provider> => {
+export const createProvider = async (providerData: CreateProviderData, token?: string): Promise<Provider> => {
   try {
-    const response = await API.post('/providers', providerData, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    const response = await API.post('/providers', providerData);
     return response.data;
   } catch (error: any) {
     console.error('Error creating provider:', error);
@@ -88,14 +110,10 @@ export const createProvider = async (providerData: CreateProviderData, token: st
 export const updateProvider = async (
   id: number, 
   providerData: UpdateProviderData, 
-  token: string
+  token?: string
 ): Promise<Provider> => {
   try {
-    const response = await API.put(`/providers/${id}`, providerData, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    const response = await API.put(`/providers/${id}`, providerData);
     return response.data;
   } catch (error: any) {
     console.error('Error updating provider:', error);
@@ -110,13 +128,9 @@ export const updateProvider = async (
 };
 
 // Eliminar un proveedor
-export const deleteProvider = async (id: number, token: string): Promise<void> => {
+export const deleteProvider = async (id: number, token?: string): Promise<void> => {
   try {
-    await API.delete(`/providers/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    await API.delete(`/providers/${id}`);
   } catch (error: any) {
     console.error('Error deleting provider:', error);
     if (error.response?.status === 404) {

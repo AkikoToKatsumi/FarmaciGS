@@ -40,16 +40,15 @@ export const getAllMedicine = async (req: Request, res: Response) => {
         const { category, search } = req.query;
         console.log('[GET] /api/inventory', { category, search });
         let query = `
-            SELECT m.*, p.name as provider_name, c.name as category_name
+            SELECT m.*, p.name as provider_name
             FROM medicine m
             LEFT JOIN providers p ON m.provider_id = p.id
-            LEFT JOIN categories c ON m.category_id = c.id
         `;
         const params: any[] = [];
         const conditions: string[] = [];
 
         if (category) {
-            conditions.push(`m.category_id = $${params.length + 1}`);
+            conditions.push(`m.category = $${params.length + 1}`);
             params.push(category);
         }
 
@@ -95,6 +94,9 @@ export const getMedicineById = async (req: Request, res: Response) => {
 // Crear un nuevo medicamento
 export const createMedicine = async (req: Request, res: Response) => {
     try {
+        // Loguea el cuerpo recibido para depuración
+        console.log('[POST] /api/inventory - Body recibido:', req.body);
+
         let { name, description, stock, price, expirationDate, lot, category, barcode, provider_id } = req.body;
 
         // Validar los datos de entrada
@@ -103,14 +105,17 @@ export const createMedicine = async (req: Request, res: Response) => {
             return res.status(400).json({ message: validation.message });
         }
 
-        // Validar category
-        if (!category || isNaN(Number(category))) {
+        // Validar category (string, no id)
+        if (!category || typeof category !== 'string') {
             return res.status(400).json({ message: 'Debe seleccionar una categoría válida.' });
         }
-        const categoryCheck = await pool.query('SELECT id FROM categories WHERE id = $1', [category]);
+
+        // Validar que la categoría exista en la tabla categories (case-insensitive)
+        const categoryCheck = await pool.query('SELECT name FROM categories WHERE LOWER(name) = LOWER($1)', [category]);
         if (categoryCheck.rows.length === 0) {
-            return res.status(404).json({ message: 'Categoría no encontrada.' });
+            return res.status(400).json({ message: 'La categoría seleccionada no existe.' });
         }
+        category = categoryCheck.rows[0].name;
 
         // Validar provider_id
         if (!provider_id || isNaN(Number(provider_id))) {
@@ -134,16 +139,30 @@ export const createMedicine = async (req: Request, res: Response) => {
             return res.status(409).json({ message: 'Ya existe un medicamento con ese código de barras.' });
         }
 
-        // Insertar el nuevo medicamento con provider_id y category_id
+        // Insertar el nuevo medicamento con provider_id y category (string)
         const result = await pool.query(
-            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot, category_id, barcode, provider_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot, category, barcode, provider_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
             [name, description, stock, price, expirationDate, lot, category, barcode, provider_id]
         );
 
         res.status(201).json(result.rows[0]);
     } catch (error) {
+        // Loguea el error completo para depuración
         console.error('Error al crear medicamento:', error);
-        res.status(500).json({ message: 'Error interno del servidor.' });
+
+        // Si la tabla categories no existe, dar instrucción clara
+        const errStr = String(error);
+        if (errStr.includes('relation "categories"') || errStr.includes('does not exist')) {
+            return res.status(500).json({
+                message: 'Error interno del servidor: la tabla "categories" no existe. Ejecuta el script SQL para crearla.',
+                error: process.env.NODE_ENV === 'development' ? errStr : undefined
+            });
+        }
+
+        res.status(500).json({
+            message: 'Error interno del servidor.',
+            error: process.env.NODE_ENV === 'development' ? errStr : undefined
+        });
     }
 };
 
@@ -176,14 +195,10 @@ export const updateMedicine = async (req: Request, res: Response) => {
             }
         }
 
-        // Validar category si se envía
+        // Validar category si se envía (string)
         if (category !== undefined) {
-            if (!category || isNaN(Number(category))) {
+            if (!category || typeof category !== 'string') {
                 return res.status(400).json({ message: 'Debe seleccionar una categoría válida.' });
-            }
-            const categoryCheck = await pool.query('SELECT id FROM categories WHERE id = $1', [category]);
-            if (categoryCheck.rows.length === 0) {
-                return res.status(404).json({ message: 'Categoría no encontrada.' });
             }
         }
 
@@ -223,7 +238,7 @@ export const updateMedicine = async (req: Request, res: Response) => {
         if (price !== undefined) { fields.push(`price = $${queryIndex++}`); values.push(price); }
         if (expirationDate !== undefined) { fields.push(`expiration_date = $${queryIndex++}`); values.push(expirationDate); }
         if (lot !== undefined) { fields.push(`lot = $${queryIndex++}`); values.push(lot); }
-        if (category !== undefined) { fields.push(`category_id = $${queryIndex++}`); values.push(category); }
+        if (category !== undefined) { fields.push(`category = $${queryIndex++}`); values.push(category); }
         if (barcode !== undefined) { fields.push(`barcode = $${queryIndex++}`); values.push(barcode); }
         if (provider_id !== undefined) { fields.push(`provider_id = $${queryIndex++}`); values.push(provider_id); }
 
@@ -321,6 +336,7 @@ export const getCategories = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 };
+
 export const getMedicineByBarcode = async (req: Request, res: Response) => {
   try {
     const { barcode } = req.params;
@@ -344,7 +360,6 @@ export const getMedicineByBarcode = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error interno del servidor.' });
   }
 };
-
 // Obtener todos los proveedores
 export const getProviders = async (_req: Request, res: Response) => {
     try {

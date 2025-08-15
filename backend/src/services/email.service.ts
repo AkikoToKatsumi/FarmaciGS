@@ -247,7 +247,7 @@ class EmailService {
         userName,
         userEmail,
         temporaryPassword,
-        loginUrl: process.env.APP_URL || 'http://localhost:3000',
+        loginUrl: process.env.APP_URL || 'http://localhost:4004',
         companyName: process.env.COMPANY_NAME || 'Farmacia Sistema'
       });
 

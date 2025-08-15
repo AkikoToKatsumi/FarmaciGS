@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useUserStore } from '../store/User';
 
 import { 
   getMedicine, 
@@ -687,6 +688,7 @@ const Inventory = () => {
   const navigate = useNavigate();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { token } = useUserStore(); // <-- usar token del store
 
   // Estados principales
   const [showForm, setShowForm] = useState(false);
@@ -695,7 +697,7 @@ const Inventory = () => {
   
   const [providers, setProviders] = useState<{ id: number; name: string }[]>([]);
   const [providersLoading, setProvidersLoading] = useState(false);
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   // Estado del formulario
@@ -785,7 +787,7 @@ const Inventory = () => {
     const fetchProviders = async () => {
       setProvidersLoading(true);
       try {
-        const data = await getProviders();
+        const data = await getProviders(token ?? undefined); // pasar undefined si token es null
         setProviders(data);
       } catch (error) {
         setErrorMessage('Error al cargar proveedores. Por favor, intenta de nuevo.');
@@ -795,16 +797,14 @@ const Inventory = () => {
       }
     };
     fetchProviders();
-  }, []);
+  }, [token]);
 
   // Obtener categorías desde la base de datos
   useEffect(() => {
     const fetchCategories = async () => {
       setCategoriesLoading(true);
       try {
-        // getCategories debe retornar [{id, name}]
-        const token = ""; // Si requiere token, pásalo aquí
-        const data = await getCategoryList(token);
+        const data = await getCategoryList(token ?? undefined); // pasar undefined si token es null
         setCategories(data);
       } catch (error) {
         setErrorMessage('Error al cargar categorías. Por favor, intenta de nuevo.');
@@ -814,7 +814,7 @@ const Inventory = () => {
       }
     };
     fetchCategories();
-  }, []);
+  }, [token]);
 
   // Generador automático de código de producto
   const generateProductCode = () => {
@@ -1037,7 +1037,7 @@ const Inventory = () => {
             >
               <option value="">Todas las categorías</option>
               {categories.map((category) => (
-                <option key={category.id} value={category.id}>{category.name}</option>
+                <option key={category} value={category}>{category}</option>
               ))}
             </Select>
           </FilterGroup>
@@ -1105,7 +1105,7 @@ const Inventory = () => {
                   >
                     <option value="">Seleccione categoría</option>
                     {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </Select>
                   {categoriesLoading && <span style={{ color: '#888', fontSize: '0.85rem' }}>Cargando categorías...</span>}
@@ -1181,7 +1181,7 @@ const Inventory = () => {
                   <Input
                     type="text"
                     name="barcode"
-                    value={formData.barcode}
+                    value={formData.barcode ?? ''}
                     onChange={handleInputChange}
                     placeholder="Se genera automáticamente si se deja vacío"
                   />
@@ -1251,7 +1251,7 @@ const Inventory = () => {
                     </div>
                   </td>
                   <td>
-                    {categories.find(cat => String(cat.id) === String(product.category))?.name || 'Sin categoría'}
+                    {product.category || 'Sin categoría'}
                   </td>
                   <td>
                     <Price>

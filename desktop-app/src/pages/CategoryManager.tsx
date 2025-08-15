@@ -186,10 +186,10 @@ const CategoryManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (name: string) => {
     if (!window.confirm('¿Eliminar esta categoría?')) return;
     try {
-      await deleteCategory(id, token ?? '');
+      await deleteCategory(name, token ?? '');
       fetchCategories();
     } catch {
       setError('Error al eliminar categoría');
@@ -216,10 +216,10 @@ const CategoryManager: React.FC = () => {
       {error && <Error>{error}</Error>}
       <CategoryGrid>
         {categories.map(cat => (
-          <CategoryCard key={cat.id}>
+          <CategoryCard key={cat}>
             <CategoryIcon />
-            <CategoryName>{cat.name}</CategoryName>
-            <DeleteButton onClick={() => handleDelete(cat.id)} title="Eliminar">
+            <CategoryName>{cat}</CategoryName>
+            <DeleteButton onClick={() => handleDelete(cat)} title="Eliminar">
               <Trash2 size={18} />
             </DeleteButton>
           </CategoryCard>
