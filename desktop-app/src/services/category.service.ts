@@ -47,13 +47,14 @@ export type Category = {
 export const getCategories = async (token?: string): Promise<Category[]> => {
   try {
     const response = await API.get('/categories');
+    console.log('Respuesta cruda de la API:', response.data);
     // Ajuste: si la respuesta viene como { categories: [...] }
     const data = Array.isArray(response.data)
       ? response.data
       : Array.isArray(response.data?.categories)
         ? response.data.categories
         : [];
-    console.log('Categorías recibidas:', data);
+    console.log('Categorías procesadas:', data);
     return data;
   } catch (error) {
     console.error('Error al obtener categorías:', error);

@@ -164,8 +164,21 @@ const CategoryManager: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      setCategories(await getCategories(token ?? ''));
-    } catch {
+      const cats = await getCategories(token ?? '');
+      console.log('Categorías recibidas en fetchCategories:', cats);
+      // Normalizar: si es array de strings, convertir a objetos
+      let normalized: Category[] = [];
+      if (Array.isArray(cats)) {
+        if (cats.length > 0 && typeof cats[0] === 'string') {
+          normalized = cats.map((name, idx) => ({ id: idx + 1, name: String(name) }));
+        } else if (typeof cats[0] === 'object' && cats[0] !== null) {
+          normalized = cats.map((cat, idx) => ({ id: typeof cat.id === 'number' ? cat.id : idx + 1, name: cat.name ?? String(cat) }));
+        }
+      }
+      setCategories(normalized);
+      setError(null);
+    } catch (err: any) {
+      setCategories([]);
       setError('Error al cargar categorías');
     }
   };
@@ -191,8 +204,13 @@ const CategoryManager: React.FC = () => {
     try {
       await deleteCategory(id, token ?? '');
       fetchCategories();
-    } catch {
-      setError('Error al eliminar categoría');
+    } catch (err: any) {
+      // Mostrar el mensaje del backend si existe
+      if (err?.response?.data?.error || err?.response?.data?.message) {
+        setError(err.response.data.error || err.response.data.message);
+      } else {
+        setError('Error al eliminar categoría');
+      }
     }
   };
 
@@ -216,23 +234,22 @@ const CategoryManager: React.FC = () => {
       </Form>
       {error && <Error>{error}</Error>}
       <CategoryGrid>
-        {categories.length === 0 ? (
+        {categories.length === 0 && !error ? (
           <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#6b7280', fontSize: '1rem', marginTop: '18px' }}>
             No hay categorías registradas.
           </div>
-        ) : (
-          categories
-            .filter(cat => typeof cat === 'object' && cat !== null && 'id' in cat && 'name' in cat)
-            .map(cat => (
-              <CategoryCard key={cat.id}>
-                <CategoryIcon />
-                <CategoryName>{cat.name}</CategoryName>
-                <DeleteButton onClick={() => handleDelete(cat.id)} title="Eliminar">
-                  <Trash2 size={18} />
-                </DeleteButton>
-              </CategoryCard>
-            ))
-        )}
+        ) : null}
+        {categories.length > 0 && categories.map(cat => (
+          <CategoryCard key={cat.id}>
+            <CategoryIcon />
+            <CategoryName>
+              {cat.name && String(cat.name).trim() ? String(cat.name) : <span style={{color:'#e74c3c'}}>Sin nombre</span>}
+            </CategoryName>
+            <DeleteButton onClick={() => handleDelete(cat.id)} title="Eliminar">
+              <Trash2 size={18} />
+            </DeleteButton>
+          </CategoryCard>
+        ))}
       </CategoryGrid>
     </Container>
   );
