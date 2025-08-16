@@ -97,7 +97,17 @@ export const createMedicine = async (req: Request, res: Response) => {
         // Loguea el cuerpo recibido para depuración
         console.log('[POST] /api/inventory - Body recibido:', req.body);
 
-        let { name, description, stock, price, expirationDate, lot, category, barcode, provider_id } = req.body;
+        let { name, description, stock, price, expirationDate, lot, category, barcode, provider_id, category_id } = req.body;
+
+        // Detectar si la tabla 'medicine' tiene columna 'category' o 'category_id'
+        // Hacer la comprobación más robusta asegurando el schema (public)
+        const colsResult = await pool.query(
+            "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'medicine' AND column_name IN ('category','category_id')"
+        );
+        const existingCols = colsResult.rows.map((r: any) => r.column_name);
+        const hasCategoryNameCol = existingCols.includes('category');
+        const hasCategoryIdCol = existingCols.includes('category_id');
+        console.log('[DB SCHEMA] medicine columns:', existingCols);
 
         // Validar los datos de entrada
         const validation = validateMedicineInput(req.body);
@@ -105,17 +115,34 @@ export const createMedicine = async (req: Request, res: Response) => {
             return res.status(400).json({ message: validation.message });
         }
 
-        // Validar category (string, no id)
-        if (!category || typeof category !== 'string') {
-            return res.status(400).json({ message: 'Debe seleccionar una categoría válida.' });
-        }
+        // Manejar category / category_id de forma flexible
+        let finalCategoryName: string | null = null;
+        let finalCategoryId: number | null = null;
 
-        // Validar que la categoría exista en la tabla categories (case-insensitive)
-        const categoryCheck = await pool.query('SELECT name FROM categories WHERE LOWER(name) = LOWER($1)', [category]);
-        if (categoryCheck.rows.length === 0) {
-            return res.status(400).json({ message: 'La categoría seleccionada no existe.' });
+        if (category_id !== undefined && category_id !== null) {
+            // Se recibió category_id directo
+            if (isNaN(Number(category_id))) {
+                return res.status(400).json({ message: 'category_id inválido.' });
+            }
+            const catById = await pool.query('SELECT id, name FROM categories WHERE id = $1', [Number(category_id)]);
+            if (catById.rows.length === 0) {
+                return res.status(404).json({ message: 'Categoría no encontrada.' });
+            }
+            finalCategoryId = Number(category_id);
+            finalCategoryName = catById.rows[0].name;
+        } else if (category !== undefined && category !== null && category !== '') {
+            // Se recibió category por nombre
+            const catByName = await pool.query('SELECT id, name FROM categories WHERE LOWER(name) = LOWER($1)', [category]);
+            if (catByName.rows.length === 0) {
+                return res.status(400).json({ message: 'La categoría seleccionada no existe.' });
+            }
+            finalCategoryId = catByName.rows[0].id;
+            finalCategoryName = catByName.rows[0].name;
+        } else {
+            // No se envió categoría: permitir NULL si la columna lo permite
+            finalCategoryId = null;
+            finalCategoryName = null;
         }
-        category = categoryCheck.rows[0].name;
 
         // Validar provider_id
         if (!provider_id || isNaN(Number(provider_id))) {
@@ -139,16 +166,35 @@ export const createMedicine = async (req: Request, res: Response) => {
             return res.status(409).json({ message: 'Ya existe un medicamento con ese código de barras.' });
         }
 
-        // Insertar el nuevo medicamento con provider_id y category (string)
-        const result = await pool.query(
-            'INSERT INTO medicine (name, description, stock, price, expiration_date, lot, category, barcode, provider_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-            [name, description, stock, price, expirationDate, lot, category, barcode, provider_id]
-        );
+        // Construir INSERT dinámico según columnas disponibles (category o category_id)
+        const insertFields: string[] = ['name', 'description', 'stock', 'price', 'expiration_date', 'lot', 'barcode', 'provider_id'];
+        const insertValues: any[] = [name, description, stock, price, expirationDate, lot, barcode, provider_id];
+
+        // Insertar la columna de categoría justo antes de 'barcode' si la tabla la tiene.
+        // Preferir category_id cuando exista; sólo insertar columna si existe en la tabla.
+        const barcodePos = insertFields.indexOf('barcode') >= 0 ? insertFields.indexOf('barcode') : insertFields.length;
+        if (hasCategoryIdCol) {
+            // Siempre usar category_id en la tabla si existe (incluso para NULL)
+            insertFields.splice(barcodePos, 0, 'category_id');
+            insertValues.splice(barcodePos, 0, finalCategoryId); // puede ser number o null
+        } else if (hasCategoryNameCol) {
+            insertFields.splice(barcodePos, 0, 'category');
+            insertValues.splice(barcodePos, 0, finalCategoryName); // puede ser string o null
+        }
+
+        const placeholders = insertFields.map((_, i) => `$${i + 1}`).join(', ');
+        const insertQuery = `INSERT INTO medicine (${insertFields.join(', ')}) VALUES (${placeholders}) RETURNING *`;
+
+        const result = await pool.query(insertQuery, insertValues);
 
         res.status(201).json(result.rows[0]);
     } catch (error) {
         // Loguea el error completo para depuración
         console.error('Error al crear medicamento:', error);
+        // Imprimir stack si está disponible para facilitar el diagnóstico
+        if (error && (error as any).stack) {
+            console.error((error as any).stack);
+        }
 
         // Si la tabla categories no existe, dar instrucción clara
         const errStr = String(error);
@@ -195,10 +241,27 @@ export const updateMedicine = async (req: Request, res: Response) => {
             }
         }
 
-        // Validar category si se envía (string)
-        if (category !== undefined) {
-            if (!category || typeof category !== 'string') {
-                return res.status(400).json({ message: 'Debe seleccionar una categoría válida.' });
+        // Validar category/category_id si se envía (flexible)
+        let finalCategoryNameUpdate: string | null = null;
+        let finalCategoryIdUpdate: number | null = null;
+
+        if (req.body.category_id !== undefined) {
+            if (isNaN(Number(req.body.category_id))) {
+                return res.status(400).json({ message: 'category_id inválido.' });
+            }
+            const cat = await pool.query('SELECT id, name FROM categories WHERE id = $1', [Number(req.body.category_id)]);
+            if (cat.rows.length === 0) return res.status(404).json({ message: 'Categoría no encontrada.' });
+            finalCategoryIdUpdate = Number(req.body.category_id);
+            finalCategoryNameUpdate = cat.rows[0].name;
+        } else if (category !== undefined) {
+            if (category !== null && category !== '') {
+                const cat = await pool.query('SELECT id, name FROM categories WHERE LOWER(name) = LOWER($1)', [category]);
+                if (cat.rows.length === 0) return res.status(400).json({ message: 'La categoría seleccionada no existe.' });
+                finalCategoryIdUpdate = cat.rows[0].id;
+                finalCategoryNameUpdate = cat.rows[0].name;
+            } else {
+                finalCategoryIdUpdate = null;
+                finalCategoryNameUpdate = null;
             }
         }
 
@@ -238,7 +301,21 @@ export const updateMedicine = async (req: Request, res: Response) => {
         if (price !== undefined) { fields.push(`price = $${queryIndex++}`); values.push(price); }
         if (expirationDate !== undefined) { fields.push(`expiration_date = $${queryIndex++}`); values.push(expirationDate); }
         if (lot !== undefined) { fields.push(`lot = $${queryIndex++}`); values.push(lot); }
-        if (category !== undefined) { fields.push(`category = $${queryIndex++}`); values.push(category); }
+        // Añadir category o category_id según esquema (comprobación robusta del schema)
+        const colsResult = await pool.query(
+            "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'medicine' AND column_name IN ('category','category_id')"
+        );
+        const existingCols = colsResult.rows.map((r: any) => r.column_name);
+        const hasCategoryNameCol = existingCols.includes('category');
+        const hasCategoryIdCol = existingCols.includes('category_id');
+
+        // Sólo agregar la columna si existe en la tabla. Permitir también establecer NULL si se envió explicitamente.
+        if (hasCategoryIdCol && finalCategoryIdUpdate !== undefined) {
+            fields.push(`category_id = $${queryIndex++}`); values.push(finalCategoryIdUpdate);
+        } else if (hasCategoryNameCol && finalCategoryNameUpdate !== undefined) {
+            fields.push(`category = $${queryIndex++}`); values.push(finalCategoryNameUpdate);
+        }
+
         if (barcode !== undefined) { fields.push(`barcode = $${queryIndex++}`); values.push(barcode); }
         if (provider_id !== undefined) { fields.push(`provider_id = $${queryIndex++}`); values.push(provider_id); }
 
@@ -370,3 +447,4 @@ export const getProviders = async (_req: Request, res: Response) => {
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 };
+  

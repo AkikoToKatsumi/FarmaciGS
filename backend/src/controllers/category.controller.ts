@@ -58,31 +58,38 @@ export const createCategory = async (req: Request, res: Response) => {
 // Eliminar una categoría
 export const deleteCategory = async (req: Request, res: Response) => {
   console.log('[DELETE] /api/categories/' + req.params.id);
+  const { id } = req.params;
+  const idNum = Number(id);
+
+  // Validar que el id sea un entero positivo
+  if (!Number.isInteger(idNum) || idNum <= 0) {
+    return res.status(400).json({ error: 'Invalid category id' });
+  }
+
   try {
-    const { id } = req.params;
-    const categoryName = id.trim();
-
-    // Verificar si hay medicamentos usando esta categoría (case-insensitive)
-    const medicinesUsingCategory = await pool.query(
-      'SELECT COUNT(*) as count FROM medicine WHERE LOWER(category) = LOWER($1)', 
-      [categoryName]
+    // Verificar si existen medicinas asociadas a la categoría
+    const refCheck = await pool.query(
+      'SELECT COUNT(*)::int AS cnt FROM medicine WHERE category_id = $1',
+      [idNum]
     );
-    if (parseInt(medicinesUsingCategory.rows[0].count) > 0) {
-      return res.status(409).json({ 
-        message: 'No se puede eliminar la categoría porque hay medicamentos que la usan.' 
-      });
+    const refs = refCheck.rows[0]?.cnt ?? 0;
+    if (refs > 0) {
+      return res.status(409).json({ error: 'Cannot delete category with associated medicines' });
     }
 
-    // Eliminar por nombre (case-insensitive)
-    const result = await pool.query('DELETE FROM categories WHERE LOWER(name) = LOWER($1)', [categoryName]);
+    // Intentar borrar la categoría
+    const result = await pool.query(
+      'DELETE FROM categories WHERE id = $1',
+      [idNum]
+    );
     if (result.rowCount === 0) {
-      return res.status(404).json({ message: 'Categoría no encontrada.' });
+      return res.status(404).json({ error: 'Category not found' });
     }
 
-    res.status(204).send();
-  } catch (error) {
-    console.error('Error al eliminar categoría:', error);
-    res.status(500).json({ message: 'Error al eliminar la categoría.' });
+    return res.status(204).send();
+  } catch (err) {
+    console.error('[DELETE] /api/categories/%s\nError al eliminar categoría:', id, err);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
