@@ -186,16 +186,17 @@ const CategoryManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (name: string) => {
+  const handleDelete = async (id: number) => {
     if (!window.confirm('¿Eliminar esta categoría?')) return;
     try {
-      await deleteCategory(name, token ?? '');
+      await deleteCategory(id, token ?? '');
       fetchCategories();
     } catch {
       setError('Error al eliminar categoría');
     }
   };
 
+  console.log('Estructura categories en render:', categories);
   return (
     <Container>
       <BackButton onClick={() => navigate('/dashboard')}>← Volver atrás</BackButton>
@@ -215,15 +216,23 @@ const CategoryManager: React.FC = () => {
       </Form>
       {error && <Error>{error}</Error>}
       <CategoryGrid>
-        {categories.map(cat => (
-          <CategoryCard key={cat}>
-            <CategoryIcon />
-            <CategoryName>{cat}</CategoryName>
-            <DeleteButton onClick={() => handleDelete(cat)} title="Eliminar">
-              <Trash2 size={18} />
-            </DeleteButton>
-          </CategoryCard>
-        ))}
+        {categories.length === 0 ? (
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#6b7280', fontSize: '1rem', marginTop: '18px' }}>
+            No hay categorías registradas.
+          </div>
+        ) : (
+          categories
+            .filter(cat => typeof cat === 'object' && cat !== null && 'id' in cat && 'name' in cat)
+            .map(cat => (
+              <CategoryCard key={cat.id}>
+                <CategoryIcon />
+                <CategoryName>{cat.name}</CategoryName>
+                <DeleteButton onClick={() => handleDelete(cat.id)} title="Eliminar">
+                  <Trash2 size={18} />
+                </DeleteButton>
+              </CategoryCard>
+            ))
+        )}
       </CategoryGrid>
     </Container>
   );

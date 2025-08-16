@@ -9,14 +9,14 @@ export const getCategories = async (_req: Request, res: Response) => {
     const testQuery = await pool.query('SELECT NOW()');
     console.log('Conexión a BD exitosa:', testQuery.rows[0]);
     
-    // Obtener categorías
-    const result = await pool.query('SELECT name FROM categories ORDER BY name ASC');
-    const categories = result.rows.map(row => row.name);
+  // Obtener categorías (id y name)
+  const result = await pool.query('SELECT id, name FROM categories ORDER BY name ASC');
+  const categories = result.rows.map(row => ({ id: row.id, name: row.name }));
     
-    console.log('Categorías encontradas:', categories.length);
-    console.log('Categorías:', categories);
+  console.log('Categorías encontradas:', categories.length);
+  console.log('Categorías:', categories);
     
-    res.json(categories);
+  res.json(categories);
   } catch (error) {
     console.error('Error completo:', error);
     res.status(500).json({ 
@@ -44,11 +44,10 @@ export const createCategory = async (req: Request, res: Response) => {
     }
     
     const result = await pool.query(
-      'INSERT INTO categories (name) VALUES ($1) RETURNING name', 
+      'INSERT INTO categories (name) VALUES ($1) RETURNING id, name', 
       [trimmedName]
     );
-    
-    res.status(201).json(result.rows[0].name);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error al crear categoría:', error);
     res.status(500).json({ message: 'Error al crear la categoría.' });

@@ -39,13 +39,22 @@ API.interceptors.response.use(
   }
 );
 
-export type Category = string;
+export type Category = {
+  id: number;
+  name: string;
+};
 
 export const getCategories = async (token?: string): Promise<Category[]> => {
   try {
     const response = await API.get('/categories');
-    console.log('Categorías recibidas:', response.data);
-    return Array.isArray(response.data) ? response.data : [];
+    // Ajuste: si la respuesta viene como { categories: [...] }
+    const data = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.categories)
+        ? response.data.categories
+        : [];
+    console.log('Categorías recibidas:', data);
+    return data;
   } catch (error) {
     console.error('Error al obtener categorías:', error);
     throw new Error('Error al obtener categorías');
@@ -62,9 +71,9 @@ export const createCategory = async (name: string, token?: string): Promise<Cate
   }
 };
 
-export const deleteCategory = async (idOrName: number | string, token?: string): Promise<void> => {
+export const deleteCategory = async (id: number, token?: string): Promise<void> => {
   try {
-    await API.delete(`/categories/${encodeURIComponent(String(idOrName))}`);
+    await API.delete(`/categories/${id}`);
   } catch (error: any) {
     console.error('Error al eliminar categoría:', error);
     throw new Error(error.response?.data?.message || 'Error al eliminar categoría');
