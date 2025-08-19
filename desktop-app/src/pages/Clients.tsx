@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { getClients, createClient, updateClient, deleteClient } from '../services/client.service';
 import { useNavigate } from 'react-router-dom';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 
 // Styled Components
 const Container = styled.div`

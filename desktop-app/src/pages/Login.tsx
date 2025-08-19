@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth.service';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 // Corrige el import del CSS
 import './login.css';
 

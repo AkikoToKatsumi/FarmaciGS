@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 import { employeeService } from '../services/employees.service';
 
 

@@ -399,3 +399,21 @@ export const getProviders = async (token?: string): Promise<{ id: number; name: 
   const data = Array.isArray(response.data) ? response.data : [];
   return data.map((p: any) => ({ id: p.id, name: p.name }));
 };
+
+/**
+ * Obtiene medicamentos próximos a vencer (expiring soon).
+ * @returns Promise<Medicine[]> - Array de medicamentos próximos a vencer
+ */
+export const getExpiringSoonReport = async (token?: string): Promise<Medicine[]> => {
+  // Si tienes un endpoint específico, usa ese:
+  // const response = await API.get('/inventory/alerts/expiring');
+  // return response.data;
+
+  // Si no, usa el endpoint de stock alerts y filtra por fecha de vencimiento:
+  const response = await API.get('/inventory/alerts/stock');
+  const now = new Date();
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  return (response.data as Medicine[]).filter(
+    m => new Date(m.expiration_date) <= thirtyDaysFromNow
+  );
+};

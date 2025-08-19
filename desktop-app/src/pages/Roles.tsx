@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getRoles, createRole, updateRole, deleteRole } from '../services/role.service';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 import styled from 'styled-components';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 

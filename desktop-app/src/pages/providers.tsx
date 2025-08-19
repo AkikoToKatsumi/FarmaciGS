@@ -8,7 +8,7 @@ import {
   CreateProviderData,
   UpdateProviderData
 } from '../services/provider.service';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 import styled from 'styled-components';
 
 // Interfaces

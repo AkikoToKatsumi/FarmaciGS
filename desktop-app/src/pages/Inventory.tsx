@@ -12,6 +12,7 @@ import {
   deleteMedicine, 
   getStockAlerts,
   getProviders, // <-- nuevo import
+  getExpiringSoonReport, // <-- importar el servicio
   Medicine as MedicineType, 
   CreateMedicineData, 
   UpdateMedicineData 
@@ -446,84 +447,39 @@ const AlertText = styled.p`
   margin: 0.125rem 0;
 `;
 
-// Summary styles
-const SummaryGrid = styled.div`
-  margin-top: 1.5rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(4, 1fr);
+// Nuevo: estilos para alertas separadas
+const StockAlertContainer = styled(AlertContainer)`
+  background-color: #fee2e2;
+  border-color: #f87171;
+`;
+
+const StockAlertTitle = styled(AlertTitle)`
+  color: #b91c1c;
+`;
+
+const ExpiringAlertContainer = styled(AlertContainer)`
+  background-color: #fef3c7;
+  border-color: #fbbf24;
+`;
+
+const ExpiringAlertTitle = styled(AlertTitle)`
+  color: #d97706;
+`;
+
+const StockAlertButton = styled(AlertButton)`
+  background-color: ${props => props.hasAlerts ? '#f87171' : '#e2e8f0'};
+  color: ${props => props.hasAlerts ? '#fff' : '#4a5568'};
+  &:hover {
+    background-color: ${props => props.hasAlerts ? '#ef4444' : '#cbd5e0'};
   }
 `;
 
-const SummaryCard = styled.div<{ color: 'blue' | 'green' | 'yellow' | 'purple' }>`
-  padding: 1rem;
-  border-radius: 0.5rem;
-  
-  ${props => {
-    switch (props.color) {
-      case 'blue':
-        return 'background-color: #dbeafe;';
-      case 'green':
-        return 'background-color: #dcfce7;';
-      case 'yellow':
-        return 'background-color: #fef3c7;';
-      case 'purple':
-        return 'background-color: #f3e8ff;';
-      default:
-        return 'background-color: #f3f4f6;';
-    }
-  }}
-`;
-
-const SummaryValue = styled.div<{ color: 'blue' | 'green' | 'yellow' | 'purple' }>`
-  font-size: 2rem;
-  font-weight: 700;
-  
-  ${props => {
-    switch (props.color) {
-      case 'blue':
-        return 'color: #2563eb;';
-      case 'green':
-        return 'color: #16a34a;';
-      case 'yellow':
-        return 'color: #d97706;';
-      case 'purple':
-        return 'color: #9333ea;';
-      default:
-        return 'color: #6b7280;';
-    }
-  }}
-`;
-
-const SummaryLabel = styled.div<{ color: 'blue' | 'green' | 'yellow' | 'purple' }>`
-  font-size: 0.875rem;
-  
-  ${props => {
-    switch (props.color) {
-      case 'blue':
-        return 'color: #2563eb;';
-      case 'green':
-        return 'color: #16a34a;';
-      case 'yellow':
-        return 'color: #d97706;';
-      case 'purple':
-        return 'color: #9333ea;';
-      default:
-        return 'color: #6b7280;';
-    }
-  }}
-`;
-
-const LoadingContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 80vh;
-  font-size: 1.125rem;
-  color: #6b7280;
+const ExpiringAlertButton = styled(AlertButton)`
+  background-color: ${props => props.hasAlerts ? '#fbbf24' : '#e2e8f0'};
+  color: ${props => props.hasAlerts ? '#92400e' : '#4a5568'};
+  &:hover {
+    background-color: ${props => props.hasAlerts ? '#f59e42' : '#cbd5e0'};
+  }
 `;
 
 // Componentes de mensajes modernos
@@ -640,6 +596,74 @@ const NotificationContainer = styled.div`
     max-width: none;
   }
 `;
+// --- Summary & Loading Components ---
+
+const LoadingContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  font-size: 1.25rem;
+  color: #4299e1;
+  font-weight: 600;
+`;
+
+const SummaryGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 2rem 0 0 0;
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+`;
+
+const SummaryCard = styled.div<{ color: string }>`
+  background-color: ${({ color }) => {
+    switch (color) {
+      case 'blue': return '#ebf8ff';
+      case 'green': return '#f0fdf4';
+      case 'yellow': return '#fef9c3';
+      case 'purple': return '#f3e8ff';
+      default: return '#f7fafc';
+    }
+  }};
+  border-radius: 0.75rem;
+  padding: 1.5rem 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const SummaryValue = styled.div<{ color: string }>`
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: ${({ color }) => {
+    switch (color) {
+      case 'blue': return '#2563eb';
+      case 'green': return '#22c55e';
+      case 'yellow': return '#eab308';
+      case 'purple': return '#a21caf';
+      default: return '#374151';
+    }
+  }};
+  margin-bottom: 0.5rem;
+`;
+
+const SummaryLabel = styled.div<{ color: string }>`
+  font-size: 1rem;
+  font-weight: 500;
+  color: ${({ color }) => {
+    switch (color) {
+      case 'blue': return '#2563eb';
+      case 'green': return '#22c55e';
+      case 'yellow': return '#eab308';
+      case 'purple': return '#a21caf';
+      default: return '#374151';
+    }
+  }};
+`;
 
 // Componente de notificación reutilizable
 interface NotificationProps {
@@ -694,7 +718,13 @@ const Inventory = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<MedicineType | null>(null);
   const [showAlerts, setShowAlerts] = useState(false);
-  
+  const [showStockAlerts, setShowStockAlerts] = useState(false);
+  const [showExpiringAlerts, setShowExpiringAlerts] = useState(false);
+
+  // Nuevo estado para productos por vencer
+  const [expiringAlerts, setExpiringAlerts] = useState<MedicineType[]>([]);
+  const [expiringLoading, setExpiringLoading] = useState(false);
+
   const [providers, setProviders] = useState<{ id: number; name: string }[]>([]);
   const [providersLoading, setProvidersLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
@@ -804,8 +834,9 @@ const Inventory = () => {
     const fetchCategories = async () => {
       setCategoriesLoading(true);
       try {
-        const data = await getCategoryList(token ?? undefined); // pasar undefined si token es null
-        setCategories(data);
+        const data = await getCategoryList(token ?? undefined); // data: Category[]
+        // Mapea a string[] (por ejemplo, usando data.map(c => c.name))
+        setCategories(data.map((c: any) => c.name));
       } catch (error) {
         setErrorMessage('Error al cargar categorías. Por favor, intenta de nuevo.');
         setCategories([]);
@@ -814,6 +845,22 @@ const Inventory = () => {
       }
     };
     fetchCategories();
+  }, [token]);
+
+  // Obtener productos por vencer al montar
+  useEffect(() => {
+    const fetchExpiring = async () => {
+      setExpiringLoading(true);
+      try {
+        const data = await getExpiringSoonReport(token ?? undefined);
+        setExpiringAlerts(data);
+      } catch (error) {
+        setExpiringAlerts([]);
+      } finally {
+        setExpiringLoading(false);
+      }
+    };
+    fetchExpiring();
   }, [token]);
 
   // Generador automático de código de producto
@@ -983,12 +1030,18 @@ const Inventory = () => {
       <Header>
         <Title>Gestión de Inventario</Title>
         <ButtonContainer>
-          <AlertButton
-            onClick={() => setShowAlerts(!showAlerts)}
+          <StockAlertButton
+            onClick={() => setShowStockAlerts(!showStockAlerts)}
             hasAlerts={stockAlerts.length > 0}
           >
             Alertas de Stock ({stockAlerts.length})
-          </AlertButton>
+          </StockAlertButton>
+          <ExpiringAlertButton
+            onClick={() => setShowExpiringAlerts(!showExpiringAlerts)}
+            hasAlerts={expiringAlerts.length > 0}
+          >
+            Alertas de Vencimiento ({expiringAlerts.length})
+          </ExpiringAlertButton>
           <PrimaryButton
             onClick={() => setShowForm(true)}
           >
@@ -1001,19 +1054,49 @@ const Inventory = () => {
       </Header>
 
       {/* Alertas de Stock */}
-      {showAlerts && stockAlerts.length > 0 && (
-        <AlertContainer>
-          <AlertTitle>Productos con Stock Bajo</AlertTitle>
-          <AlertGrid>
-            {stockAlerts.map(product => (
-              <AlertCard key={product.id}>
-                <AlertProductName>{product.name}</AlertProductName>
-                <AlertText>Stock: {product.stock} unidades</AlertText>
-                <AlertText>Lote: {product.lot}</AlertText>
-              </AlertCard>
-            ))}
-          </AlertGrid>
-        </AlertContainer>
+      {showStockAlerts && (
+        <StockAlertContainer>
+          <StockAlertTitle>Productos con Stock Bajo</StockAlertTitle>
+          {stockAlerts.length === 0 && (
+            <span style={{ color: '#b91c1c', fontSize: '0.85rem' }}>No hay productos con stock bajo.</span>
+          )}
+          {stockAlerts.length > 0 && (
+            <AlertGrid>
+              {stockAlerts.map(product => (
+                <AlertCard key={product.id}>
+                  <AlertProductName>{product.name}</AlertProductName>
+                  <AlertText>Stock: {product.stock} unidades</AlertText>
+                  <AlertText>Lote: {product.lot}</AlertText>
+                </AlertCard>
+              ))}
+            </AlertGrid>
+          )}
+        </StockAlertContainer>
+      )}
+
+      {/* Alertas de productos por vencer */}
+      {showExpiringAlerts && (
+        <ExpiringAlertContainer>
+          <ExpiringAlertTitle>Productos por vencer</ExpiringAlertTitle>
+          {expiringLoading && <span style={{ color: '#d97706', fontSize: '0.85rem' }}>Cargando productos por vencer...</span>}
+          {!expiringLoading && expiringAlerts.length === 0 && (
+            <span style={{ color: '#d97706', fontSize: '0.85rem' }}>No hay productos próximos a vencer.</span>
+          )}
+          {!expiringLoading && expiringAlerts.length > 0 && (
+            <AlertGrid>
+              {expiringAlerts.map(product => (
+                <AlertCard key={product.id}>
+                  <AlertProductName>{product.name}</AlertProductName>
+                  <AlertText>Vence: {formatDate(product.expiration_date)}</AlertText>
+                  <AlertText>
+                    Estado: {new Date(product.expiration_date) < new Date() ? 'Vencido' : 'Por vencer'}
+                  </AlertText>
+                  <AlertText>Lote: {product.lot}</AlertText>
+                </AlertCard>
+              ))}
+            </AlertGrid>
+          )}
+        </ExpiringAlertContainer>
       )}
 
       {/* Filtros y Búsqueda */}
@@ -1325,7 +1408,6 @@ const Inventory = () => {
         )}
       </div>
 
-      
       {/* Resumen */}
       <SummaryGrid>
         <SummaryCard color="blue">
@@ -1347,7 +1429,6 @@ const Inventory = () => {
           <SummaryLabel color="purple">Categorías</SummaryLabel>
         </SummaryCard>
       </SummaryGrid>
-       
     </PageContainer>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 import { getRoles } from '../services/role.service';
 import { useNavigate } from 'react-router-dom';
 

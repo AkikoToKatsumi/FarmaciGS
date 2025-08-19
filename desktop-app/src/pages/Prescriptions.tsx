@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { getClients } from '../services/client.service';
 import { getMedicine } from '../services/inventory.service';
 import { getPrescriptionsByClient, createPrescription } from '../services/prescription.service';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '../store/User';
 
 // Styled Components
 const Container = styled.div`
