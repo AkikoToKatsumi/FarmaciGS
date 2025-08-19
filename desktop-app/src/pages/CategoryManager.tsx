@@ -205,9 +205,9 @@ const CategoryManager: React.FC = () => {
       await deleteCategory(id, token ?? '');
       fetchCategories();
     } catch (err: any) {
-      // Mostrar el mensaje del backend si existe
-      if (err?.response?.data?.error || err?.response?.data?.message) {
-        setError(err.response.data.error || err.response.data.message);
+      const backendMsg = err?.response?.data?.error || err?.response?.data?.message;
+      if (backendMsg) {
+        setError(backendMsg);
       } else {
         setError('Error al eliminar categoría');
       }

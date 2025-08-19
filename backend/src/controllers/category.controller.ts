@@ -66,17 +66,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
   }
 
   try {
-    // Verificar si existen medicinas asociadas a la categoría
-    const refCheck = await pool.query(
-      'SELECT COUNT(*)::int AS cnt FROM medicine WHERE category_id = $1',
-      [idNum]
-    );
-    const refs = refCheck.rows[0]?.cnt ?? 0;
-    if (refs > 0) {
-      return res.status(409).json({ error: 'Cannot delete category with associated medicines' });
-    }
-
-    // Intentar borrar la categoría
+    // Eliminar la categoría directamente, la DB se encarga de poner category_id en NULL en medicine
     const result = await pool.query(
       'DELETE FROM categories WHERE id = $1',
       [idNum]
@@ -86,8 +76,11 @@ export const deleteCategory = async (req: Request, res: Response) => {
     }
 
     return res.status(204).send();
-  } catch (err) {
-    console.error('[DELETE] /api/categories/%s\nError al eliminar categoría:', id, err);
+  } catch (err: any) {
+    console.error(`[DELETE] /api/categories/${id}\nError al eliminar categoría:`, err);
+    if (process.env.NODE_ENV === 'development') {
+      return res.status(500).json({ error: 'Internal Server Error', details: err?.message || err });
+    }
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
