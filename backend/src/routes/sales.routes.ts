@@ -8,6 +8,7 @@ const router = Router();
 router.use(verifyToken);
 
 router.get('/', salesController.getSales);
+router.get('/cashbox-summary', salesController.getCashboxSummary);
 router.get('/:id', salesController.getSaleById);
 router.post('/', salesController.createSale);
 router.put('/:id', salesController.updateSale);

@@ -150,6 +150,7 @@ const NoPerms = styled.div`
 `;
 
 const Reports = () => {
+  const [expired, setExpired] = useState([]);
   const navigate = useNavigate();
   const token = useUserStore((s) => s.token);
   const user = useUserStore((s) => s.user);
@@ -165,15 +166,17 @@ const Reports = () => {
         .toISOString()
         .split('T')[0];
 
-      const salesRes = await getSalesReport(weekAgo, today);
-      // Si el backend devuelve { sales, totalSum }
+      // Pasar el token a los servicios si lo requieren
+  const salesRes = await getSalesReport(weekAgo, today);
       setSales(salesRes.sales || []);
       setSalesTotal(salesRes.totalSum || 0);
 
-      const e = await getExpiringSoonReport();
-      const l = await getStockLowReport();
-
-      setExpiring(e);
+  const e = await getExpiringSoonReport();
+  const l = await getStockLowReport();
+      // Separar productos por vencer y vencidos
+      const now = new Date();
+      setExpiring(e.filter((m: any) => new Date(m.expiration_date) > now));
+      setExpired(e.filter((m: any) => new Date(m.expiration_date) <= now));
       setLowStock(l);
     };
     loadReports();
@@ -213,10 +216,21 @@ const Reports = () => {
     const rows = expiring.map((m: any) => [
       m.id,
       m.name,
-      new Date(m.expirationDate).toLocaleDateString(),
+      new Date(m.expiration_date).toLocaleDateString(),
     ]);
     const csvContent = [header, ...rows].map((r) => r.join(',')).join('\n');
     downloadCSV(csvContent, 'por_vencer.csv');
+  };
+
+  const exportExpiredCSV = () => {
+    const header = ['ID', 'Nombre', 'Fecha de Vencimiento'];
+    const rows = expired.map((m: any) => [
+      m.id,
+      m.name,
+      new Date(m.expiration_date).toLocaleDateString(),
+    ]);
+    const csvContent = [header, ...rows].map((r) => r.join(',')).join('\n');
+    downloadCSV(csvContent, 'vencidos.csv');
   };
 
   const exportLowStockCSV = () => {
@@ -378,59 +392,112 @@ const Reports = () => {
       )}
 
       {/* Productos por vencer: solo admin y farmacéutico */}
-      {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
-        <Section>
-          <SectionHeader>
-            <SectionTitle>Medicamentos por vencer</SectionTitle>
-            <ButtonGroup>
-              <IconButton onClick={exportExpiringCSV} title="CSV">
-                <FileText size={16} /> CSV
-              </IconButton>
-              <IconButton
-                onClick={() =>
-                  exportExcel(
-                    expiring.map((m: any) => ({
-                      ID: m.id,
-                      Nombre: m.name,
-                      'Fecha de Vencimiento': new Date(
-                        m.expirationDate
-                      ).toLocaleDateString(),
-                    })),
-                    'por_vencer.xlsx'
-                  )
-                }
-                title="Excel"
-              >
-                <FileSpreadsheet size={16} /> Excel
-              </IconButton>
-              <IconButton
-                onClick={() =>
-                  exportPDF(
-                    expiring.map((m: any) => [
-                      m.id,
-                      m.name,
-                      new Date(m.expirationDate).toLocaleDateString(),
-                    ]),
-                    ['ID', 'Nombre', 'Fecha de Vencimiento'],
-                    'por_vencer.pdf'
-                  )
-                }
-                title="PDF"
-              >
-                <FileBarChart2 size={16} /> PDF
-              </IconButton>
-            </ButtonGroup>
-          </SectionHeader>
-          <List>
-            {expiring.map((m: any) => (
-              <ListItem key={m.id}>
-                {m.name} - Vence:{' '}
-                {new Date(m.expirationDate).toLocaleDateString()}
-              </ListItem>
-            ))}
-          </List>
-        </Section>
-      )}
+        {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+          <>
+            <Section>
+              <SectionHeader>
+                <SectionTitle>Medicamentos por vencer</SectionTitle>
+                <ButtonGroup>
+                  <IconButton onClick={exportExpiringCSV} title="CSV">
+                    <FileText size={16} /> CSV
+                  </IconButton>
+                  <IconButton
+                    onClick={() =>
+                      exportExcel(
+                        expiring.map((m: any) => ({
+                          ID: m.id,
+                          Nombre: m.name,
+                          'Fecha de Vencimiento': new Date(m.expiration_date).toLocaleDateString(),
+                        })),
+                        'por_vencer.xlsx'
+                      )
+                    }
+                    title="Excel"
+                  >
+                    <FileSpreadsheet size={16} /> Excel
+                  </IconButton>
+                  <IconButton
+                    onClick={() =>
+                      exportPDF(
+                        expiring.map((m: any) => [
+                          m.id,
+                          m.name,
+                          new Date(m.expiration_date).toLocaleDateString(),
+                        ]),
+                        ['ID', 'Nombre', 'Fecha de Vencimiento'],
+                        'por_vencer.pdf'
+                      )
+                    }
+                    title="PDF"
+                  >
+                    <FileBarChart2 size={16} /> PDF
+                  </IconButton>
+                </ButtonGroup>
+              </SectionHeader>
+              <List>
+                {expiring.length === 0 && (
+                  <ListItem style={{ color: '#d97706' }}>No hay medicamentos próximos a vencer.</ListItem>
+                )}
+                {expiring.map((m: any) => (
+                  <ListItem key={m.id}>
+                    #{m.id} - {m.name} - Vence: {new Date(m.expiration_date).toLocaleDateString()}
+                  </ListItem>
+                ))}
+              </List>
+            </Section>
+            <Section>
+              <SectionHeader>
+                <SectionTitle>Medicamentos vencidos</SectionTitle>
+                <ButtonGroup>
+                  <IconButton onClick={exportExpiredCSV} title="CSV">
+                    <FileText size={16} /> CSV
+                  </IconButton>
+                  <IconButton
+                    onClick={() =>
+                      exportExcel(
+                        expired.map((m: any) => ({
+                          ID: m.id,
+                          Nombre: m.name,
+                          'Fecha de Vencimiento': new Date(m.expiration_date).toLocaleDateString(),
+                        })),
+                        'vencidos.xlsx'
+                      )
+                    }
+                    title="Excel"
+                  >
+                    <FileSpreadsheet size={16} /> Excel
+                  </IconButton>
+                  <IconButton
+                    onClick={() =>
+                      exportPDF(
+                        expired.map((m: any) => [
+                          m.id,
+                          m.name,
+                          new Date(m.expiration_date).toLocaleDateString(),
+                        ]),
+                        ['ID', 'Nombre', 'Fecha de Vencimiento'],
+                        'vencidos.pdf'
+                      )
+                    }
+                    title="PDF"
+                  >
+                    <FileBarChart2 size={16} /> PDF
+                  </IconButton>
+                </ButtonGroup>
+              </SectionHeader>
+              <List>
+                {expired.length === 0 && (
+                  <ListItem style={{ color: '#dc2626' }}>No hay medicamentos vencidos.</ListItem>
+                )}
+                {expired.map((m: any) => (
+                  <ListItem key={m.id}>
+                    #{m.id} - {m.name} - Venció: {new Date(m.expiration_date).toLocaleDateString()}
+                  </ListItem>
+                ))}
+              </List>
+            </Section>
+          </>
+        )}
 
       {/* Stock bajo: solo admin y farmacéutico */}
       {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (

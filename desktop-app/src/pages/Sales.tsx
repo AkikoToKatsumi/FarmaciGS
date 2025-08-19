@@ -7,6 +7,80 @@ import { createSale, getClientById } from '../services/sales.service';
 import { getPrescriptionsByClient } from '../services/prescription.service';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/User';
+import { getCashboxSummary, CashboxSummary } from '../services/cashbox.service';
+// Cuadre de caja visual
+const CashboxCard = styled.div`
+  background: #fffbe6;
+  border-radius: 8px;
+  border: 1px solid #ffe58f;
+  padding: 24px;
+  margin-top: 32px;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.04);
+`;
+
+const CashboxTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  color: #b8860b;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ExportButton = styled.button`
+  background: #ffe58f;
+  color: #b8860b;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.15s;
+  &:hover {
+    background: #ffd700;
+    color: #fff;
+  }
+`;
+
+const CashboxRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const CashboxLabel = styled.span`
+  font-size: 14px;
+  color: #333;
+`;
+
+const CashboxAmount = styled.span`
+  font-size: 16px;
+  font-weight: 600;
+  color: #b8860b;
+`;
+// Hook para cuadre de caja
+const useCashboxSummary = (token: string | undefined) => {
+  const [summary, setSummary] = useState<CashboxSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    setLoading(true);
+    getCashboxSummary(token)
+      .then(setSummary)
+      .catch(e => setError('No se pudo obtener el cuadre de caja.'))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  return { summary, loading, error };
+};
+// Obtener usuario y token
+// Eliminado: las variables se declaran dentro del componente
 
 // Animaciones suaves y minimalistas
 const fadeIn = keyframes`
@@ -945,7 +1019,28 @@ export interface SaleResponse {
   pdf: string;
 }
 
+type CancelSaleResponse = {
+  message: string;
+  sale?: {
+    id: number;
+    total: number;
+    payment_method?: string;
+    created_at: string;
+  };
+  items?: Array<{
+    medicine_name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>;
+}
+
 const SalesPOS: React.FC = () => {
+  // Mover hooks aquí
+  const { user, token } = useUserStore();
+    // Estado para modal de detalles de cancelación
+    const [cancelDetailsModal, setCancelDetailsModal] = useState<{ open: boolean; sale?: CancelSaleResponse['sale']; items?: CancelSaleResponse['items']; message?: string }>({ open: false });
+  const { summary, loading: cashboxLoading, error: cashboxError } = useCashboxSummary(token ?? undefined);
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
   const [rnc, setRnc] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<PrescriptionInfo[]>([]);
@@ -964,7 +1059,7 @@ const SalesPOS: React.FC = () => {
   const [items, setItems] = useState<(SaleItemInput & { productInfo: MedicineType })[]>([]);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
-  const { user, token, clearUser } = useUserStore();
+  const { clearUser } = useUserStore();
 
   // Cargar lista de clientes al inicio
   useEffect(() => {
@@ -1319,7 +1414,7 @@ const SalesPOS: React.FC = () => {
   };
 
   // Añadir función para cancelar factura
-  const cancelSaleById = async (saleId: number, token: string): Promise<{ message: string }> => {
+  const cancelSaleById = async (saleId: number, token: string): Promise<CancelSaleResponse> => {
     const response = await axios.patch(
       `http://localhost:4004/api/sales/${saleId}/cancel`,
       {},
@@ -1330,6 +1425,31 @@ const SalesPOS: React.FC = () => {
 
   const [cancelSaleId, setCancelSaleId] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelPreview, setCancelPreview] = useState<CancelSaleResponse | null>(null);
+
+  // Buscar detalles de la factura cuando el usuario escribe el número
+  useEffect(() => {
+    const fetchPreview = async () => {
+      if (!cancelSaleId.trim() || !token) {
+        setCancelPreview(null);
+        return;
+      }
+      setCancelLoading(true);
+      try {
+        // Solo consulta, no cancela (GET endpoint debe existir en backend)
+        const response = await axios.get(
+          `http://localhost:4004/api/sales/${cancelSaleId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setCancelPreview(response.data);
+      } catch {
+        setCancelPreview(null);
+      } finally {
+        setCancelLoading(false);
+      }
+    };
+    fetchPreview();
+  }, [cancelSaleId, token]);
 
   // Handler para cancelar factura
   const handleCancelSale = async () => {
@@ -1343,8 +1463,13 @@ const SalesPOS: React.FC = () => {
     }
     setCancelLoading(true);
     try {
-      const result = await cancelSaleById(Number(cancelSaleId), token);
-      showNotification('success', 'Factura cancelada', result.message);
+      const result: CancelSaleResponse = await cancelSaleById(Number(cancelSaleId), token);
+      setCancelDetailsModal({
+        open: true,
+        sale: result.sale,
+        items: result.items,
+        message: result.message
+      });
       setCancelSaleId('');
     } catch (error: any) {
       if (error.response?.status === 403) {
@@ -1360,411 +1485,536 @@ const SalesPOS: React.FC = () => {
   };
 
   return (
-    <Container>
-      <MaxWidthContainer>
-        <Header>
-          <Title>
-            <ShoppingCart color="#0066cc" size={24} />
-            Ventas
-          </Title>
-          <BackButton onClick={() => navigate('/dashboard')}>
-         ← Volver a inicio
-          </BackButton>
-        </Header>
-
-        {/* Opción para cancelar factura solo para admin */}
-        {user?.role_name === 'admin' && (
-          <Card style={{ marginBottom: 32, border: '2px solid #f56565', background: '#fff5f5' }}>
-            <CardTitle style={{ color: '#b91c1c' }}>Cancelar Factura</CardTitle>
-            <FormGroup>
-              <Label htmlFor="cancelSaleId">Número de Factura</Label>
-              <Input
-                id="cancelSaleId"
-                type="number"
-                placeholder="Ingrese el número de factura a cancelar"
-                value={cancelSaleId}
-                onChange={e => setCancelSaleId(e.target.value)}
-                style={{ width: 200, marginRight: 12 }}
-                min={1}
-              />
-              <SearchButton
-                style={{ background: '#dc2626', marginLeft: 8 }}
-                onClick={handleCancelSale}
-                disabled={cancelLoading || !cancelSaleId.trim()}
-                type="button"
-              >
-                {cancelLoading ? 'Cancelando...' : 'Cancelar Factura'}
-              </SearchButton>
-            </FormGroup>
-            <p style={{ color: '#b91c1c', fontSize: 13, marginTop: 8 }}>
-              Solo el administrador puede cancelar facturas. Esta acción es irreversible.
-            </p>
-          </Card>
-        )}
-
-        <GridContainer>
-          {/* Columna izquierda: búsqueda y selección de productos */}
-          <div>
-            <Card>
-              <CardTitle>Buscar Producto</CardTitle>
-              <RadioGroup>
-                <RadioLabel>
-                  <RadioInput
-                    type="radio"
-                    name="searchType"
-                    value="barcode"
-                    checked={searchType === 'barcode'}
-                    onChange={(e) => setSearchType(e.target.value as 'barcode' | 'name')}
-                  />
-                  <Hash size={16} />
-                  Código de barras
-                </RadioLabel>
-                <RadioLabel>
-                  <RadioInput
-                    type="radio"
-                    name="searchType"
-                    value="name"
-                    checked={searchType === 'name'}
-                    onChange={(e) => setSearchType(e.target.value as 'barcode' | 'name')}
-                  />
-                  <Package size={16} />
-                  Nombre del producto
-                </RadioLabel>
-              </RadioGroup>
-              <SearchContainer>
-                <SearchInputContainer>
-                  <SearchIcon />
-                  <SearchInput
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={searchType === 'barcode' ? 'Escanear o escribir código de barras' : 'Buscar por nombre del producto'}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  />
-                </SearchInputContainer>
-                <SearchButton
-                  onClick={handleSearch}
-                  disabled={loading || !searchTerm.trim()}
-                >
-                  {loading ? 'Buscando...' : 'Buscar'}
-                </SearchButton>
-              </SearchContainer>
-            </Card>
-
-            {searchResults.length > 0 && (
-              <Card>
-                <CardTitle>Resultados de búsqueda</CardTitle>
-                <ResultsContainer>
-                  {searchResults.map((medicine) => (
-                    <ResultItem
-                      key={medicine.id}
-                      onClick={() => handleSelectFromResults(medicine)}
-                    >
-                      <ResultItemContent>
-                        <ResultItemInfo>
-                          <ResultItemName>{medicine.name}</ResultItemName>
-                          <ResultItemDescription>{medicine.description}</ResultItemDescription>
-                        </ResultItemInfo>
-                        <ResultItemPrice>
-                          <Price>${Number(medicine.price).toFixed(2)}</Price>
-                          <Stock>Stock: {medicine.stock}</Stock>
-                        </ResultItemPrice>
-                      </ResultItemContent>
-                    </ResultItem>
-                  ))}
-                </ResultsContainer>
-              </Card>
-            )}
-
-            {product && (
-              <Card>
-                <CardTitle>Producto Seleccionado</CardTitle>
-                <ProductGrid>
-                  <ProductInfoSection>
-                    <ProductInfoItem>
-                      <Package size={20} color="#2563eb" />
-                      <div>
-                        <ProductInfoLabel>Nombre</ProductInfoLabel>
-                        <ProductInfoValue>{product.name}</ProductInfoValue>
-                      </div>
-                    </ProductInfoItem>
-                    <ProductInfoItem>
-                      <Hash size={20} color="#2563eb" />
-                      <div>
-                        <ProductInfoLabel>Código de barras</ProductInfoLabel>
-                        <ProductInfoValue style={{ fontFamily: 'monospace' }}>
-                          {product.barcode || 'N/A'}
-                        </ProductInfoValue>
-                      </div>
-                    </ProductInfoItem>
-                  </ProductInfoSection>
-                  <ProductInfoSection>
-                    <ProductInfoItem>
-                      <DollarSign size={20} color="#16a34a" />
-                      <div>
-                        <ProductInfoLabel>Precio</ProductInfoLabel>
-                        <ProductPriceValue>${Number(product.price).toFixed(2)}</ProductPriceValue>
-                      </div>
-                    </ProductInfoItem>
-                    <div>
-                      <ProductInfoLabel>Stock disponible</ProductInfoLabel>
-                      <ProductStockValue low={product.stock < 10}>
-                        {product.stock} unidades
-                      </ProductStockValue>
-                    </div>
-                  </ProductInfoSection>
-                </ProductGrid>
-
-                <ProductDescription>
-                  <ProductInfoLabel>Descripción</ProductInfoLabel>
-                  <ProductInfoValue>{product.description}</ProductInfoValue>
-                </ProductDescription>
-
-                <QuantityContainer>
-                  <div>
-                    <ProductInfoLabel>Cantidad</ProductInfoLabel>
-                    <QuantityInput
-                      type="number"
-                      value={quantity}
-                      min={1}
-                      max={product.stock}
-                      onChange={(e) => setQuantity(Number(e.target.value))}
-                    />
-                  </div>
-                  <AddButton
-                    onClick={handleAddItem}
-                    disabled={quantity < 1 || quantity > product.stock}
-                  >
-                    <Plus size={16} />
-                    Agregar al carrito
-                  </AddButton>
-                </QuantityContainer>
-              </Card>
+    <>
+      {/* Modal de detalles de cancelación de factura */}
+      {cancelDetailsModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.35)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            padding: 32,
+            minWidth: 350,
+            maxWidth: 420,
+            width: '100%',
+            position: 'relative',
+          }}>
+            <button
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#888' }}
+              onClick={() => setCancelDetailsModal({ open: false })}
+              title="Cerrar"
+            >
+              <X size={22} />
+            </button>
+            <h2 style={{ color: '#b91c1c', marginBottom: 12 }}>Factura Cancelada</h2>
+            <p style={{ color: '#b91c1c', fontWeight: 500 }}>{cancelDetailsModal.message}</p>
+            {cancelDetailsModal.sale && (
+              <div style={{ marginTop: 18 }}>
+                <p><b>Número de factura:</b> {cancelDetailsModal.sale.id}</p>
+                <p><b>Total:</b> ${cancelDetailsModal.sale.total}</p>
+                <p><b>Método de pago:</b> {cancelDetailsModal.sale.payment_method || 'N/A'}</p>
+                <p><b>Fecha:</b> {new Date(cancelDetailsModal.sale.created_at).toLocaleString('es-ES')}</p>
+                <div style={{ marginTop: 10 }}>
+                  <b>Productos:</b>
+                  <ul style={{ paddingLeft: 18 }}>
+                    {cancelDetailsModal.items?.map((item, idx) => (
+                      <li key={idx} style={{ marginBottom: 4 }}>
+                        {item.medicine_name}: {item.quantity} × ${item.unit_price} = <b>${item.total_price}</b>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             )}
           </div>
+        </div>
+      )}
+      <Container>
+        <MaxWidthContainer>
+          <Header>
+            <Title>
+              <ShoppingCart color="#0066cc" size={24} />
+              Ventas
+            </Title>
+            <BackButton onClick={() => navigate('/dashboard')}>
+         ← Volver a inicio
+            </BackButton>
+          </Header>
 
-          {/* Columna derecha: cliente, recetas y carrito */}
-          <div>
-            <Card>
-              <CardTitle>Información del cliente</CardTitle>
-
+          {/* Opción para cancelar factura solo para admin */}
+          {user?.role_name === 'admin' && (
+            <Card style={{ marginBottom: 32, border: '2px solid #f56565', background: '#fff5f5' }}>
+              <CardTitle style={{ color: '#b91c1c' }}>Cancelar Factura</CardTitle>
               <FormGroup>
-                <Label>Método de Pago</Label>
-                <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)}>
-                  <option value="efectivo">Efectivo</option>
-                  <option value="tarjeta">Tarjeta</option>
-                  <option value="transferencia">Transferencia</option>
-                </Select>
+                <Label htmlFor="cancelSaleId">Número de Factura</Label>
+                <Input
+                  id="cancelSaleId"
+                  type="number"
+                  placeholder="Ingrese el número de factura a cancelar"
+                  value={cancelSaleId}
+                  onChange={e => setCancelSaleId(e.target.value)}
+                  style={{ width: 200, marginRight: 12 }}
+                  min={1}
+                />
+                <SearchButton
+                  style={{ background: '#dc2626', marginLeft: 8 }}
+                  onClick={handleCancelSale}
+                  disabled={cancelLoading || !cancelSaleId.trim()}
+                  type="button"
+                >
+                  {cancelLoading ? 'Cancelando...' : 'Cancelar Factura'}
+                </SearchButton>
               </FormGroup>
+              {/* Mostrar detalles de la factura antes de cancelar */}
+              {cancelPreview && cancelPreview.sale && (
+                <div style={{ background: '#fff', border: '1px solid #fde2e2', borderRadius: 8, padding: 16, marginTop: 12 }}>
+                  <h4 style={{ color: '#b91c1c', marginBottom: 8 }}>Detalles de la factura</h4>
+                  <p><b>Número de factura:</b> {cancelPreview.sale.id}</p>
+                  <p><b>Total:</b> ${cancelPreview.sale.total}</p>
+                  <p><b>Método de pago:</b> {cancelPreview.sale.payment_method || 'N/A'}</p>
+                  <p><b>Fecha:</b> {new Date(cancelPreview.sale.created_at).toLocaleString('es-ES')}</p>
+                  <div style={{ marginTop: 8 }}>
+                    <b>Productos:</b>
+                    <ul style={{ paddingLeft: 18 }}>
+                      {cancelPreview.items?.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: 4 }}>
+                          {item.medicine_name}: {item.quantity} × ${item.unit_price} = <b>${item.total_price}</b>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+              <p style={{ color: '#b91c1c', fontSize: 13, marginTop: 8 }}>
+                Solo el administrador puede cancelar facturas. Esta acción es irreversible.
+              </p>
+            </Card>
+          )}
 
-              <FormGroup>
-                <Label>Cliente existente (opcional)</Label>
-                <Select value={selectedClientId ?? ''} onChange={(e) => setSelectedClientId(Number(e.target.value) || null)}>
-                  <option value="">-- Ninguno --</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>{client.name}</option>
-                  ))}
-                </Select>
-              </FormGroup>
+          <GridContainer>
+            {/* Columna izquierda: búsqueda y selección de productos */}
+            <div>
+              <Card>
+                <CardTitle>Buscar Producto</CardTitle>
+                <RadioGroup>
+                  <RadioLabel>
+                    <RadioInput
+                      type="radio"
+                      name="searchType"
+                      value="barcode"
+                      checked={searchType === 'barcode'}
+                      onChange={(e) => setSearchType(e.target.value as 'barcode' | 'name')}
+                    />
+                    <Hash size={16} />
+                    Código de barras
+                  </RadioLabel>
+                  <RadioLabel>
+                    <RadioInput
+                      type="radio"
+                      name="searchType"
+                      value="name"
+                      checked={searchType === 'name'}
+                      onChange={(e) => setSearchType(e.target.value as 'barcode' | 'name')}
+                    />
+                    <Package size={16} />
+                    Nombre del producto
+                  </RadioLabel>
+                </RadioGroup>
+                <SearchContainer>
+                  <SearchInputContainer>
+                    <SearchIcon />
+                    <SearchInput
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder={searchType === 'barcode' ? 'Escanear o escribir código de barras' : 'Buscar por nombre del producto'}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    />
+                  </SearchInputContainer>
+                  <SearchButton
+                    onClick={handleSearch}
+                    disabled={loading || !searchTerm.trim()}
+                  >
+                    {loading ? 'Buscando...' : 'Buscar'}
+                  </SearchButton>
+                </SearchContainer>
+              </Card>
 
-              {selectedClient && (
-                <ClientInfoSection>
-                  <ClientInfoTitle>Información del Cliente</ClientInfoTitle>
-                  <ClientInfoGrid>
-                    <ClientInfoItem>
-                      <User size={16} color="#2563eb" />
-                      <div>
-                        <ClientInfoLabel>Nombre</ClientInfoLabel>
-                        <ClientInfoValue>{selectedClient.name}</ClientInfoValue>
-                      </div>
-                    </ClientInfoItem>
-                    {selectedClient.phone && (
-                      <ClientInfoItem>
-                        <Phone size={16} color="#2563eb" />
-                        <div>
-                          <ClientInfoLabel>Teléfono</ClientInfoLabel>
-                          <ClientInfoValue>{selectedClient.phone}</ClientInfoValue>
-                        </div>
-                      </ClientInfoItem>
-                    )}
-                    {selectedClient.email && (
-                      <ClientInfoItem>
-                        <Mail size={16} color="#2563eb" />
-                        <div>
-                          <ClientInfoLabel>Email</ClientInfoLabel>
-                          <ClientInfoValue>{selectedClient.email}</ClientInfoValue>
-                        </div>
-                      </ClientInfoItem>
-                    )}
-                  </ClientInfoGrid>
-                </ClientInfoSection>
+              {searchResults.length > 0 && (
+                <Card>
+                  <CardTitle>Resultados de búsqueda</CardTitle>
+                  <ResultsContainer>
+                    {searchResults.map((medicine) => (
+                      <ResultItem
+                        key={medicine.id}
+                        onClick={() => handleSelectFromResults(medicine)}
+                      >
+                        <ResultItemContent>
+                          <ResultItemInfo>
+                            <ResultItemName>{medicine.name}</ResultItemName>
+                            <ResultItemDescription>{medicine.description}</ResultItemDescription>
+                          </ResultItemInfo>
+                          <ResultItemPrice>
+                            <Price>${Number(medicine.price).toFixed(2)}</Price>
+                            <Stock>Stock: {medicine.stock}</Stock>
+                          </ResultItemPrice>
+                        </ResultItemContent>
+                      </ResultItem>
+                    ))}
+                  </ResultsContainer>
+                </Card>
               )}
 
-              <FormGroup>
-                <Label>RNC (opcional)</Label>
-                <Input type="text" value={rnc} onChange={(e) => setRnc(e.target.value)} placeholder="RNC del cliente" />
-              </FormGroup>
+              {product && (
+                <Card>
+                  <CardTitle>Producto Seleccionado</CardTitle>
+                  <ProductGrid>
+                    <ProductInfoSection>
+                      <ProductInfoItem>
+                        <Package size={20} color="#2563eb" />
+                        <div>
+                          <ProductInfoLabel>Nombre</ProductInfoLabel>
+                          <ProductInfoValue>{product?.name}</ProductInfoValue>
+                        </div>
+                      </ProductInfoItem>
+                      <ProductInfoItem>
+                        <Hash size={20} color="#2563eb" />
+                        <div>
+                          <ProductInfoLabel>Código de barras</ProductInfoLabel>
+                          <ProductInfoValue style={{ fontFamily: 'monospace' }}>
+                            {product?.barcode || 'N/A'}
+                          </ProductInfoValue>
+                        </div>
+                      </ProductInfoItem>
+                    </ProductInfoSection>
+                    <ProductInfoSection>
+                      <ProductInfoItem>
+                        <DollarSign size={20} color="#16a34a" />
+                        <div>
+                          <ProductInfoLabel>Precio</ProductInfoLabel>
+                          <ProductPriceValue>${Number(product?.price ?? 0).toFixed(2)}</ProductPriceValue>
+                        </div>
+                      </ProductInfoItem>
+                      <div>
+                        <ProductInfoLabel>Stock disponible</ProductInfoLabel>
+                        <ProductStockValue low={(product?.stock ?? 0) < 10}>
+                          {product?.stock} unidades
+                        </ProductStockValue>
+                      </div>
+                    </ProductInfoSection>
+                  </ProductGrid>
 
-              {/* Selector de recetas si el cliente tiene múltiples */}
-              {clientPrescriptions.length > 1 && (
+                  <ProductDescription>
+                    <ProductInfoLabel>Descripción</ProductInfoLabel>
+                    <ProductInfoValue>{product?.description}</ProductInfoValue>
+                  </ProductDescription>
+
+                  <QuantityContainer>
+                    <div>
+                      <ProductInfoLabel>Cantidad</ProductInfoLabel>
+                      <QuantityInput
+                        type="number"
+                        value={quantity}
+                        min={1}
+                        max={product?.stock ?? 1}
+                        onChange={(e) => setQuantity(Number(e.target.value))}
+                      />
+                    </div>
+                    <AddButton
+                      onClick={handleAddItem}
+                      disabled={quantity < 1 || quantity > (product?.stock ?? 1)}
+                    >
+                      <Plus size={16} />
+                      Agregar al carrito
+                    </AddButton>
+                  </QuantityContainer>
+                </Card>
+              )}
+            </div>
+
+            {/* Columna derecha: cliente, recetas y carrito */}
+            <div>
+              <Card>
+                <CardTitle>Información del cliente</CardTitle>
+
                 <FormGroup>
-                  <Label>Seleccionar Receta</Label>
-                  <Select 
-                    value={selectedPrescriptionId ?? ''} 
-                    onChange={(e) => handlePrescriptionSelect(Number(e.target.value))}
-                  >
-                    <option value="">-- Selecciona una receta --</option>
-                    {clientPrescriptions.map(prescription => (
-                      <option key={prescription.id} value={prescription.id}>
-                        Receta #{prescription.id} - {new Date(prescription.issued_at).toLocaleDateString('es-ES')} 
-                        ({prescription.medicines?.length || 0} medicamentos)
-                      </option>
+                  <Label>Método de Pago</Label>
+                  <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)}>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                  </Select>
+                </FormGroup>
+
+                <FormGroup>
+                  <Label>Cliente existente (opcional)</Label>
+                  <Select value={selectedClientId ?? ''} onChange={(e) => setSelectedClientId(Number(e.target.value) || null)}>
+                    <option value="">-- Ninguno --</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>{client.name}</option>
                     ))}
                   </Select>
                 </FormGroup>
-              )}
 
-              {/* Mostrar medicamentos de la receta seleccionada o única */}
-              {selectedProducts.length > 0 && (
-                <PrescriptionSection>
-                  <PrescriptionTitle>
-                    <Package size={18} color="#16a34a" />
-                    Medicamentos Recetados - Receta #{selectedPrescriptionId || (clientPrescriptions.length === 1 ? clientPrescriptions[0].id : '')} ({selectedProducts.length})
-                  </PrescriptionTitle>
+                {selectedClient && (
+                  <ClientInfoSection>
+                    <ClientInfoTitle>Información del Cliente</ClientInfoTitle>
+                    <ClientInfoGrid>
+                      <ClientInfoItem>
+                        <User size={16} color="#2563eb" />
+                        <div>
+                          <ClientInfoLabel>Nombre</ClientInfoLabel>
+                          <ClientInfoValue>{selectedClient?.name}</ClientInfoValue>
+                        </div>
+                      </ClientInfoItem>
+                      {selectedClient.phone && (
+                        <ClientInfoItem>
+                          <Phone size={16} color="#2563eb" />
+                          <div>
+                            <ClientInfoLabel>Teléfono</ClientInfoLabel>
+                            <ClientInfoValue>{selectedClient?.phone}</ClientInfoValue>
+                          </div>
+                        </ClientInfoItem>
+                      )}
+                      {selectedClient.email && (
+                        <ClientInfoItem>
+                          <Mail size={16} color="#2563eb" />
+                          <div>
+                            <ClientInfoLabel>Email</ClientInfoLabel>
+                            <ClientInfoValue>{selectedClient?.email}</ClientInfoValue>
+                          </div>
+                        </ClientInfoItem>
+                      )}
+                    </ClientInfoGrid>
+                  </ClientInfoSection>
+                )}
 
-                  <PrescriptionList>
-                    {selectedProducts.map((prod, index) => (
-                      <PrescriptionItem key={index}>
-                        <PrescriptionItemInfo>
-                          <PrescriptionItemName>{prod.name}</PrescriptionItemName>
-                          <PrescriptionItemDetails>
-                            Cantidad: {prod.quantity} × RD${prod.price.toFixed(2)}
-                          </PrescriptionItemDetails>
-                        </PrescriptionItemInfo>
-                        <PrescriptionItemActions>
-                          <PrescriptionItemPrice>
-                            <PrescriptionPrice>
-                              RD${(prod.quantity * prod.price).toFixed(2)}
-                            </PrescriptionPrice>
-                          </PrescriptionItemPrice>
-                          <AddPrescriptionButton
-                            onClick={() => handleAddPrescriptionItem(prod)}
-                            title="Agregar al carrito"
-                          >
-                            <Plus size={16} />
-                          </AddPrescriptionButton>
-                        </PrescriptionItemActions>
-                      </PrescriptionItem>
-                    ))}
-                  </PrescriptionList>
+                <FormGroup>
+                  <Label>RNC (opcional)</Label>
+                  <Input type="text" value={rnc} onChange={(e) => setRnc(e.target.value)} placeholder="RNC del cliente" />
+                </FormGroup>
 
-                  <PrescriptionTotalSection>
-                    <PrescriptionTotal>
-                      <PrescriptionTotalLabel>
-                        Total receta: RD${selectedProducts.reduce((sum, prod) => sum + (prod.quantity * prod.price), 0).toFixed(2)}
-                      </PrescriptionTotalLabel>
-                    </PrescriptionTotal>
-                    <AddAllPrescriptionButton
-                      onClick={() => {
-                        selectedProducts.forEach(prod => handleAddPrescriptionItem(prod));
-                      }}
+                {/* Selector de recetas si el cliente tiene múltiples */}
+                {clientPrescriptions.length > 1 && (
+                  <FormGroup>
+                    <Label>Seleccionar Receta</Label>
+                    <Select 
+                      value={selectedPrescriptionId ?? ''} 
+                      onChange={(e) => handlePrescriptionSelect(Number(e.target.value))}
                     >
-                      <ShoppingCart size={16} />
-                      Agregar todos al carrito
-                    </AddAllPrescriptionButton>
-                  </PrescriptionTotalSection>
-                </PrescriptionSection>
-              )}
-            </Card>
+                      <option value="">-- Selecciona una receta --</option>
+                      {clientPrescriptions.map(prescription => (
+                        <option key={prescription.id} value={prescription.id}>
+                          Receta #{prescription.id} - {new Date(prescription.issued_at).toLocaleDateString('es-ES')} 
+                          ({prescription.medicines?.length || 0} medicamentos)
+                        </option>
+                      ))}
+                    </Select>
+                  </FormGroup>
+                )}
 
-            <CartCard>
-              <CartTitle>
-                <ShoppingCart size={20} />
-                Carrito ({items.length})
-              </CartTitle>
+                {/* Mostrar medicamentos de la receta seleccionada o única */}
+                {selectedProducts.length > 0 && (
+                  <PrescriptionSection>
+                    <PrescriptionTitle>
+                      <Package size={18} color="#16a34a" />
+                      Medicamentos Recetados - Receta #{selectedPrescriptionId || (clientPrescriptions.length === 1 ? clientPrescriptions[0].id : '')} ({selectedProducts.length})
+                    </PrescriptionTitle>
 
-              {items.length === 0 ? (
-                <EmptyCart>El carrito está vacío</EmptyCart>
-              ) : (
-                <>
-                  <CartItems>
-                    {items.map((item, index) => (
-                      <CartItem key={index}>
-                        <CartItemInfo>
-                          <CartItemName>{item.productInfo.name}</CartItemName>
-                          <CartItemDetails>
-                            {item.quantity} × ${Number(item.productInfo.price).toFixed(2)}
-                          </CartItemDetails>
-                        </CartItemInfo>
-                        <CartItemActions>
-                          <CartItemPrice>
-                            ${(item.quantity * Number(item.productInfo.price)).toFixed(2)}
-                          </CartItemPrice>
-                          <RemoveButton onClick={() => handleRemoveItem(index)}>
-                            <Trash2 size={16} />
-                          </RemoveButton>
-                        </CartItemActions>
-                      </CartItem>
-                    ))}
-                  </CartItems>
+                    <PrescriptionList>
+                      {selectedProducts.map((prod, index) => (
+                        <PrescriptionItem key={index}>
+                          <PrescriptionItemInfo>
+                            <PrescriptionItemName>{prod.name}</PrescriptionItemName>
+                            <PrescriptionItemDetails>
+                              Cantidad: {prod.quantity} × RD${prod.price.toFixed(2)}
+                            </PrescriptionItemDetails>
+                          </PrescriptionItemInfo>
+                          <PrescriptionItemActions>
+                            <PrescriptionItemPrice>
+                              <PrescriptionPrice>
+                                RD${(prod.quantity * prod.price).toFixed(2)}
+                              </PrescriptionPrice>
+                            </PrescriptionItemPrice>
+                            <AddPrescriptionButton
+                              onClick={() => handleAddPrescriptionItem(prod)}
+                              title="Agregar al carrito"
+                            >
+                              <Plus size={16} />
+                            </AddPrescriptionButton>
+                          </PrescriptionItemActions>
+                        </PrescriptionItem>
+                      ))}
+                    </PrescriptionList>
 
-                  <CartTotal>
-                    <TotalRow>
-                      <TotalLabel>Subtotal:</TotalLabel>
-                      <TotalAmount>${getSubtotal().toFixed(2)}</TotalAmount>
-                    </TotalRow>
-                    <TotalRow>
-                      <TotalLabel>ITBIS (18%):</TotalLabel>
-                      <TotalAmount>${getItbis().toFixed(2)}</TotalAmount>
-                    </TotalRow>
-                    <TotalRow>
-                      <TotalLabel>Total a pagar:</TotalLabel>
-                      <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
-                    </TotalRow>
+                    <PrescriptionTotalSection>
+                      <PrescriptionTotal>
+                        <PrescriptionTotalLabel>
+                          Total receta: RD${selectedProducts.reduce((sum, prod) => sum + (prod.quantity * prod.price), 0).toFixed(2)}
+                        </PrescriptionTotalLabel>
+                      </PrescriptionTotal>
+                      <AddAllPrescriptionButton
+                        onClick={() => {
+                          selectedProducts.forEach(prod => handleAddPrescriptionItem(prod));
+                        }}
+                      >
+                        <ShoppingCart size={16} />
+                        Agregar todos al carrito
+                      </AddAllPrescriptionButton>
+                    </PrescriptionTotalSection>
+                  </PrescriptionSection>
+                )}
+              </Card>
 
-                    <ConfirmButton
-                      onClick={handleConfirmSale}
-                      disabled={loading || items.length === 0}
-                    >
-                      <CheckCircle size={20} />
-                      {loading ? 'Procesando...' : 'Confirmar Venta'}
-                    </ConfirmButton>
-                  </CartTotal>
-                </>
-              )}
-            </CartCard>
-          </div>
-        </GridContainer>
-      </MaxWidthContainer>
+              <CartCard>
+                <CartTitle>
+                  <ShoppingCart size={20} />
+                  Carrito ({items.length})
+                </CartTitle>
 
-      {/* Sistema de Notificaciones */}
-      <NotificationsContainer>
-        {notifications.map((notification) => (
-          <Notification
-            key={notification.id}
-            type={notification.type}
-            isVisible={notification.isVisible}
-          >
-            <NotificationIcon type={notification.type}>
-              {notification.type === 'success' ? (
-                <CheckCircle2 size={20} />
-              ) : notification.type === 'error' ? (
-                <AlertCircle size={20} />
-              ) : (
-                <Info size={20} />
-              )}
-            </NotificationIcon>
-            <NotificationContent>
-              <NotificationTitle type={notification.type}>{notification.title}</NotificationTitle>
-              <NotificationMessage type={notification.type}>{notification.message}</NotificationMessage>
-            </NotificationContent>
-            <NotificationCloseButton onClick={() => closeNotification(notification.id)}>
-              <X size={18} />
-            </NotificationCloseButton>
-          </Notification>
-        ))}
-      </NotificationsContainer>
+                {items.length === 0 ? (
+                  <EmptyCart>El carrito está vacío</EmptyCart>
+                ) : (
+                  <>
+                    <CartItems>
+                      {items.map((item, index) => (
+                        <CartItem key={index}>
+                          <CartItemInfo>
+                            <CartItemName>{item.productInfo.name}</CartItemName>
+                            <CartItemDetails>
+                              {item.quantity} × ${Number(item.productInfo.price).toFixed(2)}
+                            </CartItemDetails>
+                          </CartItemInfo>
+                          <CartItemActions>
+                            <CartItemPrice>
+                              ${(item.quantity * Number(item.productInfo.price)).toFixed(2)}
+                            </CartItemPrice>
+                            <RemoveButton onClick={() => handleRemoveItem(index)}>
+                              <Trash2 size={16} />
+                            </RemoveButton>
+                          </CartItemActions>
+                        </CartItem>
+                      ))}
+                    </CartItems>
+
+                    <CartTotal>
+                      <TotalRow>
+                        <TotalLabel>Subtotal:</TotalLabel>
+                        <TotalAmount>${getSubtotal().toFixed(2)}</TotalAmount>
+                      </TotalRow>
+                      <TotalRow>
+                        <TotalLabel>ITBIS (18%):</TotalLabel>
+                        <TotalAmount>${getItbis().toFixed(2)}</TotalAmount>
+                      </TotalRow>
+                      <TotalRow>
+                        <TotalLabel>Total a pagar:</TotalLabel>
+                        <TotalAmount>${getTotal().toFixed(2)}</TotalAmount>
+                      </TotalRow>
+
+                      <ConfirmButton
+                        onClick={handleConfirmSale}
+                        disabled={loading || items.length === 0}
+                      >
+                        <CheckCircle size={20} />
+                        {loading ? 'Procesando...' : 'Confirmar Venta'}
+                      </ConfirmButton>
+                    </CartTotal>
+                  </>
+                )}
+              </CartCard>
+            </div>
+          </GridContainer>
+        </MaxWidthContainer>
+
+        {/* Sistema de Notificaciones */}
+        <NotificationsContainer>
+          {notifications.map((notification) => (
+            <Notification
+              key={notification.id}
+              type={notification.type}
+              isVisible={notification.isVisible}
+            >
+              <NotificationIcon type={notification.type}>
+                {notification.type === 'success' ? (
+                  <CheckCircle2 size={20} />
+                ) : notification.type === 'error' ? (
+                  <AlertCircle size={20} />
+                ) : (
+                  <Info size={20} />
+                )}
+              </NotificationIcon>
+              <NotificationContent>
+                <NotificationTitle type={notification.type}>{notification.title}</NotificationTitle>
+                <NotificationMessage type={notification.type}>{notification.message}</NotificationMessage>
+              </NotificationContent>
+              <NotificationCloseButton onClick={() => closeNotification(notification.id)}>
+                <X size={18} />
+              </NotificationCloseButton>
+            </Notification>
+          ))}
+        </NotificationsContainer>
+    {/* Cuadre de caja al final */}
+    <CashboxCard>
+      <CashboxTitle>Cuadre de Caja del Día</CashboxTitle>
+      <ExportButton
+        onClick={async () => {
+          if (!token) return;
+          try {
+            const blob = await import('../services/cashbox.service').then(m => m.downloadCashboxCSV(token));
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cuadre_caja.csv';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          } catch (e) {
+            alert('No se pudo exportar el cuadre de caja.');
+          }
+        }}
+        disabled={cashboxLoading || !summary}
+      >
+        Exportar cuadre de caja (CSV)
+      </ExportButton>
+      {cashboxLoading && <p>Cargando cuadre de caja...</p>}
+      {cashboxError && <p style={{ color: 'red' }}>{cashboxError}</p>}
+      {summary && (
+        <>
+          <CashboxRow>
+            <CashboxLabel>Total de ventas:</CashboxLabel>
+            <CashboxAmount>${summary.totalSales.toFixed(2)}</CashboxAmount>
+          </CashboxRow>
+          <CashboxRow>
+            <CashboxLabel>Transacciones:</CashboxLabel>
+            <CashboxAmount>{summary.totalTransactions}</CashboxAmount>
+          </CashboxRow>
+          <CashboxRow>
+            <CashboxLabel>Métodos de pago:</CashboxLabel>
+            <CashboxAmount></CashboxAmount>
+          </CashboxRow>
+          {Object.entries(summary.byPaymentMethod).map(([method, amount]) => (
+            <CashboxRow key={method}>
+              <CashboxLabel style={{ marginLeft: 16 }}>{method}:</CashboxLabel>
+              <CashboxAmount>${amount.toFixed(2)}</CashboxAmount>
+            </CashboxRow>
+          ))}
+        </>
+      )}
+    </CashboxCard>
     </Container>
+    </>
   );
 };
 

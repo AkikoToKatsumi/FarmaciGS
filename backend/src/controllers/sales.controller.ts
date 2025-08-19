@@ -1,3 +1,103 @@
+// Exportar cuadre de caja en CSV
+export const exportCashboxSummary = async (req: AuthRequest, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Obtener ventas del día con detalles
+    const salesResult = await pool.query(
+      `SELECT s.id, s.user_id, s.client_id, s.total, s.created_at, s.payment_method, s.status,
+              u.name as user_name, c.name as client_name
+       FROM sales s
+       LEFT JOIN users u ON s.user_id = u.id
+       LEFT JOIN clients c ON s.client_id = c.id
+       WHERE s.created_at >= $1 AND s.created_at < $2 AND s.status IS DISTINCT FROM 'cancelled'`,
+      [today, tomorrow]
+    );
+    const sales = salesResult.rows;
+
+    let totalSales = 0;
+    let totalTransactions = sales.length;
+    let byPaymentMethod: Record<string, number> = {};
+
+    // Para cada venta, obtener sus productos
+    let ventasDetalles: string[] = [];
+    for (const sale of sales) {
+      totalSales += Number(sale.total);
+      const method = sale.payment_method || 'Desconocido';
+      byPaymentMethod[method] = (byPaymentMethod[method] || 0) + Number(sale.total);
+
+      // Obtener productos de la venta
+      const itemsResult = await pool.query(
+        `SELECT si.medicine_id, si.quantity, si.unit_price, si.total_price, m.name as medicine_name
+         FROM sale_items si
+         LEFT JOIN medicine m ON si.medicine_id = m.id
+         WHERE si.sale_id = $1`,
+        [sale.id]
+      );
+      const items = itemsResult.rows;
+
+      ventasDetalles.push(`Venta #${sale.id},Cliente: ${sale.client_name || 'Ocasional'},Usuario: ${sale.user_name},Método: ${method},Total: ${sale.total}`);
+      ventasDetalles.push('Producto,Cantidad,Precio Unitario,Total Producto');
+      for (const item of items) {
+        ventasDetalles.push(`${item.medicine_name},${item.quantity},${item.unit_price},${item.total_price}`);
+      }
+      ventasDetalles.push('');
+    }
+
+    // Construir CSV
+    let csv = 'Cuadre de Caja del Día\n';
+    csv += `Total de ventas,${totalSales.toFixed(2)}\n`;
+    csv += `Transacciones,${totalTransactions}\n`;
+    csv += 'Método de pago,Total\n';
+    for (const [method, amount] of Object.entries(byPaymentMethod)) {
+      csv += `${method},${amount.toFixed(2)}\n`;
+    }
+    csv += '\nDETALLE DE VENTAS DEL DÍA\n';
+    csv += ventasDetalles.join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="cuadre_caja.csv"');
+    res.send(csv);
+  } catch (error) {
+    console.error('Error al exportar cuadre de caja:', error);
+    res.status(500).json({ message: 'Error interno al exportar el cuadre de caja.' });
+  }
+};
+// Cuadre de caja: resumen de ventas del día
+export const getCashboxSummary = async (req: AuthRequest, res: Response) => {
+  try {
+    // Obtener fecha actual (solo ventas de hoy)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Ventas del día
+    const salesResult = await pool.query(
+      `SELECT payment_method, total FROM sales WHERE created_at >= $1 AND created_at < $2 AND status IS DISTINCT FROM 'cancelled'`,
+      [today, tomorrow]
+    );
+    const sales = salesResult.rows;
+
+    let totalSales = 0;
+    let totalTransactions = sales.length;
+    let byPaymentMethod: Record<string, number> = {};
+
+    for (const sale of sales) {
+      totalSales += Number(sale.total);
+      const method = sale.payment_method || 'Desconocido';
+      byPaymentMethod[method] = (byPaymentMethod[method] || 0) + Number(sale.total);
+    }
+
+    res.json({ totalSales, totalTransactions, byPaymentMethod });
+  } catch (error) {
+    console.error('Error al obtener cuadre de caja:', error);
+    res.status(500).json({ message: 'Error interno al obtener el cuadre de caja.' });
+  }
+};
 // src/controllers/sales.controller.ts
 
 import { Response } from 'express';
@@ -269,11 +369,19 @@ export const cancelSale = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'La factura ya está cancelada.' });
     }
 
+    // Obtener detalles de productos vendidos
+    const itemsResult = await pool.query(
+      `SELECT si.medicine_id, si.quantity, si.unit_price, si.total_price, m.name as medicine_name
+       FROM sale_items si
+       LEFT JOIN medicine m ON si.medicine_id = m.id
+       WHERE si.sale_id = $1`,
+      [id]
+    );
+
     // Marcar la venta como cancelada
     await pool.query('UPDATE sales SET status = $1 WHERE id = $2', ['cancelled', id]);
 
     // Revertir stock de los productos vendidos
-    const itemsResult = await pool.query('SELECT medicine_id, quantity FROM sale_items WHERE sale_id = $1', [id]);
     for (const item of itemsResult.rows) {
       await pool.query('UPDATE medicine SET stock = stock + $1 WHERE id = $2', [item.quantity, item.medicine_id]);
     }
@@ -284,7 +392,18 @@ export const cancelSale = async (req: AuthRequest, res: Response) => {
       [req.user.id, `Factura #${id} cancelada por admin`]
     );
 
-    res.json({ message: 'Factura cancelada correctamente.' });
+    res.json({
+      message: 'Factura cancelada correctamente.',
+      sale: {
+        id: sale.id,
+        total: sale.total,
+        created_at: sale.created_at,
+        payment_method: sale.payment_method,
+        client_id: sale.client_id,
+        status: 'cancelled'
+      },
+      items: itemsResult.rows
+    });
   } catch (error) {
     console.error('Error al cancelar factura:', error);
     res.status(500).json({ message: 'Error interno al cancelar la factura.' });
