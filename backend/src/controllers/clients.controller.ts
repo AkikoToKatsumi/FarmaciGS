@@ -58,7 +58,14 @@ export const updateClient = async (req: Request, res: Response) => {
   try {
     const clientId = Number(req.params.id);
     const { name, email, phone, rnc, cedula, address } = req.body;
-    // Valida los datos antes de actualizar
+    
+    // Verificar que el cliente existe
+    const existingClient = await pool.query('SELECT id FROM clients WHERE id = $1', [clientId]);
+    if (existingClient.rows.length === 0) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+    
+    // Valida los datos antes de actualizar (incluyendo ID para excluir el cliente actual)
     const validation = await validateClientInput({ name, email, phone, rnc, cedula, address, id: clientId });
     if (!validation.isValid) {
       // Si la validación falla, responde con error 400
@@ -72,8 +79,9 @@ export const updateClient = async (req: Request, res: Response) => {
     // Devuelve el cliente actualizado
     res.json(result.rows[0]);
   } catch (error) {
-    // Si ocurre un error, responde con error 404
-    res.status(404).json({ message: 'Cliente no encontrado o error al actualizar' });
+    console.error('Error updating client:', error);
+    // Si ocurre un error, responde con error 500
+    res.status(500).json({ message: 'Error interno del servidor al actualizar cliente' });
   }
 };
 

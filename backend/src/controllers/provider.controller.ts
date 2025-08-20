@@ -42,15 +42,15 @@ export const createProvider = async (req: Request, res: Response) => {
       return res.status(400).json({ message: validation.message });
     }
 
-    // Verificar si ya existe un proveedor con el mismo email o taxId
+    // Verificar si ya existe un proveedor con el mismo email, taxId o teléfono
     const existingProvider = await pool.query(
-      'SELECT id FROM providers WHERE email = $1 OR tax_id = $2',
-      [email, taxId]
+      'SELECT id FROM providers WHERE (email = $1 OR tax_id = $2 OR phone = $3)',
+      [email, taxId, phone]
     );
 
     if (existingProvider.rows.length > 0) {
       return res.status(409).json({ 
-        message: 'Ya existe un proveedor con el mismo email o número de identificación fiscal' 
+        message: 'Ya existe un proveedor con el mismo email, número de identificación fiscal o teléfono' 
       });
     }
 
@@ -78,15 +78,15 @@ export const updateProvider = async (req: Request, res: Response) => {
       return res.status(400).json({ message: validation.message });
     }
 
-    // Verificar si existe otro proveedor con el mismo email o taxId
+    // Verificar si existe otro proveedor con el mismo email, taxId o teléfono
     const existingProvider = await pool.query(
-      'SELECT id FROM providers WHERE (email = $1 OR tax_id = $2) AND id != $3',
-      [email, taxId, Number(id)]
+      'SELECT id FROM providers WHERE (email = $1 OR tax_id = $2 OR phone = $3) AND id != $4',
+      [email, taxId, phone, Number(id)]
     );
 
     if (existingProvider.rows.length > 0) {
       return res.status(409).json({ 
-        message: 'Ya existe otro proveedor con el mismo email o número de identificación fiscal' 
+        message: 'Ya existe otro proveedor con el mismo email, número de identificación fiscal o teléfono' 
       });
     }
 

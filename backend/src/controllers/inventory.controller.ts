@@ -166,6 +166,12 @@ export const createMedicine = async (req: Request, res: Response) => {
             return res.status(409).json({ message: 'Ya existe un medicamento con ese código de barras.' });
         }
 
+        // Verificar si ya existe un medicamento con el mismo nombre y lote
+        const existingNameLot = await pool.query('SELECT id FROM medicine WHERE LOWER(name) = LOWER($1) AND lot = $2', [name, lot]);
+        if (existingNameLot.rows.length > 0) {
+            return res.status(409).json({ message: 'Ya existe un medicamento con el mismo nombre y lote.' });
+        }
+
         // Construir INSERT dinámico según columnas disponibles (category o category_id)
         const insertFields: string[] = ['name', 'description', 'stock', 'price', 'expiration_date', 'lot', 'barcode', 'provider_id'];
         const insertValues: any[] = [name, description, stock, price, expirationDate, lot, barcode, provider_id];
@@ -287,6 +293,14 @@ export const updateMedicine = async (req: Request, res: Response) => {
             const existingBarcode = await pool.query('SELECT id FROM medicine WHERE barcode = $1 AND id != $2', [barcode, Number(id)]);
             if (existingBarcode.rows.length > 0) {
                 return res.status(409).json({ message: 'Ya existe un medicamento con ese código de barras.' });
+            }
+        }
+
+        // Verificar nombre y lote únicos si se están actualizando
+        if (name && lot) {
+            const existingNameLot = await pool.query('SELECT id FROM medicine WHERE LOWER(name) = LOWER($1) AND lot = $2 AND id != $3', [name, lot, Number(id)]);
+            if (existingNameLot.rows.length > 0) {
+                return res.status(409).json({ message: 'Ya existe un medicamento con el mismo nombre y lote.' });
             }
         }
 

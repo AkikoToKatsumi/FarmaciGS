@@ -161,6 +161,20 @@ export const createEmployee = async (req: Request, res: Response) => {
       }
     }
 
+    // Verificar si ya existe un empleado con el mismo teléfono (solo si se proporciona)
+    if (phone && phone.trim() !== '') {
+      const existingPhone = await pool.query(
+        'SELECT user_id FROM employees WHERE phone = $1 AND status = $2',
+        [phone, 'active']
+      );
+
+      if (existingPhone.rows.length > 0) {
+        return res.status(400).json({ 
+          message: 'Ya existe un empleado activo con ese número de teléfono.' 
+        });
+      }
+    }
+
     // Buscar el rol de empleado o usar un rol por defecto
     let roleId = 3; // Fallback role ID para empleado
     
@@ -330,6 +344,20 @@ export const updateEmployee = async (req: Request, res: Response) => {
       if (emailCheck.rows.length > 0) {
         return res.status(400).json({ 
           message: 'Ese correo electrónico ya pertenece a otro empleado.' 
+        });
+      }
+    }
+
+    // Verificar teléfono único (solo si cambió y se proporciona)
+    if (updatedData.phone !== currentEmployee.phone && updatedData.phone && updatedData.phone.trim() !== '') {
+      const phoneCheck = await pool.query(
+        'SELECT user_id FROM employees WHERE phone = $1 AND user_id != $2 AND status = $3',
+        [updatedData.phone, userId, 'active']
+      );
+
+      if (phoneCheck.rows.length > 0) {
+        return res.status(400).json({ 
+          message: 'Ese número de teléfono ya pertenece a otro empleado.' 
         });
       }
     }
