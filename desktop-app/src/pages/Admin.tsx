@@ -422,6 +422,7 @@ const Admin = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [showInactive, setShowInactive] = useState(true); // New state for toggle
   const [formData, setFormData] = useState<Partial<Employee>>({
     name: '',
     email: '',
@@ -758,11 +759,17 @@ const Admin = () => {
   }
 
   // Filtrar empleados
-  const filteredEmployees = employees.filter(employee =>
-    employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEmployees = employees.filter(employee => {
+    // Filter by search term
+    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.department.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filter by status visibility
+    const matchesStatus = showInactive || employee.status === 'active';
+    
+    return matchesSearch && matchesStatus;
+  });
 
   // Manejar cambios en el formulario
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -923,6 +930,12 @@ const Admin = () => {
           }}>
             + Agregar Empleado
           </Button>
+          <Button 
+            variant={showInactive ? 'secondary' : 'primary'}
+            onClick={() => setShowInactive(!showInactive)}
+          >
+            {showInactive ? 'Ocultar Inactivos' : 'Mostrar Inactivos'}
+          </Button>
           <SearchInput
             type="text"
             placeholder="Buscar empleados..."
@@ -954,7 +967,7 @@ const Admin = () => {
                   Editar
                 </Button>
                 <Button 
-                  variant="danger" 
+                  variant={employee.status === 'active' ? 'danger' : 'primary'}
                   onClick={() => handleDeleteEmployee(employee.id)}
                   disabled={employee.id.startsWith('temp-') || employee.id.startsWith('search-')}
                 >
@@ -964,6 +977,17 @@ const Admin = () => {
             </EmployeeCard>
           ))}
         </EmployeeGrid>
+
+        {filteredEmployees.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            {employees.length === 0 
+              ? 'No hay empleados registrados' 
+              : searchTerm 
+                ? 'No se encontraron empleados que coincidan con la búsqueda'
+                : 'No hay empleados activos para mostrar'
+            }
+          </div>
+        )}
 
         {/* Modal para agregar/editar empleado */}
         <Modal isOpen={isAddModalOpen}>

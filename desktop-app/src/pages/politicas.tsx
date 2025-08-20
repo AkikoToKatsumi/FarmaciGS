@@ -6,7 +6,7 @@ import { ArrowLeft, Shield, Eye, Database, Users, FileText, Scale, Phone, Mail, 
 const Container = styled.div`
   min-height: 100vh;
   background: linear-gradient(135deg, #f7f9fb 0%, #e8f4fd 100%);
-  padding: 2rem;
+  padding: 1rem;
   position: relative;
 
   // Logo de fondo
@@ -15,8 +15,8 @@ const Container = styled.div`
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 400px;
-    height: 400px;
+    width: 200px;
+    height: 200px;
     background: url('/imagenes/logo.png') no-repeat center center;
     background-size: contain;
     opacity: 0.05;
@@ -30,38 +30,42 @@ const Container = styled.div`
     z-index: 1;
   }
 
-  @media (max-width: 768px) {
-    padding: 1rem;
+  @media (min-width: 768px) {
+    padding: 2rem;
     &::before {
-      width: 200px;
-      height: 200px;
+      width: 400px;
+      height: 400px;
     }
   }
 `;
 
 const Header = styled.header`
   background: #fff;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 2rem;
-  margin-bottom: 2rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
   text-align: center;
 
-  @media (max-width: 768px) {
-    padding: 1.5rem;
-    border-radius: 8px;
+  @media (min-width: 768px) {
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
   }
 `;
 
 const LogoSection = styled.div`
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 
   img {
-    height: 80px;
+    height: 60px;
+    width: auto;
+    max-width: 100%;
     object-fit: contain;
     background: #fff;
     border-radius: 8px;
@@ -69,41 +73,52 @@ const LogoSection = styled.div`
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+  @media (min-width: 768px) {
+    flex-direction: row;
+    gap: 2rem;
+    margin-bottom: 2rem;
     
     img {
-      height: 60px;
+      height: 80px;
     }
   }
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #1964aaff;
   margin: 0 0 1rem 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: center;
 
-  @media (max-width: 768px) {
-    font-size: 1.8rem;
-    flex-direction: column;
-    gap: 0.5rem;
+  @media (min-width: 768px) {
+    font-size: 2.5rem;
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  @media (min-width: 480px) {
+    font-size: 2rem;
   }
 `;
 
 const Subtitle = styled.p`
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: #666;
   margin: 0;
   line-height: 1.6;
+  text-align: center;
 
-  @media (max-width: 768px) {
+  @media (min-width: 768px) {
+    font-size: 1.1rem;
+  }
+
+  @media (min-width: 480px) {
     font-size: 1rem;
   }
 `;
@@ -112,93 +127,130 @@ const BackButton = styled.button`
   background: #1964aaff;
   color: #fff;
   border: none;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   transition: background 0.2s;
+  width: 100%;
+  justify-content: center;
 
   &:hover {
     background: #2563eb;
   }
 
-  @media (max-width: 768px) {
-    padding: 10px 20px;
-    font-size: 0.9rem;
+  @media (min-width: 480px) {
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  @media (min-width: 768px) {
+    padding: 12px 24px;
+    font-size: 1rem;
+    margin-bottom: 2rem;
   }
 `;
 
 const Content = styled.div`
   background: #fff;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 2rem;
-  margin-bottom: 2rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  overflow-x: hidden;
 
-  @media (max-width: 768px) {
-    padding: 1.5rem;
-    border-radius: 8px;
+  @media (min-width: 768px) {
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
   }
 `;
 
 const Section = styled.section`
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 
   h2 {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 600;
     color: #1964aaff;
     margin: 0 0 1rem 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
     border-bottom: 2px solid #e8f4fd;
     padding-bottom: 0.5rem;
+    flex-wrap: wrap;
   }
 
   h3 {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #2d3748;
-    margin: 1.5rem 0 0.75rem 0;
+    margin: 1rem 0 0.75rem 0;
   }
 
   p {
-    font-size: 1rem;
-    line-height: 1.7;
+    font-size: 0.9rem;
+    line-height: 1.6;
     color: #4a5568;
     margin: 0 0 1rem 0;
     text-align: justify;
+    word-break: break-word;
   }
 
   ul {
-    padding-left: 1.5rem;
+    padding-left: 1rem;
     margin: 1rem 0;
 
     li {
-      font-size: 1rem;
-      line-height: 1.6;
+      font-size: 0.9rem;
+      line-height: 1.5;
       color: #4a5568;
       margin-bottom: 0.5rem;
+      word-break: break-word;
     }
   }
 
-  @media (max-width: 768px) {
+  @media (min-width: 480px) {
+    margin-bottom: 2rem;
+    
     h2 {
       font-size: 1.3rem;
+      align-items: center;
     }
 
     h3 {
       font-size: 1.1rem;
+      margin: 1.5rem 0 0.75rem 0;
     }
 
     p, li {
       font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    ul {
+      padding-left: 1.5rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    h3 {
+      font-size: 1.2rem;
+    }
+
+    p, li {
+      font-size: 1rem;
+      line-height: 1.7;
     }
   }
 `;
@@ -206,13 +258,13 @@ const Section = styled.section`
 const DeveloperInfo = styled.div`
   background: linear-gradient(135deg, #1964aaff 0%, #2563eb 100%);
   color: #fff;
-  padding: 2rem;
-  border-radius: 12px;
+  padding: 1.5rem;
+  border-radius: 8px;
   text-align: center;
-  margin: 2rem 0;
+  margin: 1.5rem 0;
 
   h3 {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     margin: 0 0 1rem 0;
     color: #fff;
     border: none;
@@ -220,20 +272,23 @@ const DeveloperInfo = styled.div`
   }
 
   p {
-    font-size: 1rem;
+    font-size: 0.9rem;
     margin: 0.5rem 0;
     color: #e8f4fd;
+    word-break: break-word;
   }
 
-  @media (max-width: 768px) {
-    padding: 1.5rem;
+  @media (min-width: 768px) {
+    padding: 2rem;
+    border-radius: 12px;
+    margin: 2rem 0;
 
     h3 {
-      font-size: 1.1rem;
+      font-size: 1.3rem;
     }
 
     p {
-      font-size: 0.9rem;
+      font-size: 1rem;
     }
   }
 `;
@@ -242,35 +297,56 @@ const ContactInfo = styled.div`
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   margin: 1rem 0;
 
   .contact-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.75rem;
     margin: 0.75rem 0;
-    font-size: 1rem;
+    font-size: 0.85rem;
     color: #4a5568;
+    word-break: break-word;
+    flex-wrap: wrap;
+
+    span {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
-  @media (max-width: 768px) {
-    padding: 1rem;
+  @media (min-width: 480px) {
+    padding: 1.5rem;
 
     .contact-item {
       font-size: 0.9rem;
+      align-items: center;
+      flex-wrap: nowrap;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .contact-item {
+      font-size: 1rem;
     }
   }
 `;
 
 const LastUpdated = styled.div`
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #666;
   font-style: italic;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid #e2e8f0;
+  word-break: break-word;
+
+  @media (min-width: 768px) {
+    font-size: 0.9rem;
+    margin-top: 2rem;
+  }
 `;
 
 const PoliticasPrivacidad = () => {

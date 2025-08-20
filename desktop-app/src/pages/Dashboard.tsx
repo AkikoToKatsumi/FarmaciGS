@@ -465,11 +465,15 @@ const Role = styled.span`
 const Footer = styled.footer`
   background: #1964aaff;
   color: #fff;
-  padding: 2rem 1rem 1rem 1rem;
+  padding: 1.5rem 1rem 1rem 1rem;
   margin-top: 3rem;
   border-top: 1px solid #e1e8ed;
   position: relative;
   z-index: 1;
+
+  @media (min-width: 768px) {
+    padding: 2rem 1rem 1rem 1rem;
+  }
 `;
 
 const FooterContent = styled.div`
@@ -478,31 +482,66 @@ const FooterContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
   text-align: center;
+
+  @media (min-width: 768px) {
+    gap: 1.5rem;
+  }
 `;
 
 const FooterLogos = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
   margin-bottom: 1rem;
+  width: 100%;
   
   img {
-    height: 70px;
+    height: 50px;
+    width: auto;
+    max-width: 140px;
     object-fit: contain;
-    background: #ffffffff;
-    border-radius: 8px;
-    padding: 10px;
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 
-  @media (max-width: 600px) {
-    flex-direction: column;
-    gap: 1rem;
+  @media (min-width: 480px) {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.5rem;
     
     img {
-      height: 50px;
+      height: 55px;
+      max-width: 160px;
+      padding: 9px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    gap: 2rem;
+    
+    img {
+      height: 70px;
+      max-width: 200px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    img {
+      height: 80px;
+      max-width: 220px;
+      padding: 12px;
     }
   }
 `;
@@ -510,19 +549,23 @@ const FooterLogos = styled.div`
 const FooterText = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: 0.75rem;
+  font-size: 0.8rem;
   line-height: 1.4;
+  max-width: 100%;
   
   .developers {
     font-weight: 600;
     color: #e8f4fd;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+    word-wrap: break-word;
+    hyphens: auto;
   }
   
   .copyright {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     opacity: 0.9;
+    margin: 0.25rem 0;
   }
   
   .privacy-link {
@@ -530,21 +573,50 @@ const FooterText = styled.div`
     text-decoration: underline;
     cursor: pointer;
     transition: color 0.2s;
+    font-weight: 500;
     
     &:hover {
       color: #ffffff;
+      text-decoration-color: #ffffff;
     }
   }
 
-  @media (max-width: 600px) {
-    font-size: 0.8rem;
+  @media (min-width: 480px) {
+    font-size: 0.85rem;
+    gap: 0.5rem;
     
     .developers {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
     }
     
     .copyright {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    font-size: 0.9rem;
+    gap: 0.5rem;
+    
+    .developers {
+      font-size: 1rem;
+    }
+    
+    .copyright {
+      font-size: 0.85rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    font-size: 1rem;
+    
+    .developers {
+      font-size: 1.1rem;
+    }
+    
+    .copyright {
+      font-size: 0.9rem;
     }
   }
 `;
