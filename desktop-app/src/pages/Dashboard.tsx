@@ -462,6 +462,93 @@ const Role = styled.span`
   border-radius: 15px;
 `;
 
+const Footer = styled.footer`
+  background: #1964aaff;
+  color: #fff;
+  padding: 2rem 1rem 1rem 1rem;
+  margin-top: 3rem;
+  border-top: 1px solid #e1e8ed;
+  position: relative;
+  z-index: 1;
+`;
+
+const FooterContent = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+`;
+
+const FooterLogos = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  
+  img {
+    height: 60px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 1rem;
+    
+    img {
+      height: 50px;
+    }
+  }
+`;
+
+const FooterText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  
+  .developers {
+    font-weight: 600;
+    color: #e8f4fd;
+    margin-bottom: 0.5rem;
+  }
+  
+  .copyright {
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+  
+  .privacy-link {
+    color: #e8f4fd;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s;
+    
+    &:hover {
+      color: #ffffff;
+    }
+  }
+
+  @media (max-width: 600px) {
+    font-size: 0.8rem;
+    
+    .developers {
+      font-size: 0.85rem;
+    }
+    
+    .copyright {
+      font-size: 0.75rem;
+    }
+  }
+`;
+
 const DashboardStat = styled.p`
   margin: 0;
   font-size: 2.2rem;
@@ -633,6 +720,10 @@ const Dashboard = () => {
     fetchHistoricalTrendData(historicalTrendType);
     // eslint-disable-next-line
   }, [historicalTrendType, token]);
+
+  const handlePrivacyPolicy = () => {
+    navigate('/politicas');
+  };
 
   return (
     <>
@@ -1013,6 +1104,34 @@ const Dashboard = () => {
             )}
           </>
         ) : null}
+
+        <Footer>
+          <FooterContent>
+            <FooterLogos>
+              <img src="/imagenes/Logo-UCATECI.png" alt="Logo UCATECI" />
+              <img src="/imagenes/Logo.webp" alt="Logo Farmacia GS" />
+            </FooterLogos>
+            
+            <FooterText>
+              <div className="developers">
+                Desarrollado por Gabriela García Matrícula: 2023-0105 y por Dauris Santana 2023-0253
+              </div>
+              
+              <div className="copyright">
+                © {new Date().getFullYear()} Farmacia GS. Todos los derechos reservados.
+              </div>
+              
+              <div>
+                <span 
+                  className="privacy-link"
+                  onClick={handlePrivacyPolicy}
+                >
+                  Políticas de Privacidad
+                </span>
+              </div>
+            </FooterText>
+          </FooterContent>
+        </Footer>
       </Main>
     </>
   );

@@ -12,11 +12,11 @@ import CategoryManager from './pages/CategoryManager';
 import Sales from './pages/Sales';
 import Clients from './pages/Clients';
 import Reports from './pages/Reports';
-import Admin from './pages/Admin';
-
+import Admin from './pages/Admin'
 import User from './pages/Users';
 import Roles from './pages/Roles';
 import Prescriptions from './pages/Prescriptions';
+import PoliticasPrivacidad from './pages/politicas';
 
 import Providers from './pages/providers';
 import { Users } from 'lucide-react';
@@ -61,6 +61,7 @@ export default function App() {
           <Route path="/users" element={<User />} />
           <Route path="/roles" element={<Roles />} />
           <Route path="/prescriptions" element={<Prescriptions />} />
+          <Route path="/politicas" element={<PoliticasPrivacidad />} />
          
          
         
