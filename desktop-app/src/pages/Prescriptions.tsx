@@ -4,14 +4,132 @@ import { getClients } from '../services/client.service';
 import { getMedicine } from '../services/inventory.service';
 import { getPrescriptionsByClient, createPrescription } from '../services/prescription.service';
 import { useUserStore } from '../store/User';
+import { useNavigate } from 'react-router-dom';
+import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
 
 // Styled Components
+const Sidebar = styled.nav`
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 60px;
+  background: #1964aaff;
+  color: #fff;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const SidebarLogo = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem 2rem 0.5rem;
+  img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #fff;
+    cursor: pointer;
+  }
+`;
+
+const SidebarContent = styled.div`
+  flex: 1 1 auto;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarMenu = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+`;
+
+const SidebarMenuItem = styled.li<{ active?: boolean }>`
+  width: 100%;
+  margin-bottom: 8px;
+  button {
+    width: 100%;
+    background: ${({ active }) => (active ? '#2563eb' : 'none')};
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    
+    &:hover {
+      background: #2563eb;
+    }
+    
+    svg {
+      min-width: 22px;
+      flex-shrink: 0;
+    }
+  }
+`;
+
+const SidebarFooter = styled.div`
+  width: 100%;
+  padding: 1.5rem 0.5rem 2rem 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #1964aaff;
+  min-height: 80px;
+  box-sizing: border-box;
+`;
+
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  &:hover {
+    color: #e74c3c;
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
 const Container = styled.div`
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
   background-color: #f8f9fa;
   min-height: 100vh;
+  margin-left: 60px;
+  transition: margin-left 0.3s ease;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const BackButton = styled.button`
@@ -355,7 +473,9 @@ const MedicineListItem = styled.li`
 `;
 
 const Prescriptions = () => {
+  const { user, clearUser } = useUserStore();
   const token = useUserStore((s) => s.token);
+  const navigate = useNavigate();
   const [clients, setClients] = useState<any[]>([]);
   const [medicines, setMedicines] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
@@ -464,107 +584,226 @@ const Prescriptions = () => {
   );
 
   return (
-    <Container>
-      <BackButton onClick={() => window.history.back()}>← Volver a inicio</BackButton>
+    <>
+      {/* Add Sidebar */}
+      <Sidebar>
+        <SidebarLogo onClick={() => navigate('/dashboard')}>
+          <img src="imagenes/logo.png" alt="Logo" />
+        </SidebarLogo>
+        
+        <SidebarContent>
+          <SidebarMenu>
+            {/* Overview */}
+            <SidebarMenuItem>
+              <button onClick={() => navigate('/dashboard')} title="Overview">
+                <BarChart2 />
+              </button>
+            </SidebarMenuItem>
+            
+            {/* Ventas */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/sales')} title="Ventas">
+                  <ShoppingCart />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Clientes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/clients')} title="Clientes">
+                  <Users />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Inventario */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/inventory')} title="Inventario">
+                  <Package />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Prescripciones */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem active={true}>
+                <button onClick={() => navigate('/prescriptions')} title="Prescripciones">
+                  <ClipboardList />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Usuarios */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/Users')} title="Usuarios">
+                  <User />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Reportes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/reports')} title="Reportes">
+                  <FileText />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Administración */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/admin')} title="Administración">
+                  <Shield />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Roles */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/roles')} title="Roles">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Proveedores */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/providers')} title="Proveedores">
+                  <Truck />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Categorías */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/categories')} title="Categorías">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarContent>
+        
+        <SidebarFooter>
+          <LogoutButton onClick={() => {
+            clearUser();
+            navigate('/login');
+          }} title="Cerrar Sesión">
+            <LogOut size={20} />
+          </LogoutButton>
+        </SidebarFooter>
+      </Sidebar>
 
-      <Title>Asignar Receta Médica</Title>
+      <Container>
+        <BackButton onClick={() => navigate('/dashboard')}>← Volver a inicio</BackButton>
 
-      <FormSection>
-        <FormGroup>
-          <Label>Selecciona un Cliente:</Label>
-          <Select
-            value={selectedClient || ''}
-            onChange={(e) => setSelectedClient(Number(e.target.value))}
-          >
-            <option value="">-- Selecciona un cliente --</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
-        </FormGroup>
+        <Title>Asignar Receta Médica</Title>
 
-        {/* Buscador de productos */}
-        <FormGroup>
-          <Label>Buscar producto:</Label>
-          <Input
-            type="text"
-            placeholder="Buscar por nombre o descripción..."
-            value={medicineSearch}
-            onChange={e => setMedicineSearch(e.target.value)}
-          />
-        </FormGroup>
+        <FormSection>
+          <FormGroup>
+            <Label>Selecciona un Cliente:</Label>
+            <Select
+              value={selectedClient || ''}
+              onChange={(e) => setSelectedClient(Number(e.target.value))}
+            >
+              <option value="">-- Selecciona un cliente --</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </FormGroup>
 
-        <FormGroup>
-          <Label>Selecciona medicamentos y cantidades:</Label>
-          <MedicineGrid>
-            {filteredMedicines.map((m) => (
-              <MedicineItem key={m.id}>
-                <CheckboxLabel>
-                  <Checkbox
-                    checked={isMedicineSelected(m.id)}
-                    onChange={() => handleToggleMedicine(m.id)}
-                  />
-                  {m.name}
-                </CheckboxLabel>
-                {isMedicineSelected(m.id) && (
-                  <QuantityContainer>
-                    <QuantityLabel>Cantidad:</QuantityLabel>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={getMedicineQuantity(m.id)}
-                      onChange={(e) =>
-                        handleQuantityChange(m.id, parseInt(e.target.value) || 1)
-                      }
+          {/* Buscador de productos */}
+          <FormGroup>
+            <Label>Buscar producto:</Label>
+            <Input
+              type="text"
+              placeholder="Buscar por nombre o descripción..."
+              value={medicineSearch}
+              onChange={e => setMedicineSearch(e.target.value)}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label>Selecciona medicamentos y cantidades:</Label>
+            <MedicineGrid>
+              {filteredMedicines.map((m) => (
+                <MedicineItem key={m.id}>
+                  <CheckboxLabel>
+                    <Checkbox
+                      checked={isMedicineSelected(m.id)}
+                      onChange={() => handleToggleMedicine(m.id)}
                     />
-                  </QuantityContainer>
-                )}
-              </MedicineItem>
-            ))}
-          </MedicineGrid>
-        </FormGroup>
+                    {m.name}
+                  </CheckboxLabel>
+                  {isMedicineSelected(m.id) && (
+                    <QuantityContainer>
+                      <QuantityLabel>Cantidad:</QuantityLabel>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={getMedicineQuantity(m.id)}
+                        onChange={(e) =>
+                          handleQuantityChange(m.id, parseInt(e.target.value) || 1)
+                        }
+                      />
+                    </QuantityContainer>
+                  )}
+                </MedicineItem>
+              ))}
+            </MedicineGrid>
+          </FormGroup>
 
-        {error && <ErrorMessage>{error}</ErrorMessage>}
+          {error && <ErrorMessage>{error}</ErrorMessage>}
 
-        <SubmitButton onClick={handleCreatePrescription} disabled={loading}>
-          {loading ? 'Creando Receta...' : 'Crear Receta Médica'}
-        </SubmitButton>
-      </FormSection>
+          <SubmitButton onClick={handleCreatePrescription} disabled={loading}>
+            {loading ? 'Creando Receta...' : 'Crear Receta Médica'}
+          </SubmitButton>
+        </FormSection>
 
-      {selectedClient && prescriptions.length > 0 && (
-        <HistorySection>
-          <HistoryTitle>Historial de Recetas</HistoryTitle>
-          <HistoryList>
-            {prescriptions.map((p) => (
-              <HistoryItem key={p.id}>
-                <PrescriptionInfo>
-                  <PrescriptionId>Receta #{p.id}</PrescriptionId>
-                  <PrescriptionDate>
-                    {new Date(p.issued_at).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </PrescriptionDate>
-                </PrescriptionInfo>
-                <MedicineList>
-                  {/* Cambiar 'medicines' por 'medicine' para coincidir con el backend */}
-                  {p.medicine?.map((med: any) => (
-                    <MedicineListItem key={med.id}>
-                      {med.name} - {med.quantity} unidad(es)
-                    </MedicineListItem>
-                  ))}
-                </MedicineList>
-              </HistoryItem>
-            ))}
-          </HistoryList>
-        </HistorySection>
-      )}
-    </Container>
+        {selectedClient && prescriptions.length > 0 && (
+          <HistorySection>
+            <HistoryTitle>Historial de Recetas</HistoryTitle>
+            <HistoryList>
+              {prescriptions.map((p) => (
+                <HistoryItem key={p.id}>
+                  <PrescriptionInfo>
+                    <PrescriptionId>Receta #{p.id}</PrescriptionId>
+                    <PrescriptionDate>
+                      {new Date(p.issued_at).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </PrescriptionDate>
+                  </PrescriptionInfo>
+                  <MedicineList>
+                    {/* Cambiar 'medicines' por 'medicine' para coincidir con el backend */}
+                    {p.medicine?.map((med: any) => (
+                      <MedicineListItem key={med.id}>
+                        {med.name} - {med.quantity} unidad(es)
+                      </MedicineListItem>
+                    ))}
+                  </MedicineList>
+                </HistoryItem>
+              ))}
+            </HistoryList>
+          </HistorySection>
+        )}
+      </Container>
+    </>
   );
 };
 

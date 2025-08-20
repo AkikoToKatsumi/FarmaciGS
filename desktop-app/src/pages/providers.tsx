@@ -9,22 +9,133 @@ import {
   UpdateProviderData
 } from '../services/provider.service';
 import { useUserStore } from '../store/User';
+import { useNavigate } from 'react-router-dom';
+import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
 import styled from 'styled-components';
 
-// Interfaces
-interface FormData {
-  name: string;
-  email: string;
-  phone: string;
-  taxId: string;
-}
+// Sidebar components from Sales.tsx
+const Sidebar = styled.nav`
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 60px;
+  background: #1964aaff;
+  color: #fff;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const SidebarLogo = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem 2rem 0.5rem;
+  img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #fff;
+    cursor: pointer;
+  }
+`;
+
+const SidebarContent = styled.div`
+  flex: 1 1 auto;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarMenu = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+`;
+
+const SidebarMenuItem = styled.li<{ active?: boolean }>`
+  width: 100%;
+  margin-bottom: 8px;
+  button {
+    width: 100%;
+    background: ${({ active }) => (active ? '#2563eb' : 'none')};
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    
+    &:hover {
+      background: #2563eb;
+    }
+    
+    svg {
+      min-width: 22px;
+      flex-shrink: 0;
+    }
+  }
+`;
+
+const SidebarFooter = styled.div`
+  width: 100%;
+  padding: 1.5rem 0.5rem 2rem 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #1964aaff;
+  min-height: 80px;
+  box-sizing: border-box;
+`;
+
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  &:hover {
+    color: #e74c3c;
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
 
 // Styled Components
 const Container = styled.div`
-background: #fafafa;
+  background: #fafafa;
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  margin-left: 60px;
+  transition: margin-left 0.3s ease;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const Header = styled.div`
@@ -285,8 +396,18 @@ const LoadingState = styled.div`
   color: #666;
 `;
 
+// Interfaces
+interface ProviderFormData {
+  name: string;
+  email: string;
+  phone: string;
+  taxId: string;
+}
+
 const Providers = () => {
+  const { user, clearUser } = useUserStore();
   const token = useUserStore((s) => s.token);
+  const navigate = useNavigate();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -294,7 +415,7 @@ const Providers = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState<FormData>({
+  const [form, setForm] = useState<ProviderFormData>({
     name: '',
     email: '',
     phone: '',
@@ -441,183 +562,302 @@ const Providers = () => {
   };
 
   return (
-    <Container>
-      <Header>
-        <BackButton onClick={() => window.history.back()}>
-          ← Volver a inicio
-        </BackButton>
-        <Title>Gestión de Proveedores</Title>
-      </Header>
-
-      <ActionBar>
-        <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
-          + Agregar Proveedor
-        </Button>
-        <SearchInput
-          type="text"
-          placeholder="Buscar proveedores..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </ActionBar>
-
-      {loading ? (
-        <LoadingState>Cargando proveedores...</LoadingState>
-      ) : filteredProviders.length === 0 ? (
-        <EmptyState>
-          <p>No hay proveedores registrados</p>
-          <p>Agrega el primer proveedor usando el botón de arriba</p>
-        </EmptyState>
-      ) : (
-        <ProvidersGrid>
-          {filteredProviders.map(provider => (
-            <ProviderCard key={provider.id}>
-              <ProviderName>{provider.name}</ProviderName>
-              <ProviderInfo><strong>Email:</strong> {provider.email}</ProviderInfo>
-              <ProviderInfo><strong>Teléfono:</strong> {provider.phone}</ProviderInfo>
-              <ProviderInfo><strong>ID Fiscal:</strong> {provider.tax_id}</ProviderInfo>
-              <ButtonGroup>
-                <ActionButton variant="view" onClick={() => handleView(provider)}>
-                  Ver Detalles
-                </ActionButton>
-                <ActionButton variant="edit" onClick={() => handleEdit(provider)}>
-                  Editar
-                </ActionButton>
-                <ActionButton variant="delete" onClick={() => handleDelete(provider.id)}>
-                  Eliminar
-                </ActionButton>
-              </ButtonGroup>
-            </ProviderCard>
-          ))}
-        </ProvidersGrid>
-      )}
-
-      {/* Modal para agregar/editar proveedor */}
-      <Modal isOpen={isAddModalOpen}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>
-              {editingId ? 'Editar Proveedor' : 'Agregar Nuevo Proveedor'}
-            </ModalTitle>
-            <CloseButton onClick={closeModal}>×</CloseButton>
-          </ModalHeader>
-          <Form onSubmit={handleSubmit}>
-            <FormGroup>
-              <Label htmlFor="name">Nombre del Proveedor</Label>
-              <Input
-                type="text"
-                id="name"
-                name="name"
-                value={form.name}
-                onChange={handleInputChange}
-                placeholder="Ingresa el nombre del proveedor"
-                hasError={!!errors.name}
-                disabled={submitting}
-              />
-              {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                value={form.email}
-                onChange={handleInputChange}
-                placeholder="correo@ejemplo.com"
-                hasError={!!errors.email}
-                disabled={submitting}
-              />
-              {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="phone">Teléfono</Label>
-              <Input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={form.phone}
-                onChange={handleInputChange}
-                placeholder="+1 234 567 8900"
-                hasError={!!errors.phone}
-                disabled={submitting}
-              />
-              {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="taxId">Número de Identificación Fiscal</Label>
-              <Input
-                type="text"
-                id="taxId"
-                name="taxId"
-                value={form.taxId}
-                onChange={handleInputChange}
-                placeholder="RUC, RFC, NIT, etc."
-                hasError={!!errors.taxId}
-                disabled={submitting}
-              />
-              {errors.taxId && <ErrorMessage>{errors.taxId}</ErrorMessage>}
-            </FormGroup>
-
-            {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
-
-            <ButtonGroup>
-              <Button type="button" onClick={closeModal} disabled={submitting}>
-                Cancelar
-              </Button>
-              <Button type="submit" variant="primary" disabled={submitting}>
-                {submitting ? 'Guardando...' : (editingId ? 'Actualizar Proveedor' : 'Crear Proveedor')}
-              </Button>
-            </ButtonGroup>
-          </Form>
-        </ModalContent>
-      </Modal>
-
-      {/* Modal para ver detalles del proveedor */}
-      <Modal isOpen={isDetailModalOpen}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>Detalles del Proveedor</ModalTitle>
-            <CloseButton onClick={closeModal}>×</CloseButton>
-          </ModalHeader>
-          {selectedProvider && (
-            <div>
-              <ProviderInfo><strong>ID:</strong> {selectedProvider.id}</ProviderInfo>
-              <ProviderInfo><strong>Nombre:</strong> {selectedProvider.name}</ProviderInfo>
-              <ProviderInfo><strong>Email:</strong> {selectedProvider.email}</ProviderInfo>
-              <ProviderInfo><strong>Teléfono:</strong> {selectedProvider.phone}</ProviderInfo>
-              <ProviderInfo><strong>ID Fiscal:</strong> {selectedProvider.tax_id}</ProviderInfo>
-              {selectedProvider.created_at && (
-                <ProviderInfo>
-                  <strong>Fecha de Registro:</strong> {new Date(selectedProvider.created_at).toLocaleDateString()}
-                </ProviderInfo>
-              )}
-              {selectedProvider.updated_at && (
-                <ProviderInfo>
-                  <strong>Última Actualización:</strong> {new Date(selectedProvider.updated_at).toLocaleDateString()}
-                </ProviderInfo>
-              )}
-            </div>
-          )}
-          <ButtonGroup>
-            <Button onClick={closeModal}>
-              Cerrar
-            </Button>
-            {selectedProvider && (
-              <Button variant="primary" onClick={() => {
-                setIsDetailModalOpen(false);
-                handleEdit(selectedProvider);
-              }}>
-                Editar Proveedor
-              </Button>
+    <>
+      {/* Add Sidebar */}
+      <Sidebar>
+        <SidebarLogo onClick={() => navigate('/dashboard')}>
+          <img src="imagenes/logo.png" alt="Logo" />
+        </SidebarLogo>
+        
+        <SidebarContent>
+          <SidebarMenu>
+            {/* Overview */}
+            <SidebarMenuItem>
+              <button onClick={() => navigate('/dashboard')} title="Overview">
+                <BarChart2 />
+              </button>
+            </SidebarMenuItem>
+            
+            {/* Ventas */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/sales')} title="Ventas">
+                  <ShoppingCart />
+                </button>
+              </SidebarMenuItem>
             )}
-          </ButtonGroup>
-        </ModalContent>
-      </Modal>
-    </Container>
+            
+            {/* Clientes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/clients')} title="Clientes">
+                  <Users />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Inventario */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/inventory')} title="Inventario">
+                  <Package />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Prescripciones */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/prescriptions')} title="Prescripciones">
+                  <ClipboardList />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Usuarios */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/Users')} title="Usuarios">
+                  <User />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Reportes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/reports')} title="Reportes">
+                  <FileText />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Administración */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/admin')} title="Administración">
+                  <Shield />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Roles */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/roles')} title="Roles">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Proveedores */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem active={true}>
+                <button onClick={() => navigate('/providers')} title="Proveedores">
+                  <Truck />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Categorías */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/categories')} title="Categorías">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarContent>
+        
+        <SidebarFooter>
+          <LogoutButton onClick={() => {
+            clearUser();
+            navigate('/login');
+          }} title="Cerrar Sesión">
+            <LogOut size={20} />
+          </LogoutButton>
+        </SidebarFooter>
+      </Sidebar>
+
+      <Container>
+        <Header>
+          <BackButton onClick={() => navigate('/dashboard')}>
+            ← Volver a inicio
+          </BackButton>
+          <Title>Gestión de Proveedores</Title>
+        </Header>
+
+        <ActionBar>
+          <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
+            + Agregar Proveedor
+          </Button>
+          <SearchInput
+            type="text"
+            placeholder="Buscar proveedores..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </ActionBar>
+
+        {loading ? (
+          <LoadingState>Cargando proveedores...</LoadingState>
+        ) : filteredProviders.length === 0 ? (
+          <EmptyState>
+            <p>No hay proveedores registrados</p>
+            <p>Agrega el primer proveedor usando el botón de arriba</p>
+          </EmptyState>
+        ) : (
+          <ProvidersGrid>
+            {filteredProviders.map(provider => (
+              <ProviderCard key={provider.id}>
+                <ProviderName>{provider.name}</ProviderName>
+                <ProviderInfo><strong>Email:</strong> {provider.email}</ProviderInfo>
+                <ProviderInfo><strong>Teléfono:</strong> {provider.phone}</ProviderInfo>
+                <ProviderInfo><strong>ID Fiscal:</strong> {provider.tax_id}</ProviderInfo>
+                <ButtonGroup>
+                  <ActionButton variant="view" onClick={() => handleView(provider)}>
+                    Ver Detalles
+                  </ActionButton>
+                  <ActionButton variant="edit" onClick={() => handleEdit(provider)}>
+                    Editar
+                  </ActionButton>
+                  <ActionButton variant="delete" onClick={() => handleDelete(provider.id)}>
+                    Eliminar
+                  </ActionButton>
+                </ButtonGroup>
+              </ProviderCard>
+            ))}
+          </ProvidersGrid>
+        )}
+
+        {/* Modal para agregar/editar proveedor */}
+        <Modal isOpen={isAddModalOpen}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                {editingId ? 'Editar Proveedor' : 'Agregar Nuevo Proveedor'}
+              </ModalTitle>
+              <CloseButton onClick={closeModal}>×</CloseButton>
+            </ModalHeader>
+            <Form onSubmit={handleSubmit}>
+              <FormGroup>
+                <Label htmlFor="name">Nombre del Proveedor</Label>
+                <Input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleInputChange}
+                  placeholder="Ingresa el nombre del proveedor"
+                  hasError={!!errors.name}
+                  disabled={submitting}
+                />
+                {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleInputChange}
+                  placeholder="correo@ejemplo.com"
+                  hasError={!!errors.email}
+                  disabled={submitting}
+                />
+                {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleInputChange}
+                  placeholder="+1 234 567 8900"
+                  hasError={!!errors.phone}
+                  disabled={submitting}
+                />
+                {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="taxId">Número de Identificación Fiscal</Label>
+                <Input
+                  type="text"
+                  id="taxId"
+                  name="taxId"
+                  value={form.taxId}
+                  onChange={handleInputChange}
+                  placeholder="RUC, RFC, NIT, etc."
+                  hasError={!!errors.taxId}
+                  disabled={submitting}
+                />
+                {errors.taxId && <ErrorMessage>{errors.taxId}</ErrorMessage>}
+              </FormGroup>
+
+              {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+
+              <ButtonGroup>
+                <Button type="button" onClick={closeModal} disabled={submitting}>
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="primary" disabled={submitting}>
+                  {submitting ? 'Guardando...' : (editingId ? 'Actualizar Proveedor' : 'Crear Proveedor')}
+                </Button>
+              </ButtonGroup>
+            </Form>
+          </ModalContent>
+        </Modal>
+
+        {/* Modal para ver detalles del proveedor */}
+        <Modal isOpen={isDetailModalOpen}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Detalles del Proveedor</ModalTitle>
+              <CloseButton onClick={closeModal}>×</CloseButton>
+            </ModalHeader>
+            {selectedProvider && (
+              <div>
+                <ProviderInfo><strong>ID:</strong> {selectedProvider.id}</ProviderInfo>
+                <ProviderInfo><strong>Nombre:</strong> {selectedProvider.name}</ProviderInfo>
+                <ProviderInfo><strong>Email:</strong> {selectedProvider.email}</ProviderInfo>
+                <ProviderInfo><strong>Teléfono:</strong> {selectedProvider.phone}</ProviderInfo>
+                <ProviderInfo><strong>ID Fiscal:</strong> {selectedProvider.tax_id}</ProviderInfo>
+                {selectedProvider.created_at && (
+                  <ProviderInfo>
+                    <strong>Fecha de Registro:</strong> {new Date(selectedProvider.created_at).toLocaleDateString()}
+                  </ProviderInfo>
+                )}
+                {selectedProvider.updated_at && (
+                  <ProviderInfo>
+                    <strong>Última Actualización:</strong> {new Date(selectedProvider.updated_at).toLocaleDateString()}
+                  </ProviderInfo>
+                )}
+              </div>
+            )}
+            <ButtonGroup>
+              <Button onClick={closeModal}>
+                Cerrar
+              </Button>
+              {selectedProvider && (
+                <Button variant="primary" onClick={() => {
+                  setIsDetailModalOpen(false);
+                  handleEdit(selectedProvider);
+                }}>
+                  Editar Proveedor
+                </Button>
+              )}
+            </ButtonGroup>
+          </ModalContent>
+        </Modal>
+      </Container>
+    </>
   );
 };
 

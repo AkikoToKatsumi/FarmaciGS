@@ -3,12 +3,130 @@ import styled from 'styled-components';
 import { getClients, createClient, updateClient, deleteClient } from '../services/client.service';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/User';
+import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
 
-// Styled Components
+// Add Sidebar components from Sales.tsx
+const Sidebar = styled.nav`
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 60px;
+  background: #1964aaff;
+  color: #fff;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const SidebarLogo = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem 2rem 0.5rem;
+  img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #fff;
+    cursor: pointer;
+  }
+`;
+
+const SidebarContent = styled.div`
+  flex: 1 1 auto;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarMenu = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+`;
+
+const SidebarMenuItem = styled.li<{ active?: boolean }>`
+  width: 100%;
+  margin-bottom: 8px;
+  button {
+    width: 100%;
+    background: ${({ active }) => (active ? '#2563eb' : 'none')};
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    
+    &:hover {
+      background: #2563eb;
+    }
+    
+    svg {
+      min-width: 22px;
+      flex-shrink: 0;
+    }
+  }
+`;
+
+const SidebarFooter = styled.div`
+  width: 100%;
+  padding: 1.5rem 0.5rem 2rem 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #1964aaff;
+  min-height: 80px;
+  box-sizing: border-box;
+`;
+
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  &:hover {
+    color: #e74c3c;
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+// Update Container to accommodate sidebar
 const Container = styled.div`
   background-color: #fff;
   min-height: 100vh;
   padding: 20px;
+  margin-left: 60px;
+  transition: margin-left 0.3s ease;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const BackButton = styled.button`
@@ -394,12 +512,14 @@ const NotificationCloseButton = styled.button`
 `;
 
 const Clients = () => {
+  const { user, clearUser } = useUserStore();
   const token = useUserStore((s) => s.token);
+  const navigate = useNavigate();
+  
   const [clients, setClients] = useState([]);
   const [form, setForm] = useState({ name: '', email: '', phone: '', rnc: '', cedula: '', address: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -540,178 +660,297 @@ const Clients = () => {
   };
 
   return (
-    <Container>
-      <NotificationsContainer>
-        {notifications.map(notification => (
-          <Notification
-            key={notification.id}
-            type={notification.type}
-            isVisible={notification.isVisible}
-          >
-            <NotificationIcon type={notification.type}>
-              {notification.type === 'success' ? '✓' : '✕'}
-            </NotificationIcon>
-            <NotificationContent>
-              <NotificationTitle type={notification.type}>{notification.title}</NotificationTitle>
-              <NotificationMessage type={notification.type}>{notification.message}</NotificationMessage>
-            </NotificationContent>
-            <NotificationCloseButton onClick={() => closeNotification(notification.id)}>
-              ×
-            </NotificationCloseButton>
-          </Notification>
-        ))}
-      </NotificationsContainer>
-      <BackButton onClick={() => navigate('/dashboard')}>
-        ← Volver a Inicio
-      </BackButton>
-      <Card>
-        <Title>Clientes</Title>
-        <Button variant="primary" style={{ marginBottom: 20 }} onClick={() => openModal()}>
-          + Agregar Cliente
-        </Button>
+    <>
+      {/* Add Sidebar */}
+      <Sidebar>
+        <SidebarLogo onClick={() => navigate('/dashboard')}>
+          <img src="imagenes/logo.png" alt="Logo" />
+        </SidebarLogo>
         
-        <PageSizeContainer>
-          <Label htmlFor="pageSize">Clientes por página:</Label>
-          <Select id="pageSize" value={pageSize} onChange={handlePageSizeChange} style={{width: 100}}>
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </Select>
-        </PageSizeContainer>
+        <SidebarContent>
+          <SidebarMenu>
+            {/* Overview */}
+            <SidebarMenuItem>
+              <button onClick={() => navigate('/dashboard')} title="Overview">
+                <BarChart2 />
+              </button>
+            </SidebarMenuItem>
+            
+            {/* Ventas */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/sales')} title="Ventas">
+                  <ShoppingCart />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Clientes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem active={true}>
+                <button onClick={() => navigate('/clients')} title="Clientes">
+                  <Users />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Inventario */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/inventory')} title="Inventario">
+                  <Package />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Prescripciones */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/prescriptions')} title="Prescripciones">
+                  <ClipboardList />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Usuarios */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/Users')} title="Usuarios">
+                  <User />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Reportes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/reports')} title="Reportes">
+                  <FileText />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Administración */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/admin')} title="Administración">
+                  <Shield />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Roles */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/roles')} title="Roles">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Proveedores */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/providers')} title="Proveedores">
+                  <Truck />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Categorías */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/categories')} title="Categorías">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarContent>
+        
+        <SidebarFooter>
+          <LogoutButton onClick={() => {
+            clearUser();
+            navigate('/login');
+          }} title="Cerrar Sesión">
+            <LogOut size={20} />
+          </LogoutButton>
+        </SidebarFooter>
+      </Sidebar>
 
-        <Grid>
-          {currentClients.length > 0 ? currentClients.map((c: any) => (
-            <ClientCard key={c.id}>
-              <ClientName>{c.name}</ClientName>
-              <ClientInfo><strong>Email:</strong> {c.email || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
-              <ClientInfo><strong>Teléfono:</strong> {c.phone || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
-              <ClientInfo><strong>RNC:</strong> {c.rnc || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
-              <ClientInfo><strong>Cédula:</strong> {c.cedula || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
-              <ClientInfo><strong>Dirección:</strong> {c.address || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
-              <CardActions>
-                <ActionButton
-                  variant="edit"
-                  onClick={() => handleEdit(c)}
-                >
-                  Editar
-                </ActionButton>
-                <ActionButton
-                  variant="delete"
-                  onClick={() => handleDelete(c.id)}
-                >
-                  Eliminar
-                </ActionButton>
-              </CardActions>
-            </ClientCard>
-          )) : (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888' }}>
-              No hay clientes registrados.
-            </div>
-          )}
-        </Grid>
+      <Container>
+        <NotificationsContainer>
+          {notifications.map(notification => (
+            <Notification
+              key={notification.id}
+              type={notification.type}
+              isVisible={notification.isVisible}
+            >
+              <NotificationIcon type={notification.type}>
+                {notification.type === 'success' ? '✓' : '✕'}
+              </NotificationIcon>
+              <NotificationContent>
+                <NotificationTitle type={notification.type}>{notification.title}</NotificationTitle>
+                <NotificationMessage type={notification.type}>{notification.message}</NotificationMessage>
+              </NotificationContent>
+              <NotificationCloseButton onClick={() => closeNotification(notification.id)}>
+                ×
+              </NotificationCloseButton>
+            </Notification>
+          ))}
+        </NotificationsContainer>
+        <BackButton onClick={() => navigate('/dashboard')}>
+          ← Volver a Inicio
+        </BackButton>
+        <Card>
+          <Title>Clientes</Title>
+          <Button variant="primary" style={{ marginBottom: 20 }} onClick={() => openModal()}>
+            + Agregar Cliente
+          </Button>
           
-        {totalPages > 1 && (
-          <PaginationContainer>
-            <PageButton onClick={handlePreviousPage} disabled={currentPage === 1}>
-              Anterior
-            </PageButton>
-            <PageInfo>Página {currentPage} de {totalPages}</PageInfo>
-            <PageButton onClick={handleNextPage} disabled={currentPage === totalPages}>
-              Siguiente
-            </PageButton>
-          </PaginationContainer>
-        )}
-      </Card>
+          <PageSizeContainer>
+            <Label htmlFor="pageSize">Clientes por página:</Label>
+            <Select id="pageSize" value={pageSize} onChange={handlePageSizeChange} style={{width: 100}}>
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </Select>
+          </PageSizeContainer>
 
-      {/* Modal para agregar/editar cliente */}
-      {isModalOpen && (
-        <ModalOverlay>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{editingId ? 'Editar Cliente' : 'Agregar Nuevo Cliente'}</ModalTitle>
-              <CloseButton onClick={() => setIsModalOpen(false)}>×</CloseButton>
-            </ModalHeader>
-            <Form onSubmit={e => { e.preventDefault(); handleSubmit(); setIsModalOpen(false); }}>
-              <FormGroup>
-                <ModalLabel htmlFor="name">Nombre Completo</ModalLabel>
-                <Input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  hasError={!!errors.name}
-                  required
-                />
-                {errors.name && <ErrorText>{errors.name}</ErrorText>}
-              </FormGroup>
-              <FormGroup>
-                <ModalLabel htmlFor="email">Email</ModalLabel>
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  hasError={!!errors.email}
-                />
-                {errors.email && <ErrorText>{errors.email}</ErrorText>}
-              </FormGroup>
-              <FormGroup>
-                <ModalLabel htmlFor="phone">Teléfono</ModalLabel>
-                <Input
-                  type="text"
-                  id="phone"
-                  name="phone"
-                  value={form.phone}
-                  onChange={e => setForm({ ...form, phone: e.target.value })}
-                  hasError={!!errors.phone}
-                />
-                {errors.phone && <ErrorText>{errors.phone}</ErrorText>}
-              </FormGroup>
-              <FormGroup>
-                <ModalLabel htmlFor="rnc">RNC</ModalLabel>
-                <Input
-                  type="text"
-                  id="rnc"
-                  name="rnc"
-                  value={form.rnc}
-                  onChange={e => setForm({ ...form, rnc: e.target.value })}
-                />
-              </FormGroup>
-              <FormGroup>
-                <ModalLabel htmlFor="cedula">Cédula</ModalLabel>
-                <Input
-                  type="text"
-                  id="cedula"
-                  name="cedula"
-                  value={form.cedula}
-                  onChange={e => setForm({ ...form, cedula: e.target.value })}
-                />
-              </FormGroup>
-              <FormGroup>
-                <ModalLabel htmlFor="address">Dirección</ModalLabel>
-                <TextArea
-                  id="address"
-                  name="address"
-                  value={form.address}
-                  onChange={e => setForm({ ...form, address: e.target.value })}
-                />
-              </FormGroup>
-              <ButtonGroup>
-                <Button type="button" onClick={() => setIsModalOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" variant="primary">
-                  {editingId ? 'Actualizar Cliente' : 'Agregar Cliente'}
-                </Button>
-              </ButtonGroup>
-            </Form>
-          </ModalContent>
-        </ModalOverlay>
-      )}
-    </Container>
+          <Grid>
+            {currentClients.length > 0 ? currentClients.map((c: any) => (
+              <ClientCard key={c.id}>
+                <ClientName>{c.name}</ClientName>
+                <ClientInfo><strong>Email:</strong> {c.email || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+                <ClientInfo><strong>Teléfono:</strong> {c.phone || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+                <ClientInfo><strong>RNC:</strong> {c.rnc || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+                <ClientInfo><strong>Cédula:</strong> {c.cedula || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+                <ClientInfo><strong>Dirección:</strong> {c.address || <span style={{ color: '#aaa' }}>No especificado</span>}</ClientInfo>
+                <CardActions>
+                  <ActionButton
+                    variant="edit"
+                    onClick={() => handleEdit(c)}
+                  >
+                    Editar
+                  </ActionButton>
+                  <ActionButton
+                    variant="delete"
+                    onClick={() => handleDelete(c.id)}
+                  >
+                    Eliminar
+                  </ActionButton>
+                </CardActions>
+              </ClientCard>
+            )) : (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888' }}>
+                No hay clientes registrados.
+              </div>
+            )}
+          </Grid>
+            
+          {totalPages > 1 && (
+            <PaginationContainer>
+              <PageButton onClick={handlePreviousPage} disabled={currentPage === 1}>
+                Anterior
+              </PageButton>
+              <PageInfo>Página {currentPage} de {totalPages}</PageInfo>
+              <PageButton onClick={handleNextPage} disabled={currentPage === totalPages}>
+                Siguiente
+              </PageButton>
+            </PaginationContainer>
+          )}
+        </Card>
+
+        {/* Modal para agregar/editar cliente */}
+        {isModalOpen && (
+          <ModalOverlay>
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>{editingId ? 'Editar Cliente' : 'Agregar Nuevo Cliente'}</ModalTitle>
+                <CloseButton onClick={() => setIsModalOpen(false)}>×</CloseButton>
+              </ModalHeader>
+              <Form onSubmit={e => { e.preventDefault(); handleSubmit(); setIsModalOpen(false); }}>
+                <FormGroup>
+                  <ModalLabel htmlFor="name">Nombre Completo</ModalLabel>
+                  <Input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    hasError={!!errors.name}
+                    required
+                  />
+                  {errors.name && <ErrorText>{errors.name}</ErrorText>}
+                </FormGroup>
+                <FormGroup>
+                  <ModalLabel htmlFor="email">Email</ModalLabel>
+                  <Input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    hasError={!!errors.email}
+                  />
+                  {errors.email && <ErrorText>{errors.email}</ErrorText>}
+                </FormGroup>
+                <FormGroup>
+                  <ModalLabel htmlFor="phone">Teléfono</ModalLabel>
+                  <Input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value={form.phone}
+                    onChange={e => setForm({ ...form, phone: e.target.value })}
+                    hasError={!!errors.phone}
+                  />
+                  {errors.phone && <ErrorText>{errors.phone}</ErrorText>}
+                </FormGroup>
+                <FormGroup>
+                  <ModalLabel htmlFor="rnc">RNC</ModalLabel>
+                  <Input
+                    type="text"
+                    id="rnc"
+                    name="rnc"
+                    value={form.rnc}
+                    onChange={e => setForm({ ...form, rnc: e.target.value })}
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <ModalLabel htmlFor="cedula">Cédula</ModalLabel>
+                  <Input
+                    type="text"
+                    id="cedula"
+                    name="cedula"
+                    value={form.cedula}
+                    onChange={e => setForm({ ...form, cedula: e.target.value })}
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <ModalLabel htmlFor="address">Dirección</ModalLabel>
+                  <TextArea
+                    id="address"
+                    name="address"
+                    value={form.address}
+                    onChange={e => setForm({ ...form, address: e.target.value })}
+                  />
+                </FormGroup>
+                <ButtonGroup>
+                  <Button type="button" onClick={() => setIsModalOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" variant="primary">
+                    {editingId ? 'Actualizar Cliente' : 'Agregar Cliente'}
+                  </Button>
+                </ButtonGroup>
+              </Form>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </Container>
+    </>
   );
 };
 

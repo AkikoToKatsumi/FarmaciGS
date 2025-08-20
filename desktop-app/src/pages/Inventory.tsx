@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUserStore } from '../store/User';
+import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
 
 import { 
   getMedicine, 
@@ -21,11 +22,127 @@ import { getCategories as getCategoryList } from '../services/category.service';
 
 // --- Styled Components ---
 
+const Sidebar = styled.nav`
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 60px;
+  background: #1964aaff;
+  color: #fff;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const SidebarLogo = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem 2rem 0.5rem;
+  img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #fff;
+    cursor: pointer;
+  }
+`;
+
+const SidebarContent = styled.div`
+  flex: 1 1 auto;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarMenu = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+`;
+
+const SidebarMenuItem = styled.li<{ active?: boolean }>`
+  width: 100%;
+  margin-bottom: 8px;
+  button {
+    width: 100%;
+    background: ${({ active }) => (active ? '#2563eb' : 'none')};
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    
+    &:hover {
+      background: #2563eb;
+    }
+    
+    svg {
+      min-width: 22px;
+      flex-shrink: 0;
+    }
+  }
+`;
+
+const SidebarFooter = styled.div`
+  width: 100%;
+  padding: 1.5rem 0.5rem 2rem 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #1964aaff;
+  min-height: 80px;
+  box-sizing: border-box;
+`;
+
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  &:hover {
+    color: #e74c3c;
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
 const PageContainer = styled.div`
-background-color: #f0f4f8;
+  background-color: #f0f4f8;
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  margin-left: 60px;
+  transition: margin-left 0.3s ease;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const Header = styled.div`
@@ -710,6 +827,7 @@ const Notification: React.FC<NotificationProps> = ({
 const Inventory = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { user, clearUser } = useUserStore();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { token } = useUserStore(); // <-- usar token del store
@@ -993,443 +1111,552 @@ const Inventory = () => {
     return expDate <= thirtyDaysFromNow;
   };
 
-  if (loading) {
-    return (
-      <PageContainer>
-        <LoadingContainer>
-          Cargando...
-        </LoadingContainer>
-      </PageContainer>
-    );
-  }
-
   return (
-    <PageContainer>
-      {/* Contenedor de notificaciones */}
-      <NotificationContainer>
-        {successMessage && (
-          <Notification
-            type="success"
-            message={successMessage}
-            onClose={() => setSuccessMessage(null)}
-            autoClose={true}
-            duration={4000}
-          />
-        )}
-        {errorMessage && (
-          <Notification
-            type="error"
-            message={errorMessage}
-            onClose={() => setErrorMessage(null)}
-            autoClose={true}
-            duration={6000}
-          />
-        )}
-      </NotificationContainer>
-
-      <Header>
-        <Title>Gestión de Inventario</Title>
-        <ButtonContainer>
-          <StockAlertButton
-            onClick={() => setShowStockAlerts(!showStockAlerts)}
-            hasAlerts={stockAlerts.length > 0}
-          >
-            Alertas de Stock ({stockAlerts.length})
-          </StockAlertButton>
-          <ExpiringAlertButton
-            onClick={() => setShowExpiringAlerts(!showExpiringAlerts)}
-            hasAlerts={expiringAlerts.length > 0}
-          >
-            Alertas de Vencimiento ({expiringAlerts.length})
-          </ExpiringAlertButton>
-          <PrimaryButton
-            onClick={() => setShowForm(true)}
-          >
-            Agregar Producto
-          </PrimaryButton>
-          <BackToHomeButton onClick={() => navigate('/dashboard')}>
-            Volver a inicio
-          </BackToHomeButton>
-        </ButtonContainer>
-      </Header>
-
-      {/* Alertas de Stock */}
-      {showStockAlerts && (
-        <StockAlertContainer>
-          <StockAlertTitle>Productos con Stock Bajo</StockAlertTitle>
-          {stockAlerts.length === 0 && (
-            <span style={{ color: '#b91c1c', fontSize: '0.85rem' }}>No hay productos con stock bajo.</span>
-          )}
-          {stockAlerts.length > 0 && (
-            <AlertGrid>
-              {stockAlerts.map(product => (
-                <AlertCard key={product.id}>
-                  <AlertProductName>{product.name}</AlertProductName>
-                  <AlertText>Stock: {product.stock} unidades</AlertText>
-                  <AlertText>Lote: {product.lot}</AlertText>
-                </AlertCard>
-              ))}
-            </AlertGrid>
-          )}
-        </StockAlertContainer>
-      )}
-
-      {/* Alertas de productos por vencer */}
-      {showExpiringAlerts && (
-        <ExpiringAlertContainer>
-          <ExpiringAlertTitle>Productos por vencer</ExpiringAlertTitle>
-          {expiringLoading && <span style={{ color: '#d97706', fontSize: '0.85rem' }}>Cargando productos por vencer...</span>}
-          {!expiringLoading && expiringAlerts.length === 0 && (
-            <span style={{ color: '#d97706', fontSize: '0.85rem' }}>No hay productos próximos a vencer.</span>
-          )}
-          {!expiringLoading && expiringAlerts.length > 0 && (
-            <AlertGrid>
-              {expiringAlerts.map(product => (
-                <AlertCard key={product.id}>
-                  <AlertProductName>{product.name}</AlertProductName>
-                  <AlertText>Vence: {formatDate(product.expiration_date)}</AlertText>
-                  <AlertText>
-                    Estado: {new Date(product.expiration_date) < new Date() ? 'Vencido' : 'Por vencer'}
-                  </AlertText>
-                  <AlertText>Lote: {product.lot}</AlertText>
-                </AlertCard>
-              ))}
-            </AlertGrid>
-          )}
-        </ExpiringAlertContainer>
-      )}
-
-      {/* Filtros y Búsqueda */}
-      <Card>
-        <FilterGrid>
-          <FilterGroup>
-            <Label>Buscar</Label>
-            <Input
-              type="text"
-              placeholder="Buscar por nombre, descripción o código..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </FilterGroup>
-          
-          <FilterGroup>
-            <Label>Categoría</Label>
-            <Select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-            >
-              <option value="">Todas las categorías</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </Select>
-          </FilterGroup>
-          
-          <FilterGroup>
-            <Label>Ordenar por</Label>
-            <Select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="name">Nombre</option>
-              <option value="price">Precio</option>
-              <option value="stock">Stock</option>
-              <option value="expiration_date">Fecha de vencimiento</option>
-            </Select>
-          </FilterGroup>
-          
-          <FilterGroup>
-            <Label>Orden</Label>
-            <Select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as any)}
-            >
-              <option value="asc">Ascendente</option>
-              <option value="desc">Descendente</option>
-            </Select>
-          </FilterGroup>
-        </FilterGrid>
-      </Card>
-
-      {/* Formulario de Producto */}
-      {showForm && (
-        <ModalOverlay>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                {editingProduct ? 'Editar Producto' : 'Agregar Nuevo Producto'}
-              </ModalTitle>
-              <CloseButton onClick={resetForm}>
-                ✕
-              </CloseButton>
-            </ModalHeader>
+    <>
+      {/* Add Sidebar */}
+      <Sidebar>
+        <SidebarLogo onClick={() => navigate('/dashboard')}>
+          <img src="imagenes/logo.png" alt="Logo" />
+        </SidebarLogo>
+        
+        <SidebarContent>
+          <SidebarMenu>
+            {/* Overview */}
+            <SidebarMenuItem>
+              <button onClick={() => navigate('/dashboard')} title="Overview">
+                <BarChart2 />
+              </button>
+            </SidebarMenuItem>
             
-            <FormContainer onSubmit={handleSubmit}>
-              <FormGrid>
+            {/* Ventas */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/sales')} title="Ventas">
+                  <ShoppingCart />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Clientes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/clients')} title="Clientes">
+                  <Users />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Inventario */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem active={true}>
+                <button onClick={() => navigate('/inventory')} title="Inventario">
+                  <Package />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Prescripciones */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/prescriptions')} title="Prescripciones">
+                  <ClipboardList />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Usuarios */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/Users')} title="Usuarios">
+                  <User />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Reportes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/reports')} title="Reportes">
+                  <FileText />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Administración */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/admin')} title="Administración">
+                  <Shield />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Roles */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/roles')} title="Roles">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Proveedores */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/providers')} title="Proveedores">
+                  <Truck />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Categorías */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/categories')} title="Categorías">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarContent>
+        
+        <SidebarFooter>
+          <LogoutButton onClick={() => {
+            clearUser();
+            navigate('/login');
+          }} title="Cerrar Sesión">
+            <LogOut size={20} />
+          </LogoutButton>
+        </SidebarFooter>
+      </Sidebar>
+
+      <PageContainer>
+        {/* Contenedor de notificaciones */}
+        <NotificationContainer>
+          {successMessage && (
+            <Notification
+              type="success"
+              message={successMessage}
+              onClose={() => setSuccessMessage(null)}
+              autoClose={true}
+              duration={4000}
+            />
+          )}
+          {errorMessage && (
+            <Notification
+              type="error"
+              message={errorMessage}
+              onClose={() => setErrorMessage(null)}
+              autoClose={true}
+              duration={6000}
+            />
+          )}
+        </NotificationContainer>
+
+        <Header>
+          <Title>Gestión de Inventario</Title>
+          <ButtonContainer>
+            <StockAlertButton
+              onClick={() => setShowStockAlerts(!showStockAlerts)}
+              hasAlerts={stockAlerts.length > 0}
+            >
+              Alertas de Stock ({stockAlerts.length})
+            </StockAlertButton>
+            <ExpiringAlertButton
+              onClick={() => setShowExpiringAlerts(!showExpiringAlerts)}
+              hasAlerts={expiringAlerts.length > 0}
+            >
+              Alertas de Vencimiento ({expiringAlerts.length})
+            </ExpiringAlertButton>
+            <PrimaryButton
+              onClick={() => setShowForm(true)}
+            >
+              Agregar Producto
+            </PrimaryButton>
+            <BackToHomeButton onClick={() => navigate('/dashboard')}>
+              Volver a inicio
+            </BackToHomeButton>
+          </ButtonContainer>
+        </Header>
+
+        {/* Alertas de Stock */}
+        {showStockAlerts && (
+          <StockAlertContainer>
+            <StockAlertTitle>Productos con Stock Bajo</StockAlertTitle>
+            {stockAlerts.length === 0 && (
+              <span style={{ color: '#b91c1c', fontSize: '0.85rem' }}>No hay productos con stock bajo.</span>
+            )}
+            {stockAlerts.length > 0 && (
+              <AlertGrid>
+                {stockAlerts.map(product => (
+                  <AlertCard key={product.id}>
+                    <AlertProductName>{product.name}</AlertProductName>
+                    <AlertText>Stock: {product.stock} unidades</AlertText>
+                    <AlertText>Lote: {product.lot}</AlertText>
+                  </AlertCard>
+                ))}
+              </AlertGrid>
+            )}
+          </StockAlertContainer>
+        )}
+
+        {/* Alertas de productos por vencer */}
+        {showExpiringAlerts && (
+          <ExpiringAlertContainer>
+            <ExpiringAlertTitle>Productos por vencer</ExpiringAlertTitle>
+            {expiringLoading && <span style={{ color: '#d97706', fontSize: '0.85rem' }}>Cargando productos por vencer...</span>}
+            {!expiringLoading && expiringAlerts.length === 0 && (
+              <span style={{ color: '#d97706', fontSize: '0.85rem' }}>No hay productos próximos a vencer.</span>
+            )}
+            {!expiringLoading && expiringAlerts.length > 0 && (
+              <AlertGrid>
+                {expiringAlerts.map(product => (
+                  <AlertCard key={product.id}>
+                    <AlertProductName>{product.name}</AlertProductName>
+                    <AlertText>Vence: {formatDate(product.expiration_date)}</AlertText>
+                    <AlertText>
+                      Estado: {new Date(product.expiration_date) < new Date() ? 'Vencido' : 'Por vencer'}
+                    </AlertText>
+                    <AlertText>Lote: {product.lot}</AlertText>
+                  </AlertCard>
+                ))}
+              </AlertGrid>
+            )}
+          </ExpiringAlertContainer>
+        )}
+
+        {/* Filtros y Búsqueda */}
+        <Card>
+          <FilterGrid>
+            <FilterGroup>
+              <Label>Buscar</Label>
+              <Input
+                type="text"
+                placeholder="Buscar por nombre, descripción o código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </FilterGroup>
+            
+            <FilterGroup>
+              <Label>Categoría</Label>
+              <Select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                <option value="">Todas las categorías</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </Select>
+            </FilterGroup>
+            
+            <FilterGroup>
+              <Label>Ordenar por</Label>
+              <Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+              >
+                <option value="name">Nombre</option>
+                <option value="price">Precio</option>
+                <option value="stock">Stock</option>
+                <option value="expiration_date">Fecha de vencimiento</option>
+              </Select>
+            </FilterGroup>
+            
+            <FilterGroup>
+              <Label>Orden</Label>
+              <Select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as any)}
+              >
+                <option value="asc">Ascendente</option>
+                <option value="desc">Descendente</option>
+              </Select>
+            </FilterGroup>
+          </FilterGrid>
+        </Card>
+
+        {/* Formulario de Producto */}
+        {showForm && (
+          <ModalOverlay>
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>
+                  {editingProduct ? 'Editar Producto' : 'Agregar Nuevo Producto'}
+                </ModalTitle>
+                <CloseButton onClick={resetForm}>
+                  ✕
+                </CloseButton>
+              </ModalHeader>
+              
+              <FormContainer onSubmit={handleSubmit}>
+                <FormGrid>
+                  <FilterGroup>
+                    <Label>Nombre del Producto *</Label>
+                    <Input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </FilterGroup>
+                  
+                  <FilterGroup>
+                    <Label>Categoría *</Label>
+                    <Select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      required
+                      disabled={categoriesLoading}
+                    >
+                      <option value="">Seleccione categoría</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </Select>
+                    {categoriesLoading && <span style={{ color: '#888', fontSize: '0.85rem' }}>Cargando categorías...</span>}
+                    {!categoriesLoading && categories.length === 0 && (
+                      <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>No hay categorías disponibles.</span>
+                    )}
+                  </FilterGroup>
+                </FormGrid>
+                
                 <FilterGroup>
-                  <Label>Nombre del Producto *</Label>
-                  <Input
-                    type="text"
-                    name="name"
-                    value={formData.name}
+                  <Label>Descripción *</Label>
+                  <TextArea
+                    name="description"
+                    value={formData.description}
                     onChange={handleInputChange}
                     required
+                    rows={3}
                   />
                 </FilterGroup>
                 
+                <FormGrid3>
+                  <FilterGroup>
+                    <Label>Precio *</Label>
+                    <Input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      required
+                      step="0.01"
+                      min="0"
+                    />
+                  </FilterGroup>
+                  
+                  <FilterGroup>
+                    <Label>Stock *</Label>
+                    <Input
+                      type="number"
+                      name="stock"
+                      value={formData.stock}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                    />
+                  </FilterGroup>
+                  
+                  <FilterGroup>
+                    <Label>Lote *</Label>
+                    <Input
+                      type="text"
+                      name="lot"
+                      value={formData.lot}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </FilterGroup>
+                </FormGrid3>
+                
+                <FormGrid>
+                  <FilterGroup>
+                    <Label>Fecha de Vencimiento *</Label>
+                    <Input
+                      type="date"
+                      name="expirationDate"
+                      value={formData.expirationDate}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </FilterGroup>
+                  
+                  <FilterGroup>
+                    <Label>Código de Barras</Label>
+                    <Input
+                      type="text"
+                      name="barcode"
+                      value={formData.barcode ?? ''}
+                      onChange={handleInputChange}
+                      placeholder="Se genera automáticamente si se deja vacío"
+                    />
+                  </FilterGroup>
+                </FormGrid>
+                
                 <FilterGroup>
-                  <Label>Categoría *</Label>
+                  <Label>Proveedor *</Label>
                   <Select
-                    name="category"
-                    value={formData.category}
+                    name="provider_id"
+                    value={formData.provider_id}
                     onChange={handleInputChange}
                     required
-                    disabled={categoriesLoading}
+                    disabled={providersLoading}
                   >
-                    <option value="">Seleccione categoría</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                    <option value="">Seleccione proveedor</option>
+                    {providers.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </Select>
-                  {categoriesLoading && <span style={{ color: '#888', fontSize: '0.85rem' }}>Cargando categorías...</span>}
-                  {!categoriesLoading && categories.length === 0 && (
-                    <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>No hay categorías disponibles.</span>
+                  {providersLoading && <span style={{ color: '#888', fontSize: '0.85rem' }}>Cargando proveedores...</span>}
+                  {!providersLoading && providers.length === 0 && (
+                    <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>No hay proveedores disponibles.</span>
                   )}
                 </FilterGroup>
-              </FormGrid>
-              
-              <FilterGroup>
-                <Label>Descripción *</Label>
-                <TextArea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  required
-                  rows={3}
-                />
-              </FilterGroup>
-              
-              <FormGrid3>
-                <FilterGroup>
-                  <Label>Precio *</Label>
-                  <Input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    required
-                    step="0.01"
-                    min="0"
-                  />
-                </FilterGroup>
                 
-                <FilterGroup>
-                  <Label>Stock *</Label>
-                  <Input
-                    type="number"
-                    name="stock"
-                    value={formData.stock}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                  />
-                </FilterGroup>
-                
-                <FilterGroup>
-                  <Label>Lote *</Label>
-                  <Input
-                    type="text"
-                    name="lot"
-                    value={formData.lot}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </FilterGroup>
-              </FormGrid3>
-              
-              <FormGrid>
-                <FilterGroup>
-                  <Label>Fecha de Vencimiento *</Label>
-                  <Input
-                    type="date"
-                    name="expirationDate"
-                    value={formData.expirationDate}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </FilterGroup>
-                
-                <FilterGroup>
-                  <Label>Código de Barras</Label>
-                  <Input
-                    type="text"
-                    name="barcode"
-                    value={formData.barcode ?? ''}
-                    onChange={handleInputChange}
-                    placeholder="Se genera automáticamente si se deja vacío"
-                  />
-                </FilterGroup>
-              </FormGrid>
-              
-              <FilterGroup>
-                <Label>Proveedor *</Label>
-                <Select
-                  name="provider_id"
-                  value={formData.provider_id}
-                  onChange={handleInputChange}
-                  required
-                  disabled={providersLoading}
-                >
-                  <option value="">Seleccione proveedor</option>
-                  {providers.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </Select>
-                {providersLoading && <span style={{ color: '#888', fontSize: '0.85rem' }}>Cargando proveedores...</span>}
-                {!providersLoading && providers.length === 0 && (
-                  <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>No hay proveedores disponibles.</span>
-                )}
-              </FilterGroup>
-              
-              <FormActions>
-                <CancelButton
-                  type="button"
-                  onClick={resetForm}
-                >
-                  Cancelar
-                </CancelButton>
-                <SubmitButton type="submit">
-                  {editingProduct ? 'Actualizar' : 'Guardar'}
-                </SubmitButton>
-              </FormActions>
-            </FormContainer>
-          </ModalContent>
-        </ModalOverlay>
-      )}
-
-      {/* Tabla de Productos */}
-      <TableContainer>
-        <TableScrollContainer>
-          <StyledTable>
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>Lote</th>
-                <th>Vencimiento</th>
-                <th>Código</th>
-                <th>Proveedor</th> {/* <-- nueva columna */}
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentProducts.map((product) => (
-                <tr key={product.id}>
-                  <td>
-                    <div>
-                      <ProductName>{product.name}</ProductName>
-                      <ProductDescription>{product.description}</ProductDescription>
-                    </div>
-                  </td>
-                  <td>
-                    {product.category || 'Sin categoría'}
-                  </td>
-                  <td>
-                    <Price>
-                      {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(product.price)}
-                    </Price>
-                  </td>
-                  <td>
-                    <StockBadge stockLevel={getStockLevel(product.stock)}>
-                      {product.stock} unidades
-                    </StockBadge>
-                  </td>
-                  <td>
-                    {product.lot}
-                  </td>
-                  <td>
-                    <ExpirationDate isExpiringSoon={isExpiringSoon(product.expiration_date)}>
-                      {formatDate(product.expiration_date)}
-                    </ExpirationDate>
-                  </td>
-                  <td>
-                    {product.barcode || 'N/A'}
-                  </td>
-                  <td>
-                    {product.provider_name || 'Sin proveedor'}
-                  </td>
-                  <td>
-                    <ActionContainer>
-                      <EditButton onClick={() => handleEdit(product)}>
-                        Editar
-                      </EditButton>
-                      <DeleteButton onClick={() => handleDelete(product.id)}>
-                        Eliminar
-                      </DeleteButton>
-                    </ActionContainer>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </StyledTable>
-        </TableScrollContainer>
-        
-        {sortedProducts.length === 0 && (
-          <EmptyState>
-            <p>No se encontraron productos</p>
-          </EmptyState>
+                <FormActions>
+                  <CancelButton
+                    type="button"
+                    onClick={resetForm}
+                  >
+                    Cancelar
+                  </CancelButton>
+                  <SubmitButton type="submit">
+                    {editingProduct ? 'Actualizar' : 'Guardar'}
+                  </SubmitButton>
+                </FormActions>
+              </FormContainer>
+            </ModalContent>
+          </ModalOverlay>
         )}
-      </TableContainer>
 
-      {/* Pagination Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', background: '#f9fafb', padding: '12px 16px', borderRadius: '8px' }}>
-        <div>
-          <Label htmlFor="pageSize">Productos por página:</Label>
-          <Select id="pageSize" value={pageSize} onChange={handlePageSizeChange}>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </Select>
+        {/* Tabla de Productos */}
+        <TableContainer>
+          <TableScrollContainer>
+            <StyledTable>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th>Lote</th>
+                  <th>Vencimiento</th>
+                  <th>Código</th>
+                  <th>Proveedor</th> {/* <-- nueva columna */}
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentProducts.map((product) => (
+                  <tr key={product.id}>
+                    <td>
+                      <div>
+                        <ProductName>{product.name}</ProductName>
+                        <ProductDescription>{product.description}</ProductDescription>
+                      </div>
+                    </td>
+                    <td>
+                      {product.category || 'Sin categoría'}
+                    </td>
+                    <td>
+                      <Price>
+                        {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(product.price)}
+                      </Price>
+                    </td>
+                    <td>
+                      <StockBadge stockLevel={getStockLevel(product.stock)}>
+                        {product.stock} unidades
+                      </StockBadge>
+                    </td>
+                    <td>
+                      {product.lot}
+                    </td>
+                    <td>
+                      <ExpirationDate isExpiringSoon={isExpiringSoon(product.expiration_date)}>
+                        {formatDate(product.expiration_date)}
+                      </ExpirationDate>
+                    </td>
+                    <td>
+                      {product.barcode || 'N/A'}
+                    </td>
+                    <td>
+                      {product.provider_name || 'Sin proveedor'}
+                    </td>
+                    <td>
+                      <ActionContainer>
+                        <EditButton onClick={() => handleEdit(product)}>
+                          Editar
+                        </EditButton>
+                        <DeleteButton onClick={() => handleDelete(product.id)}>
+                          Eliminar
+                        </DeleteButton>
+                      </ActionContainer>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </StyledTable>
+          </TableScrollContainer>
+          
+          {sortedProducts.length === 0 && (
+            <EmptyState>
+              <p>No se encontraron productos</p>
+            </EmptyState>
+          )}
+        </TableContainer>
+
+        {/* Pagination Controls */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', background: '#f9fafb', padding: '12px 16px', borderRadius: '8px' }}>
+          <div>
+            <Label htmlFor="pageSize">Productos por página:</Label>
+            <Select id="pageSize" value={pageSize} onChange={handlePageSizeChange}>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </Select>
+          </div>
+
+          {sortedProducts.length > pageSize && (
+            <div>
+              <BaseButton onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>
+                Anterior
+              </BaseButton>
+              <span style={{ margin: '0 1rem' }}>Página {currentPage} de {totalPages}</span>
+              <BaseButton onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}>
+                Siguiente
+              </BaseButton>
+            </div>
+          )}
         </div>
 
-        {sortedProducts.length > pageSize && (
-          <div>
-            <BaseButton onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>
-              Anterior
-            </BaseButton>
-            <span style={{ margin: '0 1rem' }}>Página {currentPage} de {totalPages}</span>
-            <BaseButton onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}>
-              Siguiente
-            </BaseButton>
-          </div>
-        )}
-      </div>
-
-      {/* Resumen */}
-      <SummaryGrid>
-        <SummaryCard color="blue">
-          <SummaryValue color="blue">{products.length}</SummaryValue>
-          <SummaryLabel color="blue">Total de Productos</SummaryLabel>
-        </SummaryCard>
-        <SummaryCard color="green">
-          <SummaryValue color="green">
-            {products.reduce((sum, p) => sum + p.stock, 0)}
-          </SummaryValue>
-          <SummaryLabel color="green">Total en Stock</SummaryLabel>
-        </SummaryCard>
-        <SummaryCard color="yellow">
-          <SummaryValue color="yellow">{stockAlerts.length}</SummaryValue>
-          <SummaryLabel color="yellow">Alertas de Stock</SummaryLabel>
-        </SummaryCard>
-        <SummaryCard color="purple">
-          <SummaryValue color="purple">{categories.length}</SummaryValue>
-          <SummaryLabel color="purple">Categorías</SummaryLabel>
-        </SummaryCard>
-      </SummaryGrid>
-    </PageContainer>
+        {/* Resumen */}
+        <SummaryGrid>
+          <SummaryCard color="blue">
+            <SummaryValue color="blue">{products.length}</SummaryValue>
+            <SummaryLabel color="blue">Total de Productos</SummaryLabel>
+          </SummaryCard>
+          <SummaryCard color="green">
+            <SummaryValue color="green">
+              {products.reduce((sum, p) => sum + p.stock, 0)}
+            </SummaryValue>
+            <SummaryLabel color="green">Total en Stock</SummaryLabel>
+          </SummaryCard>
+          <SummaryCard color="yellow">
+            <SummaryValue color="yellow">{stockAlerts.length}</SummaryValue>
+            <SummaryLabel color="yellow">Alertas de Stock</SummaryLabel>
+          </SummaryCard>
+          <SummaryCard color="purple">
+            <SummaryValue color="purple">{categories.length}</SummaryValue>
+            <SummaryLabel color="purple">Categorías</SummaryLabel>
+          </SummaryCard>
+        </SummaryGrid>
+      </PageContainer>
+    </>
   );
 };
 

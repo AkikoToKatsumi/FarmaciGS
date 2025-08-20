@@ -3,16 +3,132 @@ import styled from 'styled-components';
 import { useUserStore } from '../store/User';
 import { getRoles } from '../services/role.service';
 import { useNavigate } from 'react-router-dom';
+import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
 
 // Styled Components
-const Container = styled.div`
+const Sidebar = styled.nav`
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 60px;
+  background: #1964aaff;
+  color: #fff;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  overflow-x: hidden;
 
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const SidebarLogo = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem 2rem 0.5rem;
+  img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #fff;
+    cursor: pointer;
+  }
+`;
+
+const SidebarContent = styled.div`
+  flex: 1 1 auto;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarMenu = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+`;
+
+const SidebarMenuItem = styled.li<{ active?: boolean }>`
+  width: 100%;
+  margin-bottom: 8px;
+  button {
+    width: 100%;
+    background: ${({ active }) => (active ? '#2563eb' : 'none')};
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    
+    &:hover {
+      background: #2563eb;
+    }
+    
+    svg {
+      min-width: 22px;
+      flex-shrink: 0;
+    }
+  }
+`;
+
+const SidebarFooter = styled.div`
+  width: 100%;
+  padding: 1.5rem 0.5rem 2rem 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #1964aaff;
+  min-height: 80px;
+  box-sizing: border-box;
+`;
+
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  &:hover {
+    color: #e74c3c;
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const Container = styled.div`
   max-width: 500px;
   margin: 2rem auto;
   padding: 2rem;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-left: 60px;
+  transition: margin-left 0.3s ease;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const Title = styled.h2`
@@ -222,6 +338,7 @@ interface FormErrors {
 
 // Main Component
 const UserRegistration: React.FC = () => {
+  const { user, clearUser } = useUserStore();
   const [formData, setFormData] = useState<User>({
     name: '',
     email: '',
@@ -409,96 +526,214 @@ const UserRegistration: React.FC = () => {
   };
 
   return (
-    <Container>
-      <BackButton onClick={() => navigate('/dashboard')}>
-        <span style={{ fontSize: '1.2rem' }}>←</span> Volver a inicio
-      </BackButton>
-      <Title>Registro de Usuarios</Title>
-      <Form onSubmit={handleSubmit}>
-        <InputGroup>
-          <Label htmlFor="name">Nombre</Label>
-          <Input
-            id="name"
-            name="name"
-            type="text"
-            value={formData.name}
-            onChange={handleInputChange}
-            placeholder="Ingresa el nombre completo"
-            hasError={!!errors.name}
-            maxLength={100}
-          />
-          {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
-        </InputGroup>
+    <>
+      <Sidebar>
+        <SidebarLogo onClick={() => navigate('/dashboard')}>
+          <img src="imagenes/logo.png" alt="Logo" />
+        </SidebarLogo>
+        
+        <SidebarContent>
+          <SidebarMenu>
+            {/* Overview */}
+            <SidebarMenuItem>
+              <button onClick={() => navigate('/dashboard')} title="Overview">
+                <BarChart2 />
+              </button>
+            </SidebarMenuItem>
+            
+            {/* Ventas */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/sales')} title="Ventas">
+                  <ShoppingCart />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Clientes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/clients')} title="Clientes">
+                  <Users />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Inventario */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/inventory')} title="Inventario">
+                  <Package />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Prescripciones */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/prescriptions')} title="Prescripciones">
+                  <ClipboardList />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Usuarios */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem active={true}>
+                <button onClick={() => navigate('/Users')} title="Usuarios">
+                  <User />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Reportes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/reports')} title="Reportes">
+                  <FileText />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Administración */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/admin')} title="Administración">
+                  <Shield />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Roles */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/roles')} title="Roles">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Proveedores */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/providers')} title="Proveedores">
+                  <Truck />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Categorías */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/categories')} title="Categorías">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarContent>
+        
+        <SidebarFooter>
+          <LogoutButton onClick={() => {
+            clearUser();
+            navigate('/login');
+          }} title="Cerrar Sesión">
+            <LogOut size={20} />
+          </LogoutButton>
+        </SidebarFooter>
+      </Sidebar>
 
-        <InputGroup>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            placeholder="ejemplo@correo.com"
-            hasError={!!errors.email}
-            maxLength={100}
-          />
-          {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
-        </InputGroup>
+      <Container>
+        <BackButton onClick={() => navigate('/dashboard')}>
+          <span style={{ fontSize: '1.2rem' }}>←</span> Volver a inicio
+        </BackButton>
+        <Title>Registro de Usuarios</Title>
+        <Form onSubmit={handleSubmit}>
+          <InputGroup>
+            <Label htmlFor="name">Nombre</Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="Ingresa el nombre completo"
+              hasError={!!errors.name}
+              maxLength={100}
+            />
+            {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+          </InputGroup>
 
-        <InputGroup>
-          <Label htmlFor="password">Contraseña</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            placeholder="Mínimo 8 caracteres"
-            hasError={!!errors.password}
-            maxLength={255}
-          />
-          {formData.password && (
-            <>
-              <PasswordStrength strength={passwordStrength} />
-              <PasswordStrengthText strength={passwordStrength}>
-                {getPasswordStrengthText(passwordStrength)}
-              </PasswordStrengthText>
-            </>
+          <InputGroup>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="ejemplo@correo.com"
+              hasError={!!errors.email}
+              maxLength={100}
+            />
+            {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+          </InputGroup>
+
+          <InputGroup>
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              placeholder="Mínimo 8 caracteres"
+              hasError={!!errors.password}
+              maxLength={255}
+            />
+            {formData.password && (
+              <>
+                <PasswordStrength strength={passwordStrength} />
+                <PasswordStrengthText strength={passwordStrength}>
+                  {getPasswordStrengthText(passwordStrength)}
+                </PasswordStrengthText>
+              </>
+            )}
+            {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
+          </InputGroup>
+
+          <InputGroup>
+            <Label htmlFor="role_id">Rol</Label>
+            <Select
+              id="role_id"
+              name="role_id"
+              value={formData.role_id}
+              onChange={handleInputChange}
+              hasError={!!errors.role_id}
+            >
+              <option value={0}>Selecciona un rol</option>
+              {roles.map(role => (
+                <option key={role.id} value={role.id}>
+                  {role.name}
+                </option>
+              ))}
+            </Select>
+            {errors.role_id && <ErrorMessage>{errors.role_id}</ErrorMessage>}
+          </InputGroup>
+
+          <Button type="submit" disabled={loading}>
+            {loading && <LoadingSpinner />}
+            {loading ? 'Creando empleado...' : 'Registrar Empleado'}
+          </Button>
+
+          {success && (
+            <SuccessMessage>
+              ¡Empleado registrado exitosamente!
+            </SuccessMessage>
           )}
-          {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
-        </InputGroup>
-
-        <InputGroup>
-          <Label htmlFor="role_id">Rol</Label>
-          <Select
-            id="role_id"
-            name="role_id"
-            value={formData.role_id}
-            onChange={handleInputChange}
-            hasError={!!errors.role_id}
-          >
-            <option value={0}>Selecciona un rol</option>
-            {roles.map(role => (
-              <option key={role.id} value={role.id}>
-                {role.name}
-              </option>
-            ))}
-          </Select>
-          {errors.role_id && <ErrorMessage>{errors.role_id}</ErrorMessage>}
-        </InputGroup>
-
-        <Button type="submit" disabled={loading}>
-          {loading && <LoadingSpinner />}
-          {loading ? 'Creando empleado...' : 'Registrar Empleado'}
-        </Button>
-
-        {success && (
-          <SuccessMessage>
-            ¡Empleado registrado exitosamente!
-          </SuccessMessage>
-        )}
-      </Form>
-    </Container>
+        </Form>
+      </Container>
+    </>
   );
 };
 
