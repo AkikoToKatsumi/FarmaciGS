@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import styled, { keyframes } from 'styled-components';
-import { Search, Info, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCircle, X, AlertCircle, CheckCircle2, User, Phone, Mail } from 'lucide-react';
+import { Search, Info, ShoppingCart, Package, DollarSign, Hash, Plus, Trash2, CheckCircle, X, AlertCircle, CheckCircle2, User, Phone, Mail, BarChart2, Users, ClipboardList, FileText, Shield, Truck, Layers, LogOut, Activity } from 'lucide-react';
 import { getMedicine, getMedicineByBarcode, Medicine as MedicineType } from '../services/inventory.service';
 import { createSale, getClientById } from '../services/sales.service';
 import { getPrescriptionsByClient } from '../services/prescription.service';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/User';
-import { getCashboxSummary, CashboxSummary } from '../services/cashbox.service';
+import { getCashboxSummary, getCashboxDetails, CashboxSummary, CashboxDetails } from '../services/cashbox.service';
 // Cuadre de caja visual
 const CashboxCard = styled.div`
   background: #fffbe6;
@@ -28,23 +28,6 @@ const CashboxTitle = styled.h2`
   gap: 8px;
 `;
 
-const ExportButton = styled.button`
-  background: #ffe58f;
-  color: #b8860b;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-bottom: 12px;
-  transition: background 0.15s;
-  &:hover {
-    background: #ffd700;
-    color: #fff;
-  }
-`;
-
 const CashboxRow = styled.div`
   display: flex;
   justify-content: space-between;
@@ -62,22 +45,217 @@ const CashboxAmount = styled.span`
   font-weight: 600;
   color: #b8860b;
 `;
-// Hook para cuadre de caja
-const useCashboxSummary = (token: string | undefined) => {
-  const [summary, setSummary] = useState<CashboxSummary | null>(null);
+
+const SalesDetailsContainer = styled.div`
+  margin-top: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+`;
+
+const SaleCard = styled.div`
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px;
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const SaleHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const SaleInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+const SaleId = styled.span`
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+`;
+
+const SaleClient = styled.span`
+  color: #666;
+  font-size: 12px;
+`;
+
+const SaleTotal = styled.span`
+  font-weight: 600;
+  color: #b8860b;
+  font-size: 16px;
+`;
+
+const SaleItemsList = styled.div`
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+`;
+
+const SaleItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+  color: #666;
+`;
+
+const ItemInfo = styled.span`
+  flex: 1;
+`;
+
+const ItemPrice = styled.span`
+  font-weight: 500;
+  color: #333;
+`;
+
+const ShowDetailsButton = styled.button`
+  background: none;
+  border: none;
+  color: #b8860b;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  &:hover {
+    color: #333;
+  }
+`;
+
+// Sidebar components
+const Sidebar = styled.nav`
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 60px;
+  background: #1964aaff;
+  color: #fff;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const SidebarLogo = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem 2rem 0.5rem;
+  img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #fff;
+    cursor: pointer;
+  }
+`;
+
+const SidebarContent = styled.div`
+  flex: 1 1 auto;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarMenu = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+`;
+
+const SidebarMenuItem = styled.li<{ active?: boolean }>`
+  width: 100%;
+  margin-bottom: 8px;
+  button {
+    width: 100%;
+    background: ${({ active }) => (active ? '#2563eb' : 'none')};
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    
+    &:hover {
+      background: #2563eb;
+    }
+    
+    svg {
+      min-width: 22px;
+      flex-shrink: 0;
+    }
+  }
+`;
+
+const SidebarFooter = styled.div`
+  width: 100%;
+  padding: 1.5rem 0.5rem 2rem 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #1964aaff;
+  min-height: 80px;
+  box-sizing: border-box;
+`;
+
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  &:hover {
+    color: #e74c3c;
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+// Hook para cuadre de caja con detalles
+const useCashboxDetails = (token: string | undefined) => {
+  const [details, setDetails] = useState<CashboxDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    getCashboxSummary(token)
-      .then(setSummary)
-      .catch(e => setError('No se pudo obtener el cuadre de caja.'))
+    getCashboxDetails(token)
+      .then(setDetails)
+      .catch(e => setError('No se pudo obtener los detalles del cuadre de caja.'))
       .finally(() => setLoading(false));
   }, [token]);
 
-  return { summary, loading, error };
+  return { details, loading, error };
 };
 // Obtener usuario y token
 // Eliminado: las variables se declaran dentro del componente
@@ -129,6 +307,12 @@ const Container = styled.div`
   font-size: 14px;
   line-height: 1.5;
   color: #1a1a1a;
+  margin-left: 60px;
+  transition: margin-left 0.3s ease;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const MaxWidthContainer = styled.div`
@@ -1040,7 +1224,9 @@ const SalesPOS: React.FC = () => {
   const { user, token } = useUserStore();
     // Estado para modal de detalles de cancelación
     const [cancelDetailsModal, setCancelDetailsModal] = useState<{ open: boolean; sale?: CancelSaleResponse['sale']; items?: CancelSaleResponse['items']; message?: string }>({ open: false });
-  const { summary, loading: cashboxLoading, error: cashboxError } = useCashboxSummary(token ?? undefined);
+  const { details: cashboxDetails, loading: cashboxLoading, error: cashboxError } = useCashboxDetails(token ?? undefined);
+  const [showSaleDetails, setShowSaleDetails] = useState<{ [key: number]: boolean }>({});
+  const [showAllDetails, setShowAllDetails] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
   const [rnc, setRnc] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<PrescriptionInfo[]>([]);
@@ -1486,6 +1672,123 @@ const SalesPOS: React.FC = () => {
 
   return (
     <>
+      {/* Updated Sidebar with collapsed state */}
+      <Sidebar>
+        <SidebarLogo onClick={() => navigate('/dashboard')}>
+          <img src="imagenes/logo.png" alt="Logo" />
+        </SidebarLogo>
+        
+        <SidebarContent>
+          <SidebarMenu>
+            {/* Overview */}
+            <SidebarMenuItem>
+              <button onClick={() => navigate('/dashboard')} title="Overview">
+                <BarChart2 />
+              </button>
+            </SidebarMenuItem>
+            
+            {/* Ventas */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem active={true}>
+                <button onClick={() => navigate('/sales')} title="Ventas">
+                  <ShoppingCart />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Clientes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/clients')} title="Clientes">
+                  <Users />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Inventario */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/inventory')} title="Inventario">
+                  <Package />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Prescripciones */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/prescriptions')} title="Prescripciones">
+                  <ClipboardList />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Usuarios */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/Users')} title="Usuarios">
+                  <User />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Reportes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/reports')} title="Reportes">
+                  <FileText />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Administración */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/admin')} title="Administración">
+                  <Shield />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Roles */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/roles')} title="Roles">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Proveedores */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/providers')} title="Proveedores">
+                  <Truck />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Categorías */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/categories')} title="Categorías">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarContent>
+        
+        <SidebarFooter>
+          <LogoutButton onClick={() => {
+            clearUser();
+            navigate('/login');
+          }} title="Cerrar Sesión">
+            <LogOut size={20} />
+          </LogoutButton>
+        </SidebarFooter>
+      </Sidebar>
+
       {/* Modal de detalles de cancelación de factura */}
       {cancelDetailsModal.open && (
         <div style={{
@@ -1522,7 +1825,7 @@ const SalesPOS: React.FC = () => {
             {cancelDetailsModal.sale && (
               <div style={{ marginTop: 18 }}>
                 <p><b>Número de factura:</b> {cancelDetailsModal.sale.id}</p>
-                <p><b>Total:</b> ${cancelDetailsModal.sale.total}</p>
+                <p><b>Total:</b> ${Number(cancelDetailsModal.sale.total).toFixed(2)}</p>
                 <p><b>Método de pago:</b> {cancelDetailsModal.sale.payment_method || 'N/A'}</p>
                 <p><b>Fecha:</b> {new Date(cancelDetailsModal.sale.created_at).toLocaleString('es-ES')}</p>
                 <div style={{ marginTop: 10 }}>
@@ -1530,7 +1833,7 @@ const SalesPOS: React.FC = () => {
                   <ul style={{ paddingLeft: 18 }}>
                     {cancelDetailsModal.items?.map((item, idx) => (
                       <li key={idx} style={{ marginBottom: 4 }}>
-                        {item.medicine_name}: {item.quantity} × ${item.unit_price} = <b>${item.total_price}</b>
+                        {item.medicine_name}: {item.quantity} × ${Number(item.unit_price).toFixed(2)} = <b>${Number(item.total_price).toFixed(2)}</b>
                       </li>
                     ))}
                   </ul>
@@ -1581,7 +1884,7 @@ const SalesPOS: React.FC = () => {
                 <div style={{ background: '#fff', border: '1px solid #fde2e2', borderRadius: 8, padding: 16, marginTop: 12 }}>
                   <h4 style={{ color: '#b91c1c', marginBottom: 8 }}>Detalles de la factura</h4>
                   <p><b>Número de factura:</b> {cancelPreview.sale.id}</p>
-                  <p><b>Total:</b> ${cancelPreview.sale.total}</p>
+                  <p><b>Total:</b> ${Number(cancelPreview.sale.total).toFixed(2)}</p>
                   <p><b>Método de pago:</b> {cancelPreview.sale.payment_method || 'N/A'}</p>
                   <p><b>Fecha:</b> {new Date(cancelPreview.sale.created_at).toLocaleString('es-ES')}</p>
                   <div style={{ marginTop: 8 }}>
@@ -1589,16 +1892,13 @@ const SalesPOS: React.FC = () => {
                     <ul style={{ paddingLeft: 18 }}>
                       {cancelPreview.items?.map((item, idx) => (
                         <li key={idx} style={{ marginBottom: 4 }}>
-                          {item.medicine_name}: {item.quantity} × ${item.unit_price} = <b>${item.total_price}</b>
+                          {item.medicine_name}: {item.quantity} × ${Number(item.unit_price).toFixed(2)} = <b>${Number(item.total_price).toFixed(2)}</b>
                         </li>
                       ))}
                     </ul>
                   </div>
                 </div>
               )}
-              <p style={{ color: '#b91c1c', fontSize: 13, marginTop: 8 }}>
-                Solo el administrador puede cancelar facturas. Esta acción es irreversible.
-              </p>
             </Card>
           )}
 
@@ -1967,49 +2267,76 @@ const SalesPOS: React.FC = () => {
     {/* Cuadre de caja al final */}
     <CashboxCard>
       <CashboxTitle>Cuadre de Caja del Día</CashboxTitle>
-      <ExportButton
-        onClick={async () => {
-          if (!token) return;
-          try {
-            const blob = await import('../services/cashbox.service').then(m => m.downloadCashboxCSV(token));
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'cuadre_caja.csv';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-          } catch (e) {
-            alert('No se pudo exportar el cuadre de caja.');
-          }
-        }}
-        disabled={cashboxLoading || !summary}
-      >
-        Exportar cuadre de caja (CSV)
-      </ExportButton>
+      
       {cashboxLoading && <p>Cargando cuadre de caja...</p>}
       {cashboxError && <p style={{ color: 'red' }}>{cashboxError}</p>}
-      {summary && (
+      
+      {cashboxDetails && (
         <>
+          {/* Resumen del cuadre */}
           <CashboxRow>
             <CashboxLabel>Total de ventas:</CashboxLabel>
-            <CashboxAmount>${summary.totalSales.toFixed(2)}</CashboxAmount>
+            <CashboxAmount>${Number(cashboxDetails.summary.totalSales).toFixed(2)}</CashboxAmount>
           </CashboxRow>
           <CashboxRow>
             <CashboxLabel>Transacciones:</CashboxLabel>
-            <CashboxAmount>{summary.totalTransactions}</CashboxAmount>
+            <CashboxAmount>{cashboxDetails.summary.totalTransactions}</CashboxAmount>
           </CashboxRow>
           <CashboxRow>
             <CashboxLabel>Métodos de pago:</CashboxLabel>
             <CashboxAmount></CashboxAmount>
           </CashboxRow>
-          {Object.entries(summary.byPaymentMethod).map(([method, amount]) => (
+          {Object.entries(cashboxDetails.summary.byPaymentMethod).map(([method, amount]) => (
             <CashboxRow key={method}>
               <CashboxLabel style={{ marginLeft: 16 }}>{method}:</CashboxLabel>
-              <CashboxAmount>${amount.toFixed(2)}</CashboxAmount>
+              <CashboxAmount>${Number(amount).toFixed(2)}</CashboxAmount>
             </CashboxRow>
           ))}
+
+          {/* Detalles de las ventas */}
+          {cashboxDetails.sales.length > 0 && (
+            <SalesDetailsContainer>
+              {cashboxDetails.sales.map((sale) => (
+                <SaleCard key={sale.id}>
+                                   <SaleHeader>
+                    <SaleInfo>
+                      <SaleId>Venta #{sale.id}</SaleId>
+                      <SaleClient>
+                        Cliente: {sale.client_name} | Usuario: {sale.user_name} | 
+                        Método: {sale.payment_method} | 
+                        {new Date(sale.created_at).toLocaleString()}
+                      </SaleClient>
+                    </SaleInfo>
+                    <SaleTotal>${Number(sale.total).toFixed(2)}</SaleTotal>
+                  </SaleHeader>
+                  
+                  <ShowDetailsButton
+                    onClick={() => setShowSaleDetails(prev => ({
+                      ...prev,
+                      [sale.id]: !prev[sale.id]
+                    }))}
+                  >
+                    {showSaleDetails[sale.id] ? 'Ocultar productos' : 'Ver productos'}
+                  </ShowDetailsButton>
+                  
+                  {showSaleDetails[sale.id] && (
+                    <SaleItemsList>
+                      {sale.items.map((item, index) => (
+                        <SaleItem key={index}>
+                          <ItemInfo>
+                            {item.medicine_name} (x{item.quantity})
+                          </ItemInfo>
+                          <ItemPrice>
+                            ${Number(item.unit_price).toFixed(2)} = ${Number(item.total_price).toFixed(2)}
+                          </ItemPrice>
+                        </SaleItem>
+                      ))}
+                    </SaleItemsList>
+                  )}
+                </SaleCard>
+              ))}
+            </SalesDetailsContainer>
+          )}
         </>
       )}
     </CashboxCard>
