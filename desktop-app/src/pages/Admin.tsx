@@ -4,7 +4,137 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useUserStore } from '../store/User';
 import { employeeService } from '../services/employees.service';
+import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
 
+// Add Sidebar components
+const Sidebar = styled.nav`
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 60px;
+  background: #1964aaff;
+  color: #fff;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const SidebarLogo = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem 2rem 0.5rem;
+  img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #fff;
+    cursor: pointer;
+  }
+`;
+
+const SidebarContent = styled.div`
+  flex: 1 1 auto;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarMenu = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+`;
+
+const SidebarMenuItem = styled.li<{ active?: boolean }>`
+  width: 100%;
+  margin-bottom: 8px;
+  button {
+    width: 100%;
+    background: ${({ active }) => (active ? '#2563eb' : 'none')};
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    
+    &:hover {
+      background: #2563eb;
+    }
+    
+    svg {
+      min-width: 22px;
+      flex-shrink: 0;
+    }
+  }
+`;
+
+const SidebarFooter = styled.div`
+  width: 100%;
+  padding: 1.5rem 0.5rem 2rem 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #1964aaff;
+  min-height: 80px;
+  box-sizing: border-box;
+`;
+
+const LogoutButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  &:hover {
+    color: #e74c3c;
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+// Update Container to accommodate sidebar and center content
+const Container = styled.div`
+  background-color: #f8f9fa;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
+  transform: translateX(30px);
+  transition: transform 0.3s ease;
+
+  @media (max-width: 768px) {
+    transform: translateX(0);
+    margin-left: 0;
+    margin-right: 0;
+    padding: 1rem;
+  }
+`;
 
 // Interfaces
 interface Employee {
@@ -23,13 +153,6 @@ interface Employee {
 }
 
 // Styled Components
-const Container = styled.div`
-  background-color: #f8f9fa;
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
@@ -283,8 +406,8 @@ const NotificationCloseButton = styled.button`
 `;
 
 const Admin = () => {
+  const { user, clearUser } = useUserStore();
   const navigate = useNavigate();
-  const { user } = useUserStore();
 
   // Add debugging for user role
   useEffect(() => {
@@ -636,260 +759,379 @@ const Admin = () => {
   
 
   return (
-    <Container>
-      {notification && (
-        <Notification type={notification.type}>
-          <span>{notification.message}</span>
-          <NotificationCloseButton onClick={() => setNotification(null)}>
-            ×
-          </NotificationCloseButton>
-        </Notification>
-      )}
-      <Header>
-        <BackButton onClick={() => navigate('/dashboard')}>
-          <span style={{ fontSize: '1.2rem' }}>←</span> Volver a inicio
-        </BackButton>
-        <Title>Panel de Administración de Empleados</Title>
-      </Header>
+    <>
+      {/* Add Sidebar */}
+      <Sidebar>
+        <SidebarLogo onClick={() => navigate('/dashboard')}>
+          <img src="imagenes/logo.png" alt="Logo" />
+        </SidebarLogo>
+        
+        <SidebarContent>
+          <SidebarMenu>
+            {/* Overview */}
+            <SidebarMenuItem>
+              <button onClick={() => navigate('/dashboard')} title="Overview">
+                <BarChart2 />
+              </button>
+            </SidebarMenuItem>
+            
+            {/* Ventas */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/sales')} title="Ventas">
+                  <ShoppingCart />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Clientes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/clients')} title="Clientes">
+                  <Users />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Inventario */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/inventory')} title="Inventario">
+                  <Package />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Prescripciones */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/prescriptions')} title="Prescripciones">
+                  <ClipboardList />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Usuarios */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/Users')} title="Usuarios">
+                  <User />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Reportes */}
+            {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/reports')} title="Reportes">
+                  <FileText />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Administración */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem active={true}>
+                <button onClick={() => navigate('/admin')} title="Administración">
+                  <Shield />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Roles */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/roles')} title="Roles">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Proveedores */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/providers')} title="Proveedores">
+                  <Truck />
+                </button>
+              </SidebarMenuItem>
+            )}
+            
+            {/* Categorías */}
+            {user?.role_name === 'admin' && (
+              <SidebarMenuItem>
+                <button onClick={() => navigate('/categories')} title="Categorías">
+                  <Layers />
+                </button>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarContent>
+        
+        <SidebarFooter>
+          <LogoutButton onClick={() => {
+            clearUser();
+            navigate('/login');
+          }} title="Cerrar Sesión">
+            <LogOut size={20} />
+          </LogoutButton>
+        </SidebarFooter>
+      </Sidebar>
 
-      <ActionBar>
-        <Button variant="primary" onClick={() => { 
-          resetForm(); 
-          setIsAddModalOpen(true); 
-        }}>
-          + Agregar Empleado
-        </Button>
-        <SearchInput
-          type="text"
-          placeholder="Buscar empleados..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </ActionBar>
+      <Container>
+        {notification && (
+          <Notification type={notification.type}>
+            <span>{notification.message}</span>
+            <NotificationCloseButton onClick={() => setNotification(null)}>
+              ×
+            </NotificationCloseButton>
+          </Notification>
+        )}
+        <Header>
+          <BackButton onClick={() => navigate('/dashboard')}>
+            <span style={{ fontSize: '1.2rem' }}>←</span> Volver a inicio
+          </BackButton>
+          <Title>Panel de Administración de Empleados</Title>
+        </Header>
 
-      <EmployeeGrid>
-        {filteredEmployees.map(employee => (
-          <EmployeeCard key={`employee-${employee.id}`}>
-            <EmployeeName>{employee.name}</EmployeeName>
-            <EmployeeInfo><strong>Puesto:</strong> {employee.position || 'No especificado'}</EmployeeInfo>
-            <EmployeeInfo><strong>Departamento:</strong> {employee.department || 'No especificado'}</EmployeeInfo>
-            <EmployeeInfo><strong>Salario:</strong> ${Number(employee.salary).toLocaleString()}</EmployeeInfo>
-            <EmployeeInfo><strong>Contrato:</strong> {employee.contractType}</EmployeeInfo>
-            <EmployeeInfo>
-              <strong>Estado:</strong> <StatusBadge status={employee.status}>{employee.status}</StatusBadge>
-            </EmployeeInfo>
-            <ButtonGroup>
-              <Button onClick={() => handleViewEmployee(employee)}>
-                Ver Detalles
-              </Button>
-              <Button 
-                variant="primary" 
-                onClick={() => handleEditEmployee(employee)}
-                disabled={!employee.name || employee.name.trim() === ''}
-              >
-                Editar
-              </Button>
-              <Button 
-                variant="danger" 
-                onClick={() => handleDeleteEmployee(employee.id)}
-                disabled={employee.id.startsWith('temp-')}
-              >
-                Eliminar
-              </Button>
-            </ButtonGroup>
-          </EmployeeCard>
-        ))}
-      </EmployeeGrid>
+        <ActionBar>
+          <Button variant="primary" onClick={() => { 
+            resetForm(); 
+            setIsAddModalOpen(true); 
+          }}>
+            + Agregar Empleado
+          </Button>
+          <SearchInput
+            type="text"
+            placeholder="Buscar empleados..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </ActionBar>
 
-      {/* Modal para agregar/editar empleado */}
-      <Modal isOpen={isAddModalOpen}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>{editingId ? 'Editar Empleado' : 'Agregar Nuevo Empleado'}</ModalTitle>
-            <CloseButton onClick={() => { 
-              setIsAddModalOpen(false); 
-              resetForm(); 
-            }}>×</CloseButton>
-          </ModalHeader>
-          <Form onSubmit={handleAddOrUpdateEmployee}>
-            <FormGroup>
-              <Label htmlFor="name">Nombre Completo</Label>
-              <Input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="position">Puesto</Label>
-              <Input
-                type="text"
-                id="position"
-                name="position"
-                value={formData.position}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="department">Departamento</Label>
-              <Input
-                type="text"
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="salary">Salario Mensual</Label>
-              <Input
-                type="number"
-                id="salary"
-                name="salary"
-                value={formData.salary === undefined ? '' : formData.salary}
-                onChange={e => {
-                  const val = e.target.value;
-                  setFormData(prev => ({
-                    ...prev,
-                    salary: val === '' ? undefined : Number(val)
-                  }));
-                }}
-                min="0"
-                step="0.01"
-                placeholder="Ingrese el salario mensual"
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="contractType">Tipo de Contrato</Label>
-              <Select
-                id="contractType"
-                name="contractType"
-                value={formData.contractType}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="full-time">Tiempo Completo</option>
-                <option value="part-time">Medio Tiempo</option>
-                <option value="contract">Por Contrato</option>
-                <option value="intern">Practicante</option>
-              </Select>
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="schedule">Horario</Label>
-              <Input
-                type="text"
-                id="schedule"
-                name="schedule"
-                value={formData.schedule}
-                onChange={handleInputChange}
-                placeholder="Ej: Lunes a Viernes 9:00 AM - 6:00 PM"
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="phone">Teléfono</Label>
-              <Input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="address">Dirección</Label>
-              <TextArea
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label htmlFor="status">Estado</Label>
-              <Select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
-              </Select>
-            </FormGroup>
-            <ButtonGroup>
-              <Button type="button" onClick={() => { 
+        <EmployeeGrid>
+          {filteredEmployees.map(employee => (
+            <EmployeeCard key={`employee-${employee.id}`}>
+              <EmployeeName>{employee.name}</EmployeeName>
+              <EmployeeInfo><strong>Puesto:</strong> {employee.position || 'No especificado'}</EmployeeInfo>
+              <EmployeeInfo><strong>Departamento:</strong> {employee.department || 'No especificado'}</EmployeeInfo>
+              <EmployeeInfo><strong>Salario:</strong> ${Number(employee.salary).toLocaleString()}</EmployeeInfo>
+              <EmployeeInfo><strong>Contrato:</strong> {employee.contractType}</EmployeeInfo>
+              <EmployeeInfo>
+                <strong>Estado:</strong> <StatusBadge status={employee.status}>{employee.status}</StatusBadge>
+              </EmployeeInfo>
+              <ButtonGroup>
+                <Button onClick={() => handleViewEmployee(employee)}>
+                  Ver Detalles
+                </Button>
+                <Button 
+                  variant="primary" 
+                  onClick={() => handleEditEmployee(employee)}
+                  disabled={!employee.name || employee.name.trim() === ''}
+                >
+                  Editar
+                </Button>
+                <Button 
+                  variant="danger" 
+                  onClick={() => handleDeleteEmployee(employee.id)}
+                  disabled={employee.id.startsWith('temp-')}
+                >
+                  Eliminar
+                </Button>
+              </ButtonGroup>
+            </EmployeeCard>
+          ))}
+        </EmployeeGrid>
+
+        {/* Modal para agregar/editar empleado */}
+        <Modal isOpen={isAddModalOpen}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>{editingId ? 'Editar Empleado' : 'Agregar Nuevo Empleado'}</ModalTitle>
+              <CloseButton onClick={() => { 
                 setIsAddModalOpen(false); 
                 resetForm(); 
-              }}>
-                Cancelar
-              </Button>
-              {editingId ? (
-                <Button type="submit" variant="primary">
-                  Actualizar Empleado
+              }}>×</CloseButton>
+            </ModalHeader>
+            <Form onSubmit={handleAddOrUpdateEmployee}>
+              <FormGroup>
+                <Label htmlFor="name">Nombre Completo</Label>
+                <Input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="position">Puesto</Label>
+                <Input
+                  type="text"
+                  id="position"
+                  name="position"
+                  value={formData.position}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="department">Departamento</Label>
+                <Input
+                  type="text"
+                  id="department"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="salary">Salario Mensual</Label>
+                <Input
+                  type="number"
+                  id="salary"
+                  name="salary"
+                  value={formData.salary === undefined ? '' : formData.salary}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setFormData(prev => ({
+                      ...prev,
+                      salary: val === '' ? undefined : Number(val)
+                    }));
+                  }}
+                  min="0"
+                  step="0.01"
+                  placeholder="Ingrese el salario mensual"
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="contractType">Tipo de Contrato</Label>
+                <Select
+                  id="contractType"
+                  name="contractType"
+                  value={formData.contractType}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="full-time">Tiempo Completo</option>
+                  <option value="part-time">Medio Tiempo</option>
+                  <option value="contract">Por Contrato</option>
+                  <option value="intern">Practicante</option>
+                </Select>
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="schedule">Horario</Label>
+                <Input
+                  type="text"
+                  id="schedule"
+                  name="schedule"
+                  value={formData.schedule}
+                  onChange={handleInputChange}
+                  placeholder="Ej: Lunes a Viernes 9:00 AM - 6:00 PM"
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="address">Dirección</Label>
+                <TextArea
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label htmlFor="status">Estado</Label>
+                <Select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </Select>
+              </FormGroup>
+              <ButtonGroup>
+                <Button type="button" onClick={() => { 
+                  setIsAddModalOpen(false); 
+                  resetForm(); 
+                }}>
+                  Cancelar
                 </Button>
-              ) : (
-                <Button type="submit" variant="primary">
-                  Agregar Empleado
-                </Button>
-              )}
-            </ButtonGroup>
-          </Form>
-        </ModalContent>
-      </Modal>
+                {editingId ? (
+                  <Button type="submit" variant="primary">
+                    Actualizar Empleado
+                  </Button>
+                ) : (
+                  <Button type="submit" variant="primary">
+                    Agregar Empleado
+                  </Button>
+                )}
+              </ButtonGroup>
+            </Form>
+          </ModalContent>
+        </Modal>
 
-      {/* Modal para ver detalles del empleado */}
-      <Modal isOpen={isDetailModalOpen}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>Detalles del Empleado</ModalTitle>
-            <CloseButton onClick={() => setIsDetailModalOpen(false)}>×</CloseButton>
-          </ModalHeader>
-          {selectedEmployee && (
-            <div>
-              <EmployeeInfo><strong>Nombre:</strong> {selectedEmployee.name}</EmployeeInfo>
-              <EmployeeInfo><strong>Email:</strong> {selectedEmployee.email}</EmployeeInfo>
-              <EmployeeInfo><strong>Puesto:</strong> {selectedEmployee.position}</EmployeeInfo>
-              <EmployeeInfo><strong>Departamento:</strong> {selectedEmployee.department}</EmployeeInfo>
-              <EmployeeInfo><strong>Salario:</strong> ${Number(selectedEmployee.salary).toLocaleString()}</EmployeeInfo>
-              <EmployeeInfo><strong>Tipo de Contrato:</strong> {selectedEmployee.contractType}</EmployeeInfo>
-              <EmployeeInfo><strong>Horario:</strong> {selectedEmployee.schedule}</EmployeeInfo>
-              <EmployeeInfo><strong>Fecha de Inicio:</strong> {selectedEmployee.startDate}</EmployeeInfo>
-              <EmployeeInfo><strong>Teléfono:</strong> {selectedEmployee.phone}</EmployeeInfo>
-              <EmployeeInfo><strong>Dirección:</strong> {selectedEmployee.address}</EmployeeInfo>
-              <EmployeeInfo>
-                <strong>Estado:</strong> <StatusBadge status={selectedEmployee.status}>{selectedEmployee.status}</StatusBadge>
-              </EmployeeInfo>
-            </div>
-          )}
-          <ButtonGroup>
-            <Button onClick={() => setIsDetailModalOpen(false)}>
-              Cerrar
-            </Button>
-          </ButtonGroup>
-        </ModalContent>
-      </Modal>
-    </Container>
+        {/* Modal para ver detalles del empleado */}
+        <Modal isOpen={isDetailModalOpen}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Detalles del Empleado</ModalTitle>
+              <CloseButton onClick={() => setIsDetailModalOpen(false)}>×</CloseButton>
+            </ModalHeader>
+            {selectedEmployee && (
+              <div>
+                <EmployeeInfo><strong>Nombre:</strong> {selectedEmployee.name}</EmployeeInfo>
+                <EmployeeInfo><strong>Email:</strong> {selectedEmployee.email}</EmployeeInfo>
+                <EmployeeInfo><strong>Puesto:</strong> {selectedEmployee.position}</EmployeeInfo>
+                <EmployeeInfo><strong>Departamento:</strong> {selectedEmployee.department}</EmployeeInfo>
+                <EmployeeInfo><strong>Salario:</strong> ${Number(selectedEmployee.salary).toLocaleString()}</EmployeeInfo>
+                <EmployeeInfo><strong>Tipo de Contrato:</strong> {selectedEmployee.contractType}</EmployeeInfo>
+                <EmployeeInfo><strong>Horario:</strong> {selectedEmployee.schedule}</EmployeeInfo>
+                <EmployeeInfo><strong>Fecha de Inicio:</strong> {selectedEmployee.startDate}</EmployeeInfo>
+                <EmployeeInfo><strong>Teléfono:</strong> {selectedEmployee.phone}</EmployeeInfo>
+                <EmployeeInfo><strong>Dirección:</strong> {selectedEmployee.address}</EmployeeInfo>
+                <EmployeeInfo>
+                  <strong>Estado:</strong> <StatusBadge status={selectedEmployee.status}>{selectedEmployee.status}</StatusBadge>
+                </EmployeeInfo>
+              </div>
+            )}
+            <ButtonGroup>
+              <Button onClick={() => setIsDetailModalOpen(false)}>
+                Cerrar
+              </Button>
+            </ButtonGroup>
+          </ModalContent>
+        </Modal>
+      </Container>
+    </>
   );
 };
 

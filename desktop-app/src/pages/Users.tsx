@@ -123,11 +123,21 @@ const Container = styled.div`
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  margin-left: 60px;
-  transition: margin-left 0.3s ease;
+  margin-left: auto;
+  margin-right: auto;
+  transform: translateX(30px); /* Offset for sidebar */
+  transition: transform 0.3s ease;
 
   @media (max-width: 768px) {
-    margin-left: 0;
+    transform: translateX(0);
+    margin-left: 2rem;
+    margin-right: 2rem;
+  }
+
+  @media (max-width: 600px) {
+    margin-left: 1rem;
+    margin-right: 1rem;
+    max-width: none;
   }
 `;
 
