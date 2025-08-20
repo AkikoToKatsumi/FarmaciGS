@@ -241,21 +241,30 @@ const LogoutButton = styled.button`
 `;
 
 // Hook para cuadre de caja con detalles
-const useCashboxDetails = (token: string | undefined) => {
+const useCashboxDetails = (token: string | undefined, refreshTrigger?: number) => {
   const [details, setDetails] = useState<CashboxDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refreshDetails = async () => {
     if (!token) return;
     setLoading(true);
-    getCashboxDetails(token)
-      .then(setDetails)
-      .catch(e => setError('No se pudo obtener los detalles del cuadre de caja.'))
-      .finally(() => setLoading(false));
-  }, [token]);
+    try {
+      const newDetails = await getCashboxDetails(token);
+      setDetails(newDetails);
+      setError(null);
+    } catch (e) {
+      setError('No se pudo obtener los detalles del cuadre de caja.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  return { details, loading, error };
+  useEffect(() => {
+    refreshDetails();
+  }, [token, refreshTrigger]);
+
+  return { details, loading, error, refreshDetails };
 };
 // Obtener usuario y token
 // Eliminado: las variables se declaran dentro del componente
@@ -1222,9 +1231,11 @@ type CancelSaleResponse = {
 const SalesPOS: React.FC = () => {
   // Mover hooks aquí
   const { user, token } = useUserStore();
-    // Estado para modal de detalles de cancelación
-    const [cancelDetailsModal, setCancelDetailsModal] = useState<{ open: boolean; sale?: CancelSaleResponse['sale']; items?: CancelSaleResponse['items']; message?: string }>({ open: false });
-  const { details: cashboxDetails, loading: cashboxLoading, error: cashboxError } = useCashboxDetails(token ?? undefined);
+  // Estado para refrescar el cuadre de caja
+  const [cashboxRefreshTrigger, setCashboxRefreshTrigger] = useState(0);
+  const { details: cashboxDetails, loading: cashboxLoading, error: cashboxError, refreshDetails: refreshCashbox } = useCashboxDetails(token ?? undefined, cashboxRefreshTrigger);
+
+  const [cancelDetailsModal, setCancelDetailsModal] = useState<{ open: boolean; sale?: CancelSaleResponse['sale']; items?: CancelSaleResponse['items']; message?: string }>({ open: false });
   const [showSaleDetails, setShowSaleDetails] = useState<{ [key: number]: boolean }>({});
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
@@ -1562,6 +1573,13 @@ const SalesPOS: React.FC = () => {
 
         setItems([]);
         showNotification('success', 'Venta confirmada', 'La venta se procesó exitosamente y se generó el PDF');
+        
+        // Refrescar el cuadre de caja inmediatamente después de la venta
+        setCashboxRefreshTrigger(prev => prev + 1);
+        // También llamar directamente al refresh por si acaso
+        setTimeout(() => {
+          refreshCashbox();
+        }, 500);
       }
     } catch (error: any) {
       console.error('Error completo:', error);
@@ -1657,6 +1675,12 @@ const SalesPOS: React.FC = () => {
         message: result.message
       });
       setCancelSaleId('');
+      
+      // Refrescar el cuadre de caja después de cancelar una factura
+      setCashboxRefreshTrigger(prev => prev + 1);
+      setTimeout(() => {
+        refreshCashbox();
+      }, 500);
     } catch (error: any) {
       if (error.response?.status === 403) {
         showNotification('error', 'Acceso denegado', error.response?.data?.message || 'Solo el administrador puede cancelar facturas.');

@@ -479,7 +479,7 @@ const PoliticasPrivacidad = () => {
           <p>Gabriela García - Matrícula: 2023-0105</p>
           <p>Dauris Santana - Matrícula: 2023-0253</p>
           <p><strong>Institución:</strong> Universidad Católica Tecnológica del Cibao (UCATECI)</p>
-          <p><strong>Programa:</strong> Ingeniería en Sistemas y Computación</p>
+          <p><strong>Programa:</strong> Ingeniería en Sistemas Computacionales</p>
         </DeveloperInfo>
 
         <Section>
