@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import pool from '../config/db';
+import bcrypt from 'bcryptjs';
 
 // Obtener todos los empleados con información completa
 export const getEmployees = async (req: Request, res: Response) => {
@@ -129,6 +130,18 @@ export const createEmployee = async (req: Request, res: Response) => {
       }
     }
 
+    // Verificar si ya existe un usuario con el mismo email
+    const existingUser = await pool.query(
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1)',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ 
+        message: 'Ya existe un usuario con ese correo electrónico.' 
+      });
+    }
+
     // Verificar si ya existe un empleado con el mismo email
     const existingEmployee = await pool.query(
       'SELECT user_id, status FROM employees WHERE LOWER(email) = LOWER($1)',
@@ -148,13 +161,51 @@ export const createEmployee = async (req: Request, res: Response) => {
       }
     }
 
-    // Obtener el próximo user_id disponible
-    const maxIdResult = await pool.query('SELECT COALESCE(MAX(user_id), 0) + 1 as next_id FROM employees');
-    const nextUserId = maxIdResult.rows[0].next_id;
+    // Buscar el rol de empleado o usar un rol por defecto
+    let roleId = 3; // Fallback role ID para empleado
+    
+    try {
+      const employeeRoleResult = await pool.query(
+        'SELECT id FROM roles WHERE LOWER(name) = LOWER($1)',
+        ['employee']
+      );
 
-    console.log('Next user_id to assign:', nextUserId);
+      if (employeeRoleResult.rows.length > 0) {
+        roleId = employeeRoleResult.rows[0].id;
+      } else {
+        // Si no existe el rol 'employee', intentar obtener cualquier rol o crear uno
+        const anyRoleResult = await pool.query('SELECT id FROM roles ORDER BY id LIMIT 1');
+        if (anyRoleResult.rows.length > 0) {
+          roleId = anyRoleResult.rows[0].id;
+        } else {
+          // Si no hay roles, crear uno básico
+          const newRoleResult = await pool.query(
+            'INSERT INTO roles (name) VALUES ($1) RETURNING id',
+            ['employee']
+          );
+          roleId = newRoleResult.rows[0].id;
+        }
+      }
+    } catch (roleError) {
+      console.warn('Error handling roles, using default roleId:', roleError);
+      // Continuar con el roleId por defecto
+    }
 
-    // Insertar nuevo empleado con user_id generado
+    // Generar una contraseña temporal (puede ser cambiada después)
+    const tempPassword = Math.random().toString(36).slice(-8); // Contraseña temporal
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // Primero crear el usuario
+    const userResult = await pool.query(`
+      INSERT INTO users (name, email, password, role_id)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `, [name, email, hashedPassword, roleId]);
+
+    const userId = userResult.rows[0].id;
+    console.log('User created with ID:', userId);
+
+    // Luego crear el empleado usando el user_id
     const result = await pool.query(`
       INSERT INTO employees (
         user_id,
@@ -174,7 +225,7 @@ export const createEmployee = async (req: Request, res: Response) => {
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_DATE, CURRENT_DATE
       ) RETURNING *
     `, [
-      nextUserId,
+      userId,
       name,
       email,
       position || null,
@@ -188,7 +239,14 @@ export const createEmployee = async (req: Request, res: Response) => {
     ]);
 
     console.log('Employee created successfully:', result.rows[0]);
-    res.status(201).json(result.rows[0]);
+    console.log('Temporary password for employee:', tempPassword);
+    
+    // Retornar el empleado creado junto con la contraseña temporal
+    res.status(201).json({ 
+      ...result.rows[0], 
+      tempPassword: tempPassword,
+      message: 'Empleado creado exitosamente. Contraseña temporal generada.'
+    });
   } catch (error) {
     console.error('Error creando empleado:', error);
     res.status(500).json({ message: 'Error al crear el empleado' });
@@ -331,7 +389,7 @@ export const deleteEmployee = async (req: AuthRequest, res: Response) => {
     // Check if employee exists first
     console.log('Checking if employee exists...');
     const existsCheck = await pool.query(
-      'SELECT user_id FROM employees WHERE user_id = $1',
+      'SELECT user_id, status, name, email FROM employees WHERE user_id = $1',
       [userId]
     );
 
@@ -342,25 +400,35 @@ export const deleteEmployee = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
 
-    // Opción 1: Soft delete (recomendado) - cambiar status a 'inactive'
-    console.log('Performing soft delete...');
+    const currentEmployee = existsCheck.rows[0];
+    console.log('Current employee status:', currentEmployee.status);
+
+    // Toggle between active and inactive status
+    const newStatus = currentEmployee.status === 'active' ? 'inactive' : 'active';
+    console.log('New status will be:', newStatus);
+
+    // Perform the status change
+    console.log('Updating employee status...');
     const result = await pool.query(
       'UPDATE employees SET status = $1 WHERE user_id = $2 RETURNING *',
-      ['inactive', userId]
+      [newStatus, userId]
     );
 
-    console.log('Delete result:', result.rows);
-    console.log('✅ Employee deleted successfully');
+    console.log('Update result:', result.rows);
+    console.log('✅ Employee status updated successfully');
     console.log('=== END DELETE EMPLOYEE CONTROLLER ===');
 
+    const action = newStatus === 'inactive' ? 'desactivado' : 'reactivado';
     res.json({ 
-      message: 'Empleado desactivado correctamente',
-      employee: result.rows[0]
+      message: `Empleado ${action} correctamente`,
+      employee: result.rows[0],
+      previousStatus: currentEmployee.status,
+      newStatus: newStatus
     });
   } catch (error) {
-    console.error('❌ Error eliminando empleado:', error);
+    console.error('❌ Error updating employee status:', error);
     console.log('=== END DELETE EMPLOYEE CONTROLLER ===');
-    res.status(500).json({ message: 'Error al eliminar empleado' });
+    res.status(500).json({ message: 'Error al actualizar el estado del empleado' });
   }
 };
 

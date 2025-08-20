@@ -150,6 +150,7 @@ interface Employee {
   phone: string;
   address: string;
   status: 'active' | 'inactive';
+  tempPassword?: string; // Add optional tempPassword property
 }
 
 // Styled Components
@@ -482,7 +483,7 @@ const Admin = () => {
         };
       }).filter(emp => {
         // Solo filtrar empleados que realmente no tienen información válida
-        const isValid = emp.name && emp.name.trim() !== '';
+        const isValid = emp.name && emp.name.trim() !== '' && emp.id && !emp.id.startsWith('temp-');
         console.log(`Employee ${emp.name || 'unnamed'} is valid:`, isValid);
         return isValid;
       });
@@ -579,25 +580,30 @@ const Admin = () => {
       } else {
         // Crear nuevo empleado
         console.log('Creating new employee');
-        const newEmployee = await employeeService.createEmployee(employeeData);
-        console.log('Employee created:', newEmployee);
+        const newEmployeeResponse = await employeeService.createEmployee(employeeData);
+        console.log('Employee created:', newEmployeeResponse);
         
         const transformedEmployee = {
-          id: newEmployee.user_id?.toString() || Date.now().toString(),
-          name: newEmployee.name,
-          email: newEmployee.email,
-          position: newEmployee.position || '',
-          department: newEmployee.department || '',
-          salary: Number(newEmployee.salary) || 0,
-          contractType: newEmployee.contracttype as Employee['contractType'] || 'full-time',
-          schedule: newEmployee.schedule || '',
-          startDate: newEmployee.startdate || newEmployee.hire_date || '',
-          phone: newEmployee.phone || '',
-          address: newEmployee.address || '',
-          status: newEmployee.status as Employee['status'] || 'active'
+          id: newEmployeeResponse.user_id?.toString() || Date.now().toString(),
+          name: newEmployeeResponse.name,
+          email: newEmployeeResponse.email,
+          position: newEmployeeResponse.position || '',
+          department: newEmployeeResponse.department || '',
+          salary: Number(newEmployeeResponse.salary) || 0,
+          contractType: newEmployeeResponse.contracttype as Employee['contractType'] || 'full-time',
+          schedule: newEmployeeResponse.schedule || '',
+          startDate: newEmployeeResponse.startdate || newEmployeeResponse.hire_date || '',
+          phone: newEmployeeResponse.phone || '',
+          address: newEmployeeResponse.address || '',
+          status: newEmployeeResponse.status as Employee['status'] || 'active'
         };
         setEmployees(prev => [...prev, transformedEmployee]);
-        setNotification({ message: 'Empleado agregado exitosamente', type: 'success' });
+        
+        // Mostrar mensaje con contraseña temporal si está disponible
+        const message = (newEmployeeResponse as any).tempPassword 
+          ? `Empleado agregado exitosamente. Contraseña temporal: ${(newEmployeeResponse as any).tempPassword}`
+          : 'Empleado agregado exitosamente';
+        setNotification({ message, type: 'success' });
       }
 
       // Resetear formulario y cerrar modal
@@ -640,20 +646,37 @@ const Admin = () => {
     console.log('Employee ID to delete:', id);
     
     // Validar que no sea un ID temporal
-    if (id.startsWith('temp-')) {
+    if (id.startsWith('temp-') || id.startsWith('search-')) {
       console.log('❌ Cannot delete temporary employee');
       setNotification({ message: 'No se puede eliminar este empleado: es un registro temporal', type: 'error' });
       return;
     }
 
-    if (window.confirm('¿Estás seguro de que deseas eliminar este empleado?')) {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este empleado? (Se desactivará el empleado)')) {
       try {
         console.log('Calling delete service...');
         await employeeService.deleteEmployee(Number(id));
         console.log('✅ Delete service completed successfully');
         
-        setEmployees(prev => prev.filter(emp => emp.id !== id));
-        setNotification({ message: 'Empleado eliminado exitosamente', type: 'success' });
+        // Refresh the employee list instead of just filtering
+        const employeesData = await employeeService.getAllEmployees();
+        const transformedEmployees = employeesData.map((emp, index) => ({
+          id: emp.user_id?.toString() || `temp-${index}`,
+          name: emp.name || '',
+          email: emp.email || '',
+          position: emp.position || '',
+          department: emp.department || '',
+          salary: emp.salary || 0,
+          contractType: emp.contracttype as Employee['contractType'] || 'full-time',
+          schedule: emp.schedule || '',
+          startDate: emp.startdate || emp.hire_date || '',
+          phone: emp.phone || '',
+          address: emp.address || '',
+          status: emp.status as Employee['status'] || 'active'
+        })).filter(emp => emp.name && emp.id && !emp.id.startsWith('temp-'));
+        
+        setEmployees(transformedEmployees);
+        setNotification({ message: 'Empleado desactivado exitosamente', type: 'success' });
         console.log('=== END DELETE EMPLOYEE FRONTEND ===');
       } catch (error) {
         console.error('❌ Error deleting employee:', error);
@@ -687,7 +710,7 @@ const Admin = () => {
             phone: emp.phone || '',
             address: emp.address || '',
             status: emp.status as Employee['status'] || 'active'
-          })).filter(emp => emp.name && emp.id && !emp.id.startsWith('temp-')); // Filter based on id, not user_id
+          })).filter(emp => emp.name && emp.id && !emp.id.startsWith('temp-'));
           setEmployees(transformedEmployees);
         } catch (error) {
           console.error('Error fetching employees:', error);
@@ -709,7 +732,7 @@ const Admin = () => {
             phone: emp.phone || '',
             address: emp.address || '',
             status: emp.status as Employee['status'] || 'active'
-          })).filter(emp => emp.name && emp.id && !emp.id.startsWith('temp-') && !emp.id.startsWith('search-')); // Filter based on id, not user_id
+          })).filter(emp => emp.name && emp.id && !emp.id.startsWith('temp-') && !emp.id.startsWith('search-'));
           setEmployees(transformedResults);
         } catch (error) {
           console.error('Error searching employees:', error);
@@ -933,9 +956,9 @@ const Admin = () => {
                 <Button 
                   variant="danger" 
                   onClick={() => handleDeleteEmployee(employee.id)}
-                  disabled={employee.id.startsWith('temp-')}
+                  disabled={employee.id.startsWith('temp-') || employee.id.startsWith('search-')}
                 >
-                  Eliminar
+                  {employee.status === 'active' ? 'Desactivar' : 'Activar'}
                 </Button>
               </ButtonGroup>
             </EmployeeCard>
