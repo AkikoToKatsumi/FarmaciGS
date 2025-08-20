@@ -98,6 +98,65 @@ export const getCashboxSummary = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Error interno al obtener el cuadre de caja.' });
   }
 };
+
+// Obtener detalles completos del cuadre de caja
+export const getCashboxDetails = async (req: AuthRequest, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Obtener ventas del día con detalles
+    const salesResult = await pool.query(
+      `SELECT s.id, s.user_id, s.client_id, s.total, s.created_at, s.payment_method, s.status,
+              u.name as user_name, c.name as client_name
+       FROM sales s
+       LEFT JOIN users u ON s.user_id = u.id
+       LEFT JOIN clients c ON s.client_id = c.id
+       WHERE s.created_at >= $1 AND s.created_at < $2 AND s.status IS DISTINCT FROM 'cancelled'
+       ORDER BY s.created_at DESC`,
+      [today, tomorrow]
+    );
+    const sales = salesResult.rows;
+
+    let totalSales = 0;
+    let totalTransactions = sales.length;
+    let byPaymentMethod: Record<string, number> = {};
+
+    // Para cada venta, obtener sus productos
+    const salesWithDetails = [];
+    for (const sale of sales) {
+      totalSales += Number(sale.total);
+      const method = sale.payment_method || 'Desconocido';
+      byPaymentMethod[method] = (byPaymentMethod[method] || 0) + Number(sale.total);
+
+      // Obtener productos de la venta
+      const itemsResult = await pool.query(
+        `SELECT si.medicine_id, si.quantity, si.unit_price, si.total_price, m.name as medicine_name
+         FROM sale_items si
+         LEFT JOIN medicine m ON si.medicine_id = m.id
+         WHERE si.sale_id = $1`,
+        [sale.id]
+      );
+      const items = itemsResult.rows;
+
+      salesWithDetails.push({
+        ...sale,
+        items: items
+      });
+    }
+
+    res.json({
+      summary: { totalSales, totalTransactions, byPaymentMethod },
+      sales: salesWithDetails
+    });
+  } catch (error) {
+    console.error('Error al obtener detalles del cuadre de caja:', error);
+    res.status(500).json({ message: 'Error interno al obtener los detalles del cuadre de caja.' });
+  }
+};
+
 // src/controllers/sales.controller.ts
 
 import { Response } from 'express';

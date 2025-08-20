@@ -674,6 +674,17 @@ const Dashboard = () => {
           </SidebarLogo>
         )}
         
+        {sidebarCollapsed && !isMobile && (
+          <SidebarLogo 
+            collapsed={sidebarCollapsed} 
+            isMobile={isMobile}
+            onClick={() => navigate('/dashboard')}
+            style={{ cursor: 'pointer', padding: '0 0.5rem' }}
+          >
+            <img src="imagenes/logo.png" alt="Logo" />
+          </SidebarLogo>
+        )}
+        
         <SidebarContent>
           <SidebarMenu>
             {menuItems
