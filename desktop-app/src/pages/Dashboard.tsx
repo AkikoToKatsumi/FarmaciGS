@@ -489,11 +489,11 @@ const FooterLogos = styled.div`
   margin-bottom: 1rem;
   
   img {
-    height: 60px;
+    height: 70px;
     object-fit: contain;
-    background: #fff;
+    background: #ffffffff;
     border-radius: 8px;
-    padding: 8px;
+    padding: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
 
@@ -1114,7 +1114,7 @@ const Dashboard = () => {
             
             <FooterText>
               <div className="developers">
-                Desarrollado por Gabriela García Matrícula: 2023-0105 y por Dauris Santana 2023-0253
+                Desarrollado por Gabriela García Matrícula: 2023-0105 y  Dauris Santana 2023-0253
               </div>
               
               <div className="copyright">
