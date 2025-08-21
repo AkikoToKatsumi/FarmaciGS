@@ -7,6 +7,16 @@ import bcrypt from 'bcryptjs';
 export const getEmployees = async (req: Request, res: Response) => {
   try {
     console.log('=== DEBUGGING EMPLOYEES QUERY ===');
+    
+    // Primero verificar si hay empleados en la tabla
+    const countResult = await pool.query('SELECT COUNT(*) as count FROM employees');
+    console.log('Total employees in database:', countResult.rows[0].count);
+    
+    if (parseInt(countResult.rows[0].count) === 0) {
+      console.log('No employees found in database');
+      return res.json([]);
+    }
+
     // Check for employees without user_id
     const withoutIdResult = await pool.query('SELECT COUNT(*) as count FROM employees WHERE user_id IS NULL');
     console.log('Employees without user_id:', withoutIdResult.rows[0].count);
@@ -16,7 +26,6 @@ export const getEmployees = async (req: Request, res: Response) => {
       const maxIdResult = await pool.query('SELECT COALESCE(MAX(user_id), 0) as max_id FROM employees WHERE user_id IS NOT NULL');
       let nextId = parseInt(maxIdResult.rows[0].max_id) + 1;
 
-      // Use email as unique identifier if id column does not exist
       const employeesWithoutId = await pool.query('SELECT email FROM employees WHERE user_id IS NULL ORDER BY email');
       for (const emp of employeesWithoutId.rows) {
         await pool.query('UPDATE employees SET user_id = $1 WHERE email = $2', [nextId, emp.email]);
@@ -48,6 +57,7 @@ export const getEmployees = async (req: Request, res: Response) => {
 
     console.log('Employees fetched:', result.rows.length);
     console.log('Sample employee:', result.rows[0]);
+    console.log('All employees:', result.rows);
     console.log('=== END DEBUGGING ===');
 
     res.json(result.rows);

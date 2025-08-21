@@ -483,8 +483,8 @@ const Admin = () => {
           status: emp.status as Employee['status'] || 'active'
         };
       }).filter(emp => {
-        // Solo filtrar empleados que realmente no tienen información válida
-        const isValid = emp.name && emp.name.trim() !== '' && emp.id && !emp.id.startsWith('temp-');
+        // Filtrar solo empleados que tengan datos mínimos válidos
+        const isValid = emp.name && emp.name.trim() !== '' && emp.email && emp.email.trim() !== '';
         console.log(`Employee ${emp.name || 'unnamed'} is valid:`, isValid);
         return isValid;
       });
@@ -674,7 +674,7 @@ const Admin = () => {
           phone: emp.phone || '',
           address: emp.address || '',
           status: emp.status as Employee['status'] || 'active'
-        })).filter(emp => emp.name && emp.id && !emp.id.startsWith('temp-'));
+        })).filter(emp => emp.name && emp.name.trim() !== '' && emp.email && emp.email.trim() !== '');
         
         setEmployees(transformedEmployees);
         setNotification({ message: 'Empleado desactivado exitosamente', type: 'success' });
@@ -711,7 +711,7 @@ const Admin = () => {
             phone: emp.phone || '',
             address: emp.address || '',
             status: emp.status as Employee['status'] || 'active'
-          })).filter(emp => emp.name && emp.id && !emp.id.startsWith('temp-'));
+          })).filter(emp => emp.name && emp.name.trim() !== '' && emp.email && emp.email.trim() !== '');
           setEmployees(transformedEmployees);
         } catch (error) {
           console.error('Error fetching employees:', error);
@@ -733,7 +733,7 @@ const Admin = () => {
             phone: emp.phone || '',
             address: emp.address || '',
             status: emp.status as Employee['status'] || 'active'
-          })).filter(emp => emp.name && emp.id && !emp.id.startsWith('temp-') && !emp.id.startsWith('search-'));
+          })).filter(emp => emp.name && emp.name.trim() !== '' && emp.email && emp.email.trim() !== '');
           setEmployees(transformedResults);
         } catch (error) {
           console.error('Error searching employees:', error);
