@@ -483,6 +483,64 @@ const PoliticasPrivacidad = () => {
         </DeveloperInfo>
 
         <Section>
+          <h2><Shield size={24} />Propiedad Intelectual y Derechos de Autor</h2>
+          <p>
+            <strong>AVISO LEGAL IMPORTANTE:</strong> Este software "Sistema de Gestión Farmacéutica - Farmacia GS" 
+            es propiedad intelectual exclusiva de sus desarrolladores Gabriela García (Matrícula: 2023-0105) y 
+            Dauris Santana (Matrícula: 2023-0253), estudiantes de la Universidad Católica Tecnológica del Cibao (UCATECI).
+          </p>
+          
+          <h3>Donación y Uso Autorizado</h3>
+          <p>
+            Este sistema ha sido <strong>donado exclusivamente</strong> para fines educativos y de investigación al 
+            Instituto Nacional de Formación Técnico Profesional (INFOTEP) de la República Dominicana, como contribución 
+            al desarrollo tecnológico del sector farmacéutico nacional.
+          </p>
+
+          <h3>Prohibiciones Expresas</h3>
+          <p>Queda <strong>ESTRICTAMENTE PROHIBIDO</strong>:</p>
+          <ul>
+            <li><strong>Venta comercial:</strong> La comercialización, venta o distribución con fines de lucro de este software</li>
+            <li><strong>Copia no autorizada:</strong> La reproducción, duplicación o clonación del código fuente o ejecutables</li>
+            <li><strong>Distribución ilegal:</strong> La redistribución sin autorización expresa de los propietarios</li>
+            <li><strong>Modificación no autorizada:</strong> Alterar, descompilar o realizar ingeniería inversa del software</li>
+            <li><strong>Uso comercial no autorizado:</strong> Implementar el sistema con fines comerciales sin licencia</li>
+            <li><strong>Plagio académico:</strong> Presentar este trabajo como propio en instituciones educativas</li>
+            <li><strong>Registro de marca:</strong> Registrar el nombre "Farmacia GS" o elementos distintivos como propios</li>
+          </ul>
+
+          <h3>Marco Legal Aplicable</h3>
+          <p>Esta declaración se fundamenta en:</p>
+          <ul>
+            <li><strong>Ley No. 20-00</strong> sobre Propiedad Industrial de la República Dominicana</li>
+            <li><strong>Ley No. 65-00</strong> sobre Derecho de Autor de la República Dominicana</li>
+            <li><strong>Código Penal Dominicano</strong> - Artículos sobre violación de derechos de autor</li>
+            <li><strong>Convenio de Berna</strong> para la Protección de las Obras Literarias y Artísticas</li>
+            <li><strong>Acuerdo TRIPS</strong> de la Organización Mundial del Comercio</li>
+            <li><strong>Decreto No. 362-06</strong> que aprueba el Reglamento de aplicación de la Ley de Derecho de Autor</li>
+          </ul>
+
+          <h3>Consecuencias Legales</h3>
+          <p>
+            El incumplimiento de estas disposiciones constituye una <strong>violación a los derechos de autor</strong> 
+            y puede resultar en acciones legales que incluyen:
+          </p>
+          <ul>
+            <li>Demandas civiles por daños y perjuicios</li>
+            <li>Acciones penales por violación de derechos de autor</li>
+            <li>Multas económicas según la legislación vigente</li>
+            <li>Órdenes judiciales de cese y desista</li>
+            <li>Confiscación de copias ilegales</li>
+          </ul>
+
+          <h3>Contacto Legal</h3>
+          <p>
+            Para solicitudes de licenciamiento, autorizaciones especiales o reportar violaciones a estos derechos, 
+            contactar directamente a los propietarios a través de los canales oficiales de UCATECI o INFOTEP.
+          </p>
+        </Section>
+
+        <Section>
           <h2>Cambios a esta Política</h2>
           <p>
             Nos reservamos el derecho de actualizar esta política de privacidad en cualquier momento. 
