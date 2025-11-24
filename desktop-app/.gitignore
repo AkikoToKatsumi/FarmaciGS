@@ -7,10 +7,27 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencias
 node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Producción
 dist
+dist-electron
 dist-ssr
 *.local
+
+# Base de datos local y binarios
+pgsql/
+*.db
+*.sqlite
+*.dump
+*.exe
+*.dll
 
 # Editor directories and files
 .vscode/*

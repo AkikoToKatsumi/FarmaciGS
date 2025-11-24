@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmacia GS - Cargando...</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .splash-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 60px 50px;
+            text-align: center;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            max-width: 450px;
+            width: 90%;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .splash-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            animation: shimmer 2s ease-in-out infinite;
+        }
+        
+        .logo-container {
+            position: relative;
+            margin-bottom: 40px;
+        }
+        
+        .logo-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            animation: logoFloat 3s ease-in-out infinite;
+            object-fit: contain;
+            background: white;
+            padding: 10px;
+        }
+        
+        .main-content {
+            color: #1a202c;
+            margin-bottom: 50px;
+        }
+        
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #718096;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+        
+        .version {
+            font-size: 13px;
+            color: #a0aec0;
+            font-weight: 300;
+        }
+        
+        .loading-section {
+            margin-bottom: 40px;
+        }
+        
+        .progress-container {
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+            animation: progressGrow 3s ease-out infinite;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: progressShine 1.5s ease-in-out infinite;
+        }
+        
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: dotBounce 1.4s ease-in-out infinite both;
+        }
+        
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        .dot:nth-child(3) { animation-delay: 0s; }
+        
+        .loading-text {
+            font-size: 14px;
+            color: #4a5568;
+            font-weight: 500;
+            animation: textPulse 2s ease-in-out infinite;
+        }
+        
+        .footer-info {
+            font-size: 11px;
+            color: #a0aec0;
+            line-height: 1.4;
+        }
+        
+        .footer-info strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.7; }
+            25% { transform: translateY(-100px) translateX(10px); opacity: 1; }
+            50% { transform: translateY(-200px) translateX(-10px); opacity: 0.8; }
+            75% { transform: translateY(-300px) translateX(5px); opacity: 0.6; }
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        @keyframes progressGrow {
+            0% { width: 0%; }
+            30% { width: 30%; }
+            60% { width: 65%; }
+            90% { width: 85%; }
+            100% { width: 100%; }
+        }
+        
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1.2); opacity: 1; }
+        }
+        
+        @keyframes textPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            .splash-container {
+                padding: 40px 30px;
+                margin: 20px;
+            }
+            
+            .title {
+                font-size: 28px;
+            }
+            
+            .logo-background {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .logo-icon {
+                font-size: 40px;
+            }
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01s !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01s !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="splash-container">
+        <div class="logo-container">
+            <img src="../public/imagenes/image.png" alt="Farmacia GS" class="logo-image" onerror="this.style.display='none'">
+        </div>
+        
+        <div class="main-content">
+            <h1 class="title">Farmacia GS</h1>
+            <p class="subtitle">Sistema de Gestión Farmacéutica</p>
+            <p class="version">Versión 1.0.0</p>
+        </div>
+        
+        <div class="loading-section">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <div class="loading-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <div class="loading-text" id="loadingText">Iniciando aplicación...</div>
+            </div>
+        </div>
+        
+        <div class="footer-info">
+            Desarrollado por <strong>Gabriela García & Dauris Santana</strong><br>
+            UCATECI • Donado a INFOTEP para fines educativos
+        </div>
+    </div>
+
+    <script>
+        // Mensajes de carga dinámicos con mejor timing
+        const loadingMessages = [
+            'Iniciando aplicación...',
+            'Cargando módulos del sistema...',
+            'Conectando con la base de datos...',
+            'Verificando permisos de usuario...',
+            'Preparando la interfaz...',
+            'Cargando inventario...',
+            'Finalizando configuración...',
+            'Casi listo...'
+        ];
+        
+        let messageIndex = 0;
+        const loadingTextElement = document.getElementById('loadingText');
+        
+        function updateLoadingText() {
+            loadingTextElement.style.opacity = '0';
+            
+            setTimeout(() => {
+                messageIndex = (messageIndex + 1) % loadingMessages.length;
+                loadingTextElement.textContent = loadingMessages[messageIndex];
+                loadingTextElement.style.opacity = '1';
+            }, 200);
+        }
+        
+        // Cambiar mensaje cada 1.2 segundos
+        setInterval(updateLoadingText, 1200);
+        
+        // Añadir transición suave al texto
+        loadingTextElement.style.transition = 'opacity 0.3s ease-in-out';
+        
+        // Simular redirección después de la carga (opcional)
+        // setTimeout(() => {
+        //     window.location.href = 'dashboard.html';
+        // }, 8000);
+        
+        // Prevenir clic derecho y selección de texto para mejor UX
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('selectstart', e => e.preventDefault());
+    </script>
+</body>
+</html>

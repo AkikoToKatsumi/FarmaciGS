@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { useUserStore } from '../store/User';
 import { employeeService } from '../services/employees.service';
 import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
+import { ElectronImage } from '../hooks/useElectronImage';
 
 // Add Sidebar components
 const Sidebar = styled.nav`
@@ -793,7 +794,7 @@ const Admin = () => {
       {/* Add Sidebar */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="imagenes/logo.png" alt="Logo" />
+          <ElectronImage src="logo.png" alt="Logo" />
         </SidebarLogo>
         
         <SidebarContent>

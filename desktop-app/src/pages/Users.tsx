@@ -4,6 +4,7 @@ import { useUserStore } from '../store/User';
 import { getRoles } from '../services/role.service';
 import { useNavigate } from 'react-router-dom';
 import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
+import { ElectronImage } from '../hooks/useElectronImage';
 
 // Styled Components
 const Sidebar = styled.nav`
@@ -539,7 +540,7 @@ const UserRegistration: React.FC = () => {
     <>
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="imagenes/logo.png" alt="Logo" />
+          <ElectronImage src="logo.png" alt="Logo" />
         </SidebarLogo>
         
         <SidebarContent>

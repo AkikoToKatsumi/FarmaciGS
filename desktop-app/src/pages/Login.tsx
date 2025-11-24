@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth.service';
 import { useUserStore } from '../store/User';
+import { ElectronImage } from '../hooks/useElectronImage';
 // Corrige el import del CSS
 import './login.css';
 
@@ -56,8 +57,8 @@ const Login = () => {
       /> */}
       <div className="login-card">
         <div className="login-image-section">
-          <img
-            src="imagenes/logo.ico"
+          <ElectronImage
+            src="logo.ico"
             alt="login"
             className="login-image"
             style={{

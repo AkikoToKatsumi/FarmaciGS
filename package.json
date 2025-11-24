@@ -1,26 +1,24 @@
 {
   "dependencies": {
-    "@tanstack/react-query": "^5.85.0",
-    "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.2",
-    "json2csv": "^6.0.0-alpha.2",
-    "jspdf": "^3.0.1",
-    "jspdf-autotable": "^5.0.2",
-    "node-cron": "^4.1.0",
-    "nodemailer": "^7.0.3",
-    "pdfkit": "^0.17.1",
-    "puppeteer": "^24.10.2",
-    "uuid": "^11.1.0",
-    "xlsx": "^0.18.5"
+    "better-sqlite3": "^12.4.1",
+    "pg": "^8.16.3",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
-    "@types/moment-timezone": "^0.5.13",
-    "@types/node-cron": "^3.0.11",
-    "@types/nodemailer": "^6.4.17",
-    "@types/pdfkit": "^0.17.2",
-    "@types/uuid": "^10.0.0",
-    "@types/ws": "^8.18.1",
-    "@types/xlsx": "^0.0.35"
+    "electron-builder": "^26.0.12"
+  },
+  "extraResources": [
+    {
+      "from": "../backend/dist",
+      "to": "backend/dist"
+    }
+  ],
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "runAfterFinish": true,
+    "include": "installer.nsh"
   }
 }

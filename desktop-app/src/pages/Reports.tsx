@@ -8,9 +8,8 @@ import {
   getStockLowReport,
 } from '../services/report.service';
 import { createBackup } from '../services/backup.service';
-import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 import styled from 'styled-components';
 
 import {
@@ -370,33 +369,150 @@ const Reports = () => {
 
   // Exportar a Excel
   const exportExcel = (data: any[], filename: string, total?: number) => {
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
-    // Si es ventas y hay total, agrega una fila al final
-    if (filename.startsWith('ventas') && typeof total === 'number') {
-      const lastRow = data.length + 2;
-      XLSX.utils.sheet_add_aoa(ws, [['', 'TOTAL', total]], { origin: `A${lastRow}` });
+    if (window.electronAPI && window.electronAPI.XLSX) {
+      const ws = window.electronAPI.XLSX.utils.json_to_sheet(data);
+      const wb = window.electronAPI.XLSX.utils.book_new();
+      window.electronAPI.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
+      // Si es ventas y hay total, agrega una fila al final
+      if (filename.startsWith('ventas') && typeof total === 'number') {
+        const lastRow = data.length + 2;
+        window.electronAPI.XLSX.utils.sheet_add_aoa(ws, [['', 'TOTAL', total]], { origin: `A${lastRow}` });
+      }
+      window.electronAPI.XLSX.writeFile(wb, filename);
+    } else {
+      // Fallback: crear CSV si XLSX no está disponible
+      const header = Object.keys(data[0] || {});
+      const rows = data.map((item: any) => header.map(key => item[key]));
+      let csvContent = [header, ...rows].map((r) => r.join(',')).join('\n');
+      
+      if (filename.startsWith('ventas') && typeof total === 'number') {
+        csvContent += `\n,TOTAL,${total}`;
+      }
+      
+      downloadCSV(csvContent, filename.replace('.xlsx', '.csv'));
     }
-    XLSX.writeFile(wb, filename);
   };
 
   // Exportar a PDF
   const exportPDF = (data: any[], headers: string[], filename: string, total?: number) => {
-    const doc = new jsPDF();
-    autoTable(doc, {
-      head: [headers],
-      body: data,
-    });
-    // Si es ventas y hay total, agrega una fila al final
-    if (filename.startsWith('ventas') && typeof total === 'number') {
-      autoTable(doc, {
-        body: [['', 'TOTAL', total]],
-        theme: 'plain',
-        styles: { fontStyle: 'bold', textColor: [37, 99, 235] },
-        startY: (doc as any).lastAutoTable.finalY + 2,
+    try {
+      const doc = new jsPDF();
+      const docWithAutoTable = doc as any; // Type assertion para autoTable
+      
+      // Verificar que autoTable esté disponible
+      if (typeof docWithAutoTable.autoTable !== 'function') {
+        console.error('jsPDF autoTable plugin no está disponible');
+        
+        // Método alternativo: generar PDF simple sin tabla
+        generateSimplePDF(doc, data, headers, filename, total);
+        return;
+      }
+
+      // Configurar el documento
+      docWithAutoTable.autoTable({
+        head: [headers],
+        body: data,
+        startY: 20,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [37, 99, 235],
+          textColor: 255,
+          fontSize: 9,
+          fontStyle: 'bold',
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
       });
+
+      // Si es ventas y hay total, agrega una fila al final
+      if (filename.startsWith('ventas') && typeof total === 'number') {
+        const finalY = docWithAutoTable.lastAutoTable?.finalY || 50;
+        docWithAutoTable.autoTable({
+          body: [['', 'TOTAL', `RD$${total.toFixed(2)}`]],
+          startY: finalY + 5,
+          theme: 'plain',
+          styles: { 
+            fontSize: 10,
+            fontStyle: 'bold', 
+            textColor: [37, 99, 235],
+            fillColor: [240, 248, 255]
+          },
+          columnStyles: {
+            0: { halign: 'right' },
+            1: { halign: 'center', fontStyle: 'bold' },
+            2: { halign: 'right', fontStyle: 'bold' }
+          }
+        });
+      }
+
+      doc.save(filename);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      
+      // Método alternativo: generar PDF simple
+      try {
+        const doc = new jsPDF();
+        generateSimplePDF(doc, data, headers, filename, total);
+      } catch (fallbackError) {
+        console.error('Error en PDF alternativo:', fallbackError);
+        alert('Error generando PDF. Usando CSV como alternativa.');
+        
+        // Último recurso: CSV
+        const csvData = data.map((item: any) => 
+          headers.map(header => 
+            item[header] || item[headers.indexOf(header)] || ''
+          )
+        );
+        const csvContent = [headers, ...csvData].map((r) => r.join(',')).join('\n');
+        downloadCSV(csvContent, filename.replace('.pdf', '.csv'));
+      }
     }
+  };
+
+  // Método alternativo para generar PDF simple
+  const generateSimplePDF = (doc: jsPDF, data: any[], headers: string[], filename: string, total?: number) => {
+    // Título
+    doc.setFontSize(16);
+    doc.text('Reporte - Farmacia GS', 20, 20);
+    
+    // Headers
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    let yPosition = 40;
+    
+    headers.forEach((header, index) => {
+      doc.text(header, 20 + (index * 50), yPosition);
+    });
+    
+    // Datos
+    doc.setFont(undefined, 'normal');
+    yPosition += 10;
+    
+    data.forEach((row: any, rowIndex) => {
+      if (yPosition > 250) { // Nueva página si es necesario
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      headers.forEach((header, colIndex) => {
+        const value = Array.isArray(row) ? row[colIndex] : row[header];
+        doc.text(String(value || ''), 20 + (colIndex * 50), yPosition);
+      });
+      
+      yPosition += 8;
+    });
+    
+    // Total si aplica
+    if (filename.startsWith('ventas') && typeof total === 'number') {
+      yPosition += 10;
+      doc.setFont(undefined, 'bold');
+      doc.text(`TOTAL: RD$${total.toFixed(2)}`, 20, yPosition);
+    }
+    
     doc.save(filename);
   };
 

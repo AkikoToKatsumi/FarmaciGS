@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-   base: './',
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {
@@ -11,11 +11,30 @@ export default defineConfig({
     },
   },
   server: {
-     host: true,
+    host: true,
     port: 5173,
   },
   build: {
     outDir: 'dist',
-     emptyOutDir: true
+    emptyOutDir: true,
+    target: 'esnext',
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html')
+      },
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'chart-vendor': ['recharts']
+        }
+      },
+      external: ['electron']
+    }
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    exclude: ['electron']
+  },
+  publicDir: 'public',
+  assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.webp', '**/*.ico']
 });

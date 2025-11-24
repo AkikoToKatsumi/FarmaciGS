@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, Eye, Database, Users, FileText, Scale, Phone, Mail, MapPin } from 'lucide-react';
+import { ElectronImage } from '../hooks/useElectronImage';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -17,7 +18,7 @@ const Container = styled.div`
     left: 50%;
     width: 200px;
     height: 200px;
-    background: url('/imagenes/logo.png') no-repeat center center;
+    background: url('./imagenes/logo.png') no-repeat center center;
     background-size: contain;
     opacity: 0.05;
     z-index: 0;
@@ -361,8 +362,8 @@ const PoliticasPrivacidad = () => {
 
       <Header>
         <LogoSection>
-          <img src="/imagenes/Logo-UCATECI.png" alt="Logo UCATECI" />
-          <img src="/imagenes/Logo.webp" alt="Logo Farmacia GS" />
+          <ElectronImage src="Logo-UCATECI.png" alt="Logo UCATECI" />
+          <ElectronImage src="Logo.webp" alt="Logo Farmacia GS" />
         </LogoSection>
         
         <Title>

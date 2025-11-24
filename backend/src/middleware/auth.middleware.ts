@@ -8,6 +8,10 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 // Esto nos permite añadir la propiedad 'user' a la solicitud para almacenar los datos del token decodificado.
 export interface AuthRequest extends Request {
   user?: any; // El usuario decodificado del token.
+  headers: {
+    authorization?: string;
+    [key: string]: any;
+  };
 }
 
 // Exportamos el middleware 'verifyToken' para proteger nuestras rutas.

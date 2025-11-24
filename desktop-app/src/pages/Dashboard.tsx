@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useUserStore } from '../store/User';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardStats, DashboardStats } from '../services/dashboard.service';
+import { ElectronImage } from '../hooks/useElectronImage';
 import {
   User,
   BarChart2,
@@ -1180,8 +1181,8 @@ const Dashboard = () => {
         <Footer>
           <FooterContent>
             <FooterLogos>
-              <img src="/imagenes/Logo-UCATECI.png" alt="Logo UCATECI" />
-              <img src="/imagenes/Logo.webp" alt="Logo Farmacia GS" />
+              <ElectronImage src="Logo-UCATECI.png" alt="Logo UCATECI" />
+              <ElectronImage src="Logo.webp" alt="Logo Farmacia GS" />
             </FooterLogos>
             
             <FooterText>

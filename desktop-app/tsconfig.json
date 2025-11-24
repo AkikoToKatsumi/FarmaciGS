@@ -7,14 +7,15 @@
     "moduleResolution": "Node",
     "allowJs": false,
     "jsx": "react-jsx",
-    "strict": true,
+    "strict": false,
    
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "noImplicitAny": false
   },
-  "include": ["src"],
+  "include": ["src", "src/types"],
   "exclude": ["node_modules", "build"]
 }
