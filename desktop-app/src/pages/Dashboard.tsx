@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { useUserStore } from '../store/User';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardStats, DashboardStats } from '../services/dashboard.service';
-import { ElectronImage } from '../hooks/useElectronImage';
+
 import {
   User,
   BarChart2,
@@ -51,7 +51,7 @@ const Sidebar = styled.nav<{ collapsed: boolean; isMobile: boolean }>`
   flex-direction: column;
   align-items: ${({ collapsed, isMobile }) => (collapsed && !isMobile ? 'center' : 'flex-start')};
   padding-top: 1rem;
-  transform: ${({ collapsed, isMobile }) => 
+  transform: ${({ collapsed, isMobile }) =>
     isMobile && collapsed ? 'translateX(-100%)' : 'translateX(0)'};
   overflow-x: hidden;
 
@@ -124,8 +124,8 @@ const SidebarMenuItem = styled.li<{ active?: boolean; collapsed?: boolean; isMob
     cursor: pointer;
     transition: background 0.15s;
     text-align: left;
-    justify-content: ${({ collapsed, isMobile }) => 
-      (collapsed && !isMobile) ? 'center' : 'flex-start'};
+    justify-content: ${({ collapsed, isMobile }) =>
+    (collapsed && !isMobile) ? 'center' : 'flex-start'};
     
     &:hover {
       background: #2563eb;
@@ -137,8 +137,8 @@ const SidebarMenuItem = styled.li<{ active?: boolean; collapsed?: boolean; isMob
     }
     
     span {
-      display: ${({ collapsed, isMobile }) => 
-        (collapsed && !isMobile) ? 'none' : 'inline'};
+      display: ${({ collapsed, isMobile }) =>
+    (collapsed && !isMobile) ? 'none' : 'inline'};
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -657,7 +657,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!token) return;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
         // El backend debe retornar salesTrend y totalSalesTrend en el objeto de stats
         const data = await getDashboardStats(token);
@@ -723,13 +726,13 @@ const Dashboard = () => {
     // Usuarios
     { label: 'Usuarios', icon: <User />, onClick: () => navigate('/Users'), show: user?.role_name === 'admin' },
     // Reportes
-    { 
-      label: 'Reportes', 
-      icon: <FileText />, 
-      onClick: () => navigate('/reports'), 
-      show: user?.role_name === 'admin' 
-        || user?.role_name === 'pharmacist' 
-        || user?.role_name === 'cashier' 
+    {
+      label: 'Reportes',
+      icon: <FileText />,
+      onClick: () => navigate('/reports'),
+      show: user?.role_name === 'admin'
+        || user?.role_name === 'pharmacist'
+        || user?.role_name === 'cashier'
     },
     // Administración
     { label: 'Administración', icon: <Shield />, onClick: () => navigate('/admin'), show: user?.role_name === 'admin' },
@@ -805,25 +808,25 @@ const Dashboard = () => {
           <Menu size={24} />
         </MobileMenuButton>
       )}
-      
+
       <SidebarOverlay show={isMobile && !sidebarCollapsed} onClick={handleOverlayClick} />
-      
+
       <Sidebar collapsed={sidebarCollapsed} isMobile={isMobile}>
         {!isMobile && (
           <SidebarToggle isMobile={isMobile} onClick={handleSidebarToggle}>
             {sidebarCollapsed ? <Menu size={28} /> : <X size={28} />}
           </SidebarToggle>
         )}
-        
+
         {(!sidebarCollapsed || isMobile) && (
           <SidebarLogo collapsed={sidebarCollapsed} isMobile={isMobile}>
             {isMobile && (
-              <button 
+              <button
                 onClick={handleSidebarToggle}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  color: '#fff', 
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#fff',
                   marginLeft: 'auto',
                   cursor: 'pointer',
                   padding: '4px'
@@ -837,10 +840,10 @@ const Dashboard = () => {
             {isMobile && <span>Farmacia GS</span>}
           </SidebarLogo>
         )}
-        
+
         {sidebarCollapsed && !isMobile && (
-          <SidebarLogo 
-            collapsed={sidebarCollapsed} 
+          <SidebarLogo
+            collapsed={sidebarCollapsed}
             isMobile={isMobile}
             onClick={() => navigate('/dashboard')}
             style={{ cursor: 'pointer', padding: '0 0.5rem' }}
@@ -848,14 +851,14 @@ const Dashboard = () => {
             <img src="imagenes/logo.png" alt="Logo" />
           </SidebarLogo>
         )}
-        
+
         <SidebarContent>
           <SidebarMenu>
             {menuItems
               .filter((item) => item.show)
               .map((item, idx) => (
-                <SidebarMenuItem 
-                  key={item.label} 
+                <SidebarMenuItem
+                  key={item.label}
                   active={item.active}
                   collapsed={sidebarCollapsed}
                   isMobile={isMobile}
@@ -871,7 +874,7 @@ const Dashboard = () => {
               ))}
           </SidebarMenu>
         </SidebarContent>
-        
+
         <SidebarFooter $collapsed={sidebarCollapsed}>
           <LogoutButton onClick={() => {
             handleLogout();
@@ -882,7 +885,7 @@ const Dashboard = () => {
           </LogoutButton>
         </SidebarFooter>
       </Sidebar>
-      
+
       <Main $collapsed={sidebarCollapsed} $isMobile={isMobile}>
         <Header>
           <Title>
@@ -1014,8 +1017,8 @@ const Dashboard = () => {
                     {trendType === 'semana'
                       ? 'Tendencia Semanal de Ventas Netas'
                       : trendType === 'mes'
-                      ? 'Tendencia Mensual de Ventas Netas'
-                      : 'Tendencia Anual de Ventas Netas'}
+                        ? 'Tendencia Mensual de Ventas Netas'
+                        : 'Tendencia Anual de Ventas Netas'}
                   </ChartTitle>
                   <ResponsiveContainer width="100%" height={220}>
                     {trendType === 'semana' ? (
@@ -1103,16 +1106,16 @@ const Dashboard = () => {
                           historicalTrendType === 'año'
                             ? 'year'
                             : historicalTrendType === 'mes'
-                            ? 'month'
-                            : 'week'
+                              ? 'month'
+                              : 'week'
                         }
                         label={{
                           value:
                             historicalTrendType === 'año'
                               ? 'Año'
                               : historicalTrendType === 'mes'
-                              ? 'Mes'
-                              : 'Semana',
+                                ? 'Mes'
+                                : 'Semana',
                           position: 'insideBottom',
                           offset: -5
                         }}
@@ -1181,21 +1184,21 @@ const Dashboard = () => {
         <Footer>
           <FooterContent>
             <FooterLogos>
-              <ElectronImage src="Logo-UCATECI.png" alt="Logo UCATECI" />
-              <ElectronImage src="Logo.webp" alt="Logo Farmacia GS" />
+              <img src="/imagenes/Logo-UCATECI.png" alt="Logo UCATECI" />
+              <img src="/imagenes/Logo.webp" alt="Logo Farmacia GS" />
             </FooterLogos>
-            
+
             <FooterText>
               <div className="developers">
                 Desarrollado por Gabriela García Matrícula: 2023-0105 y  Dauris Santana 2023-0253
               </div>
-              
+
               <div className="copyright">
                 © {new Date().getFullYear()} Farmacia GS. Todos los derechos reservados.
               </div>
-              
+
               <div>
-                <span 
+                <span
                   className="privacy-link"
                   onClick={handlePrivacyPolicy}
                 >
