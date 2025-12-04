@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [react()],
   resolve: {
     alias: {
@@ -28,12 +28,10 @@ export default defineConfig({
           'chart-vendor': ['recharts']
         }
       },
-      external: ['electron']
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
-    exclude: ['electron']
+    include: ['react', 'react-dom']
   },
   publicDir: 'public',
   assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.webp', '**/*.ico']

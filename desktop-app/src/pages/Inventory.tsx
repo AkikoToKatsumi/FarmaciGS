@@ -6,17 +6,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUserStore } from '../store/User';
 import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
 
-import { 
-  getMedicine, 
-  createMedicine, 
-  updateMedicine, 
-  deleteMedicine, 
+import {
+  getMedicine,
+  createMedicine,
+  updateMedicine,
+  deleteMedicine,
   getStockAlerts,
   getProviders, // <-- nuevo import
   getExpiringSoonReport, // <-- importar el servicio
-  Medicine as MedicineType, 
-  CreateMedicineData, 
-  UpdateMedicineData 
+  Medicine as MedicineType,
+  CreateMedicineData,
+  UpdateMedicineData
 } from '../services/inventory.service';
 import { getCategories as getCategoryList } from '../services/category.service';
 
@@ -181,7 +181,7 @@ const PrimaryButton = styled(BaseButton)`
   }
 `;
 
-const AlertButton = styled(BaseButton)<{ hasAlerts: boolean }>`
+const AlertButton = styled(BaseButton) <{ hasAlerts: boolean }>`
   background-color: ${props => props.hasAlerts ? '#f56565' : '#e2e8f0'};
   color: ${props => props.hasAlerts ? 'white' : '#4a5568'};
   &:hover {
@@ -791,19 +791,19 @@ interface NotificationProps {
   duration?: number;
 }
 
-const Notification: React.FC<NotificationProps> = ({ 
-  type, 
-  message, 
-  onClose, 
-  autoClose = true, 
-  duration = 5000 
+const Notification: React.FC<NotificationProps> = ({
+  type,
+  message,
+  onClose,
+  autoClose = true,
+  duration = 5000
 }) => {
   useEffect(() => {
     if (autoClose) {
       const timer = setTimeout(() => {
         onClose();
       }, duration);
-      
+
       return () => clearTimeout(timer);
     }
   }, [autoClose, duration, onClose]);
@@ -885,22 +885,22 @@ const Inventory = () => {
       .filter(product => {
         const lowerSearchTerm = searchTerm.toLowerCase();
         const matchesSearch = product.name.toLowerCase().includes(lowerSearchTerm) ||
-                             product.description.toLowerCase().includes(lowerSearchTerm) ||
-                             (product.barcode && product.barcode.toLowerCase().includes(lowerSearchTerm));
-        
+          product.description.toLowerCase().includes(lowerSearchTerm) ||
+          (product.barcode && product.barcode.toLowerCase().includes(lowerSearchTerm));
+
         const matchesCategory = !filterCategory || product.category === filterCategory;
-        
+
         return matchesSearch && matchesCategory;
       })
       .sort((a, b) => {
         let aValue: any = a[sortBy];
         let bValue: any = b[sortBy];
-        
+
         if (sortBy === 'price' || sortBy === 'stock') {
           aValue = Number(aValue);
           bValue = Number(bValue);
         }
-        
+
         if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
         return 0;
@@ -1015,7 +1015,7 @@ const Inventory = () => {
 
   const mutation = useMutation({
     mutationFn: (medicineData: CreateMedicineData) => {
-      return editingProduct 
+      return editingProduct
         ? updateMedicine(editingProduct.id, medicineData)
         : createMedicine(medicineData);
     },
@@ -1116,9 +1116,9 @@ const Inventory = () => {
       {/* Add Sidebar */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="imagenes/logo.png" alt="Logo" />
+          <img src="/imagenes/logo.png" alt="Logo" />
         </SidebarLogo>
-        
+
         <SidebarContent>
           <SidebarMenu>
             {/* Overview */}
@@ -1127,7 +1127,7 @@ const Inventory = () => {
                 <BarChart2 />
               </button>
             </SidebarMenuItem>
-            
+
             {/* Ventas */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -1136,7 +1136,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Clientes */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -1145,7 +1145,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Inventario */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem active={true}>
@@ -1154,7 +1154,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Prescripciones */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -1163,7 +1163,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Usuarios */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -1172,7 +1172,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Reportes */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
               <SidebarMenuItem>
@@ -1181,7 +1181,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Administración */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -1190,7 +1190,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Roles */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -1199,7 +1199,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Proveedores */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -1208,7 +1208,7 @@ const Inventory = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Categorías */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -1219,7 +1219,7 @@ const Inventory = () => {
             )}
           </SidebarMenu>
         </SidebarContent>
-        
+
         <SidebarFooter>
           <LogoutButton onClick={() => {
             clearUser();
@@ -1337,7 +1337,7 @@ const Inventory = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </FilterGroup>
-            
+
             <FilterGroup>
               <Label>Categoría</Label>
               <Select
@@ -1350,7 +1350,7 @@ const Inventory = () => {
                 ))}
               </Select>
             </FilterGroup>
-            
+
             <FilterGroup>
               <Label>Ordenar por</Label>
               <Select
@@ -1363,7 +1363,7 @@ const Inventory = () => {
                 <option value="expiration_date">Fecha de vencimiento</option>
               </Select>
             </FilterGroup>
-            
+
             <FilterGroup>
               <Label>Orden</Label>
               <Select
@@ -1389,7 +1389,7 @@ const Inventory = () => {
                   ✕
                 </CloseButton>
               </ModalHeader>
-              
+
               <FormContainer onSubmit={handleSubmit}>
                 <FormGrid>
                   <FilterGroup>
@@ -1402,7 +1402,7 @@ const Inventory = () => {
                       required
                     />
                   </FilterGroup>
-                  
+
                   <FilterGroup>
                     <Label>Categoría *</Label>
                     <Select
@@ -1423,7 +1423,7 @@ const Inventory = () => {
                     )}
                   </FilterGroup>
                 </FormGrid>
-                
+
                 <FilterGroup>
                   <Label>Descripción *</Label>
                   <TextArea
@@ -1434,7 +1434,7 @@ const Inventory = () => {
                     rows={3}
                   />
                 </FilterGroup>
-                
+
                 <FormGrid3>
                   <FilterGroup>
                     <Label>Precio *</Label>
@@ -1448,7 +1448,7 @@ const Inventory = () => {
                       min="0"
                     />
                   </FilterGroup>
-                  
+
                   <FilterGroup>
                     <Label>Stock *</Label>
                     <Input
@@ -1460,7 +1460,7 @@ const Inventory = () => {
                       min="0"
                     />
                   </FilterGroup>
-                  
+
                   <FilterGroup>
                     <Label>Lote *</Label>
                     <Input
@@ -1472,7 +1472,7 @@ const Inventory = () => {
                     />
                   </FilterGroup>
                 </FormGrid3>
-                
+
                 <FormGrid>
                   <FilterGroup>
                     <Label>Fecha de Vencimiento *</Label>
@@ -1484,7 +1484,7 @@ const Inventory = () => {
                       required
                     />
                   </FilterGroup>
-                  
+
                   <FilterGroup>
                     <Label>Código de Barras</Label>
                     <Input
@@ -1496,7 +1496,7 @@ const Inventory = () => {
                     />
                   </FilterGroup>
                 </FormGrid>
-                
+
                 <FilterGroup>
                   <Label>Proveedor *</Label>
                   <Select
@@ -1516,7 +1516,7 @@ const Inventory = () => {
                     <span style={{ color: '#dc2626', fontSize: '0.85rem' }}>No hay proveedores disponibles.</span>
                   )}
                 </FilterGroup>
-                
+
                 <FormActions>
                   <CancelButton
                     type="button"
@@ -1601,7 +1601,7 @@ const Inventory = () => {
               </tbody>
             </StyledTable>
           </TableScrollContainer>
-          
+
           {sortedProducts.length === 0 && (
             <EmptyState>
               <p>No se encontraron productos</p>

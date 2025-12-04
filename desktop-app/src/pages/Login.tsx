@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth.service';
 import { useUserStore } from '../store/User';
-import { ElectronImage } from '../hooks/useElectronImage';
-// Corrige el import del CSS
 import './login.css';
 
 const Login = () => {
@@ -47,18 +45,10 @@ const Login = () => {
           : {}
       }
     >
-      {/* Puedes eliminar este img si no necesitas cambiar el fondo dinámicamente */}
-      {/* <img
-        src="imagenes/partes-de-una-farmacia.jpg"
-        alt=""
-        style={{ display: 'none' }}
-        onError={() => setBgError(true)}
-        onLoad={() => setBgError(false)}
-      /> */}
       <div className="login-card">
         <div className="login-image-section">
-          <ElectronImage
-            src="logo.ico"
+          <img
+            src="/logo.ico"
             alt="login"
             className="login-image"
             style={{

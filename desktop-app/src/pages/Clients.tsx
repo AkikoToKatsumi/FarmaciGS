@@ -515,7 +515,7 @@ const Clients = () => {
   const { user, clearUser } = useUserStore();
   const token = useUserStore((s) => s.token);
   const navigate = useNavigate();
-  
+
   const [clients, setClients] = useState([]);
   const [form, setForm] = useState({ name: '', email: '', phone: '', rnc: '', cedula: '', address: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -542,7 +542,7 @@ const Clients = () => {
   const handlePreviousPage = () => {
     setCurrentPage(Math.max(1, currentPage - 1));
   };
-  
+
   const handleNextPage = () => {
     setCurrentPage(Math.min(totalPages, currentPage + 1));
   };
@@ -664,9 +664,9 @@ const Clients = () => {
       {/* Add Sidebar */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="imagenes/logo.png" alt="Logo" />
+          <img src="/imagenes/logo.png" alt="Logo" />
         </SidebarLogo>
-        
+
         <SidebarContent>
           <SidebarMenu>
             {/* Overview */}
@@ -675,7 +675,7 @@ const Clients = () => {
                 <BarChart2 />
               </button>
             </SidebarMenuItem>
-            
+
             {/* Ventas */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -684,7 +684,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Clientes */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem active={true}>
@@ -693,7 +693,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Inventario */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -702,7 +702,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Prescripciones */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -711,7 +711,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Usuarios */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -720,7 +720,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Reportes */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
               <SidebarMenuItem>
@@ -729,7 +729,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Administración */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -738,7 +738,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Roles */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -747,7 +747,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Proveedores */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -756,7 +756,7 @@ const Clients = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Categorías */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -767,7 +767,7 @@ const Clients = () => {
             )}
           </SidebarMenu>
         </SidebarContent>
-        
+
         <SidebarFooter>
           <LogoutButton onClick={() => {
             clearUser();
@@ -807,10 +807,10 @@ const Clients = () => {
           <Button variant="primary" style={{ marginBottom: 20 }} onClick={() => openModal()}>
             + Agregar Cliente
           </Button>
-          
+
           <PageSizeContainer>
             <Label htmlFor="pageSize">Clientes por página:</Label>
-            <Select id="pageSize" value={pageSize} onChange={handlePageSizeChange} style={{width: 100}}>
+            <Select id="pageSize" value={pageSize} onChange={handlePageSizeChange} style={{ width: 100 }}>
               <option value={5}>5</option>
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -848,7 +848,7 @@ const Clients = () => {
               </div>
             )}
           </Grid>
-            
+
           {totalPages > 1 && (
             <PaginationContainer>
               <PageButton onClick={handlePreviousPage} disabled={currentPage === 1}>

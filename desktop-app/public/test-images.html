@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Imágenes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        img {
+            max-width: 200px;
+            border: 2px solid #ddd;
+            margin: 10px;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Diagnóstico de Imágenes</h1>
+
+    <div class="test-container">
+        <h2>1. Ruta Absoluta: /imagenes/logo.png</h2>
+        <img src="/imagenes/logo.png" alt="Logo absoluto" onerror="this.nextElementSibling.style.display='block'"
+            onload="this.nextElementSibling.nextElementSibling.style.display='block'">
+        <p class="error" style="display:none;">❌ Error cargando imagen con ruta absoluta</p>
+        <p class="success" style="display:none;">✅ Imagen cargada correctamente con ruta absoluta</p>
+    </div>
+
+    <div class="test-container">
+        <h2>2. Ruta Relativa: imagenes/logo.png</h2>
+        <img src="imagenes/logo.png" alt="Logo relativo" onerror="this.nextElementSibling.style.display='block'"
+            onload="this.nextElementSibling.nextElementSibling.style.display='block'">
+        <p class="error" style="display:none;">❌ Error cargando imagen con ruta relativa</p>
+        <p class="success" style="display:none;">✅ Imagen cargada correctamente con ruta relativa</p>
+    </div>
+
+    <div class="test-container">
+        <h2>3. Ruta con ./: ./imagenes/logo.png</h2>
+        <img src="./imagenes/logo.png" alt="Logo ./" onerror="this.nextElementSibling.style.display='block'"
+            onload="this.nextElementSibling.nextElementSibling.style.display='block'">
+        <p class="error" style="display:none;">❌ Error cargando imagen con ./</p>
+        <p class="success" style="display:none;">✅ Imagen cargada correctamente con ./</p>
+    </div>
+
+    <div class="test-container">
+        <h2>4. UCATECI Logo: /imagenes/Logo-UCATECI.png</h2>
+        <img src="/imagenes/Logo-UCATECI.png" alt="UCATECI" onerror="this.nextElementSibling.style.display='block'"
+            onload="this.nextElementSibling.nextElementSibling.style.display='block'">
+        <p class="error" style="display:none;">❌ Error cargando UCATECI</p>
+        <p class="success" style="display:none;">✅ UCATECI cargado correctamente</p>
+    </div>
+
+    <div class="test-container">
+        <h2>5. Logo WebP: /imagenes/Logo.webp</h2>
+        <img src="/imagenes/Logo.webp" alt="Logo WebP" onerror="this.nextElementSibling.style.display='block'"
+            onload="this.nextElementSibling.nextElementSibling.style.display='block'">
+        <p class="error" style="display:none;">❌ Error cargando WebP</p>
+        <p class="success" style="display:none;">✅ WebP cargado correctamente</p>
+    </div>
+
+    <div class="test-container">
+        <h2>Información del Sistema</h2>
+        <p><strong>URL actual:</strong> <span id="currentUrl"></span></p>
+        <p><strong>Base URL:</strong> <span id="baseUrl"></span></p>
+        <p><strong>Protocolo:</strong> <span id="protocol"></span></p>
+    </div>
+
+    <script>
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('baseUrl').textContent = window.location.origin;
+        document.getElementById('protocol').textContent = window.location.protocol;
+
+        console.log('Diagnóstico de rutas:');
+        console.log('- URL actual:', window.location.href);
+        console.log('- Base:', window.location.origin);
+        console.log('- Protocolo:', window.location.protocol);
+    </script>
+</body>
+
+</html>

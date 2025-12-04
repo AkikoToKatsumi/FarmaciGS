@@ -343,9 +343,9 @@ const CategoryManager: React.FC = () => {
       {/* Add Sidebar */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="imagenes/logo.png" alt="Logo" />
+          <img src="/imagenes/logo.png" alt="Logo" />
         </SidebarLogo>
-        
+
         <SidebarContent>
           <SidebarMenu>
             {/* Overview */}
@@ -354,7 +354,7 @@ const CategoryManager: React.FC = () => {
                 <BarChart2 />
               </button>
             </SidebarMenuItem>
-            
+
             {/* Ventas */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -363,7 +363,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Clientes */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -372,7 +372,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Inventario */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -381,7 +381,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Prescripciones */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -390,7 +390,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Usuarios */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -399,7 +399,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Reportes */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
               <SidebarMenuItem>
@@ -408,7 +408,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Administración */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -417,7 +417,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Roles */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -426,7 +426,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Proveedores */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -435,7 +435,7 @@ const CategoryManager: React.FC = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Categorías */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem active={true}>
@@ -446,7 +446,7 @@ const CategoryManager: React.FC = () => {
             )}
           </SidebarMenu>
         </SidebarContent>
-        
+
         <SidebarFooter>
           <LogoutButton onClick={() => {
             clearUser();
@@ -484,7 +484,7 @@ const CategoryManager: React.FC = () => {
             <CategoryCard key={cat.id}>
               <CategoryIcon />
               <CategoryName>
-                {cat.name && String(cat.name).trim() ? String(cat.name) : <span style={{color:'#e74c3c'}}>Sin nombre</span>}
+                {cat.name && String(cat.name).trim() ? String(cat.name) : <span style={{ color: '#e74c3c' }}>Sin nombre</span>}
               </CategoryName>
               <DeleteButton onClick={() => handleDelete(cat.id)} title="Eliminar">
                 <Trash2 size={18} />

@@ -2,7 +2,6 @@ import React from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, Eye, Database, Users, FileText, Scale, Phone, Mail, MapPin } from 'lucide-react';
-import { ElectronImage } from '../hooks/useElectronImage';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -18,7 +17,7 @@ const Container = styled.div`
     left: 50%;
     width: 200px;
     height: 200px;
-    background: url('./imagenes/logo.png') no-repeat center center;
+    background: url('/imagenes/logo.png') no-repeat center center;
     background-size: contain;
     opacity: 0.05;
     z-index: 0;
@@ -362,15 +361,15 @@ const PoliticasPrivacidad = () => {
 
       <Header>
         <LogoSection>
-          <ElectronImage src="Logo-UCATECI.png" alt="Logo UCATECI" />
-          <ElectronImage src="Logo.webp" alt="Logo Farmacia GS" />
+          <img src="/imagenes/Logo-UCATECI.png" alt="Logo UCATECI" />
+          <img src="/imagenes/Logo.webp" alt="Logo Farmacia GS" />
         </LogoSection>
-        
+
         <Title>
           <Shield size={40} />
           Políticas de Privacidad
         </Title>
-        
+
         <Subtitle>
           Farmacia GS - Sistema de Gestión Farmacéutica
         </Subtitle>
@@ -380,9 +379,9 @@ const PoliticasPrivacidad = () => {
         <Section>
           <h2><FileText size={24} />Información General</h2>
           <p>
-            En Farmacia GS, nos comprometemos a proteger la privacidad y seguridad de la información personal 
-            de nuestros usuarios, clientes y pacientes. Esta política de privacidad describe cómo recopilamos, 
-            utilizamos, almacenamos y protegemos su información personal en cumplimiento con las leyes aplicables 
+            En Farmacia GS, nos comprometemos a proteger la privacidad y seguridad de la información personal
+            de nuestros usuarios, clientes y pacientes. Esta política de privacidad describe cómo recopilamos,
+            utilizamos, almacenamos y protegemos su información personal en cumplimiento con las leyes aplicables
             de la República Dominicana y las mejores prácticas internacionales.
           </p>
         </Section>
@@ -486,15 +485,15 @@ const PoliticasPrivacidad = () => {
         <Section>
           <h2><Shield size={24} />Propiedad Intelectual y Derechos de Autor</h2>
           <p>
-            <strong>AVISO LEGAL IMPORTANTE:</strong> Este software "Sistema de Gestión Farmacéutica - Farmacia GS" 
-            es propiedad intelectual exclusiva de sus desarrolladores Gabriela García (Matrícula: 2023-0105) y 
+            <strong>AVISO LEGAL IMPORTANTE:</strong> Este software "Sistema de Gestión Farmacéutica - Farmacia GS"
+            es propiedad intelectual exclusiva de sus desarrolladores Gabriela García (Matrícula: 2023-0105) y
             Dauris Santana (Matrícula: 2023-0253), estudiantes de la Universidad Católica Tecnológica del Cibao (UCATECI).
           </p>
-          
+
           <h3>Donación y Uso Autorizado</h3>
           <p>
-            Este sistema ha sido <strong>donado exclusivamente</strong> para fines educativos y de investigación al 
-            Instituto Nacional de Formación Técnico Profesional (INFOTEP) de la República Dominicana, como contribución 
+            Este sistema ha sido <strong>donado exclusivamente</strong> para fines educativos y de investigación al
+            Instituto Nacional de Formación Técnico Profesional (INFOTEP) de la República Dominicana, como contribución
             al desarrollo tecnológico del sector farmacéutico nacional.
           </p>
 
@@ -523,7 +522,7 @@ const PoliticasPrivacidad = () => {
 
           <h3>Consecuencias Legales</h3>
           <p>
-            El incumplimiento de estas disposiciones constituye una <strong>violación a los derechos de autor</strong> 
+            El incumplimiento de estas disposiciones constituye una <strong>violación a los derechos de autor</strong>
             y puede resultar en acciones legales que incluyen:
           </p>
           <ul>
@@ -536,7 +535,7 @@ const PoliticasPrivacidad = () => {
 
           <h3>Contacto Legal</h3>
           <p>
-            Para solicitudes de licenciamiento, autorizaciones especiales o reportar violaciones a estos derechos, 
+            Para solicitudes de licenciamiento, autorizaciones especiales o reportar violaciones a estos derechos,
             contactar directamente a los propietarios a través de los canales oficiales de UCATECI o INFOTEP.
           </p>
         </Section>
@@ -544,17 +543,17 @@ const PoliticasPrivacidad = () => {
         <Section>
           <h2>Cambios a esta Política</h2>
           <p>
-            Nos reservamos el derecho de actualizar esta política de privacidad en cualquier momento. 
-            Los cambios serán notificados a través del sistema y publicados en esta página. Le recomendamos 
+            Nos reservamos el derecho de actualizar esta política de privacidad en cualquier momento.
+            Los cambios serán notificados a través del sistema y publicados en esta página. Le recomendamos
             revisar periódicamente esta política para mantenerse informado sobre cómo protegemos su información.
           </p>
         </Section>
 
         <LastUpdated>
-          <p>Última actualización: {new Date().toLocaleDateString('es-ES', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          <p>Última actualización: {new Date().toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
           })}</p>
           <p>© {new Date().getFullYear()} Farmacia GS. Todos los derechos reservados.</p>
         </LastUpdated>

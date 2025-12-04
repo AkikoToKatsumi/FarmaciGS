@@ -511,7 +511,7 @@ const Prescriptions = () => {
 
   const loadPrescriptions = async (clientId: number) => {
     try {
-      const res = await getPrescriptionsByClient(clientId, token!, );
+      const res = await getPrescriptionsByClient(clientId, token!,);
       setPrescriptions(res);
     } catch (error) {
       console.error('Error loading prescriptions:', error);
@@ -552,14 +552,14 @@ const Prescriptions = () => {
 
       const res = await createPrescription(selectedClient, medicinesForBackend, token!);
       alert(res.message);
-      
+
       // Recargar las recetas después de crear una nueva
       loadPrescriptions(selectedClient);
-      
+
       // Limpiar la selección de medicamentos
       setSelectedMedicines([]);
       setError('');
-      
+
     } catch (err: any) {
       console.error(err);
       alert(err.response?.data?.message || 'Error al crear receta');
@@ -588,9 +588,9 @@ const Prescriptions = () => {
       {/* Add Sidebar */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="imagenes/logo.png" alt="Logo" />
+          <img src="/imagenes/logo.png" alt="Logo" />
         </SidebarLogo>
-        
+
         <SidebarContent>
           <SidebarMenu>
             {/* Overview */}
@@ -599,7 +599,7 @@ const Prescriptions = () => {
                 <BarChart2 />
               </button>
             </SidebarMenuItem>
-            
+
             {/* Ventas */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -608,7 +608,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Clientes */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -617,7 +617,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Inventario */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -626,7 +626,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Prescripciones */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem active={true}>
@@ -635,7 +635,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Usuarios */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -644,7 +644,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Reportes */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
               <SidebarMenuItem>
@@ -653,7 +653,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Administración */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -662,7 +662,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Roles */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -671,7 +671,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Proveedores */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -680,7 +680,7 @@ const Prescriptions = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Categorías */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -691,7 +691,7 @@ const Prescriptions = () => {
             )}
           </SidebarMenu>
         </SidebarContent>
-        
+
         <SidebarFooter>
           <LogoutButton onClick={() => {
             clearUser();

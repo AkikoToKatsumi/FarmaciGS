@@ -1,0 +1,47 @@
+/** 
+ * Script para corregir warnings de styled-components
+ * Convierte props personalizadas a transient props (prefijo $)
+ */
+
+// En Dashboard.tsx, busca y reemplaza manualmente:
+
+// 1. Línea 33: 
+// ANTES: const Sidebar = styled.nav<{ collapsed: boolean; isMobile: boolean }>`
+// DESPUÉS: const Sidebar = styled.nav<{ $collapsed: boolean; $isMobile: boolean }>`
+
+// 2. Líneas 38-59: Reemplazar todas las referencias collapsed -> $collapsed, isMobile -> $isMobile
+
+// 3. Línea 63:
+// ANTES: const SidebarOverlay = styled.div<{ show: boolean }>`
+// DESPUÉS: const SidebarOverlay = styled.div<{ $show: boolean }>`
+
+// 4. Línea 71:
+// ANTES: display: ${({ show }) => show ? 'block' : 'none'};
+// DESPUÉS: display: ${({ $show }) => $show ? 'block' : 'none'};
+
+// 5. Línea 78:
+// ANTES: const SidebarLogo = styled.div<{ collapsed: boolean; isMobile: boolean }>`
+// DESPUÉS: const SidebarLogo = styled.div<{ $collapsed: boolean; $isMobile: boolean }>`
+
+// 6. Línea 94:
+// ANTES: opacity: ${({ collapsed, isMobile }) => (collapsed && !isMobile ? '0' : '1')};
+// DESPUÉS: opacity: ${({ $collapsed, $isMobile }) => ($collapsed && !$isMobile ? '0' : '1')};
+
+// 7. Línea 108:
+// ANTES: const SidebarMenuItem = styled.li<{ active?: boolean; collapsed?: boolean; isMobile?: boolean }>`
+// DESPUÉS: const SidebarMenuItem = styled.li<{ $active?: boolean; $collapsed?: boolean; $isMobile?: boolean }>`
+
+// 8. Líneas 113, 126, 139: Reemplazar active -> $active, collapsed -> $collapsed, isMobile -> $isMobile
+
+// 9. Línea 372:
+// ANTES: const SidebarToggle = styled.button<{ isMobile: boolean }>`
+// DESPUÉS:const SidebarToggle = styled.button<{ $isMobile: boolean }>`
+
+// 10. Líneas 376, 380: Reemplazar isMobile -> $isMobile
+
+// LUEGO, en el JSX (alrededor de las líneas 800-900), actualizar el uso de los componentes:
+// - <Sidebar collapsed={...} isMobile={...}> -> <Sidebar $collapsed={...} $isMobile={...}>
+// - <SidebarOverlay show={...}> -> <SidebarOverlay $show={...}>
+// - <SidebarLogo collapsed={...} isMobile={...}> -> <SidebarLogo $collapsed={...} $isMobile={...}>
+// - <SidebarMenuItem active={...} collapsed={...} isMobile={...}> -> <SidebarMenuItem $active={...} $collapsed={...} $isMobile={...}>
+// - <SidebarToggle isMobile={...}> -> <SidebarToggle $isMobile={...}>

@@ -10,6 +10,7 @@ import {
 import { createBackup } from '../services/backup.service';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import styled from 'styled-components';
 
 import {
@@ -280,12 +281,12 @@ const Reports = () => {
         .split('T')[0];
 
       // Pasar el token a los servicios si lo requieren
-  const salesRes = await getSalesReport(weekAgo, today);
+      const salesRes = await getSalesReport(weekAgo, today);
       setSales(salesRes.sales || []);
       setSalesTotal(salesRes.totalSum || 0);
 
-  const e = await getExpiringSoonReport();
-  const l = await getStockLowReport();
+      const e = await getExpiringSoonReport();
+      const l = await getStockLowReport();
       // Separar productos por vencer y vencidos
       const now = new Date();
       setExpiring(e.filter((m: any) => new Date(m.expiration_date) > now));
@@ -369,26 +370,30 @@ const Reports = () => {
 
   // Exportar a Excel
   const exportExcel = (data: any[], filename: string, total?: number) => {
-    if (window.electronAPI && window.electronAPI.XLSX) {
-      const ws = window.electronAPI.XLSX.utils.json_to_sheet(data);
-      const wb = window.electronAPI.XLSX.utils.book_new();
-      window.electronAPI.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
+    try {
+      const { utils, writeFile } = XLSX as any;
+      const ws = utils.json_to_sheet(data);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, 'Reporte');
+
       // Si es ventas y hay total, agrega una fila al final
       if (filename.startsWith('ventas') && typeof total === 'number') {
         const lastRow = data.length + 2;
-        window.electronAPI.XLSX.utils.sheet_add_aoa(ws, [['', 'TOTAL', total]], { origin: `A${lastRow}` });
+        utils.sheet_add_aoa(ws, [['', 'TOTAL', total]], { origin: `A${lastRow}` });
       }
-      window.electronAPI.XLSX.writeFile(wb, filename);
-    } else {
-      // Fallback: crear CSV si XLSX no está disponible
+
+      writeFile(wb, filename);
+    } catch (error) {
+      console.error('Error exportando a Excel:', error);
+      // Fallback: crear CSV si falla XLSX
       const header = Object.keys(data[0] || {});
       const rows = data.map((item: any) => header.map(key => item[key]));
       let csvContent = [header, ...rows].map((r) => r.join(',')).join('\n');
-      
+
       if (filename.startsWith('ventas') && typeof total === 'number') {
         csvContent += `\n,TOTAL,${total}`;
       }
-      
+
       downloadCSV(csvContent, filename.replace('.xlsx', '.csv'));
     }
   };
@@ -398,11 +403,11 @@ const Reports = () => {
     try {
       const doc = new jsPDF();
       const docWithAutoTable = doc as any; // Type assertion para autoTable
-      
+
       // Verificar que autoTable esté disponible
       if (typeof docWithAutoTable.autoTable !== 'function') {
         console.error('jsPDF autoTable plugin no está disponible');
-        
+
         // Método alternativo: generar PDF simple sin tabla
         generateSimplePDF(doc, data, headers, filename, total);
         return;
@@ -435,9 +440,9 @@ const Reports = () => {
           body: [['', 'TOTAL', `RD$${total.toFixed(2)}`]],
           startY: finalY + 5,
           theme: 'plain',
-          styles: { 
+          styles: {
             fontSize: 10,
-            fontStyle: 'bold', 
+            fontStyle: 'bold',
             textColor: [37, 99, 235],
             fillColor: [240, 248, 255]
           },
@@ -452,7 +457,7 @@ const Reports = () => {
       doc.save(filename);
     } catch (error) {
       console.error('Error generando PDF:', error);
-      
+
       // Método alternativo: generar PDF simple
       try {
         const doc = new jsPDF();
@@ -460,10 +465,10 @@ const Reports = () => {
       } catch (fallbackError) {
         console.error('Error en PDF alternativo:', fallbackError);
         alert('Error generando PDF. Usando CSV como alternativa.');
-        
+
         // Último recurso: CSV
-        const csvData = data.map((item: any) => 
-          headers.map(header => 
+        const csvData = data.map((item: any) =>
+          headers.map(header =>
             item[header] || item[headers.indexOf(header)] || ''
           )
         );
@@ -478,41 +483,41 @@ const Reports = () => {
     // Título
     doc.setFontSize(16);
     doc.text('Reporte - Farmacia GS', 20, 20);
-    
+
     // Headers
     doc.setFontSize(10);
     doc.setFont(undefined, 'bold');
     let yPosition = 40;
-    
+
     headers.forEach((header, index) => {
       doc.text(header, 20 + (index * 50), yPosition);
     });
-    
+
     // Datos
     doc.setFont(undefined, 'normal');
     yPosition += 10;
-    
+
     data.forEach((row: any, rowIndex) => {
       if (yPosition > 250) { // Nueva página si es necesario
         doc.addPage();
         yPosition = 20;
       }
-      
+
       headers.forEach((header, colIndex) => {
         const value = Array.isArray(row) ? row[colIndex] : row[header];
         doc.text(String(value || ''), 20 + (colIndex * 50), yPosition);
       });
-      
+
       yPosition += 8;
     });
-    
+
     // Total si aplica
     if (filename.startsWith('ventas') && typeof total === 'number') {
       yPosition += 10;
       doc.setFont(undefined, 'bold');
       doc.text(`TOTAL: RD$${total.toFixed(2)}`, 20, yPosition);
     }
-    
+
     doc.save(filename);
   };
 
@@ -548,9 +553,9 @@ const Reports = () => {
       {/* Add Sidebar */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="imagenes/logo.png" alt="Logo" />
+          <img src="/imagenes/logo.png" alt="Logo" />
         </SidebarLogo>
-        
+
         <SidebarContent>
           <SidebarMenu>
             {/* Overview */}
@@ -559,7 +564,7 @@ const Reports = () => {
                 <BarChart2 />
               </button>
             </SidebarMenuItem>
-            
+
             {/* Ventas */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -568,7 +573,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Clientes */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -577,7 +582,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Inventario */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -586,7 +591,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Prescripciones */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -595,7 +600,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Usuarios */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -604,7 +609,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Reportes */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
               <SidebarMenuItem active={true}>
@@ -613,7 +618,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Administración */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -622,7 +627,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Roles */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -631,7 +636,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Proveedores */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -640,7 +645,7 @@ const Reports = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Categorías */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -651,7 +656,7 @@ const Reports = () => {
             )}
           </SidebarMenu>
         </SidebarContent>
-        
+
         <SidebarFooter>
           <LogoutButton onClick={() => {
             clearUser();
@@ -740,112 +745,112 @@ const Reports = () => {
         )}
 
         {/* Productos por vencer: solo admin y farmacéutico */}
-          {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
-            <>
-              <Section>
-                <SectionHeader>
-                  <SectionTitle>Medicamentos por vencer</SectionTitle>
-                  <ButtonGroup>
-                    <IconButton onClick={exportExpiringCSV} title="CSV">
-                      <FileText size={16} /> CSV
-                    </IconButton>
-                    <IconButton
-                      onClick={() =>
-                        exportExcel(
-                          expiring.map((m: any) => ({
-                            ID: m.id,
-                            Nombre: m.name,
-                            'Fecha de Vencimiento': new Date(m.expiration_date).toLocaleDateString(),
-                          })),
-                          'por_vencer.xlsx'
-                        )
-                      }
-                      title="Excel"
-                    >
-                      <FileSpreadsheet size={16} /> Excel
-                    </IconButton>
-                    <IconButton
-                      onClick={() =>
-                        exportPDF(
-                          expiring.map((m: any) => [
-                            m.id,
-                            m.name,
-                            new Date(m.expiration_date).toLocaleDateString(),
-                          ]),
-                          ['ID', 'Nombre', 'Fecha de Vencimiento'],
-                          'por_vencer.pdf'
-                        )
-                      }
-                      title="PDF"
-                    >
-                      <FileBarChart2 size={16} /> PDF
-                    </IconButton>
-                  </ButtonGroup>
-                </SectionHeader>
-                <List>
-                  {expiring.length === 0 && (
-                    <ListItem style={{ color: '#d97706' }}>No hay medicamentos próximos a vencer.</ListItem>
-                  )}
-                  {expiring.map((m: any) => (
-                    <ListItem key={m.id}>
-                      #{m.id} - {m.name} - Vence: {new Date(m.expiration_date).toLocaleDateString()}
-                    </ListItem>
-                  ))}
-                </List>
-              </Section>
-              <Section>
-                <SectionHeader>
-                  <SectionTitle>Medicamentos vencidos</SectionTitle>
-                  <ButtonGroup>
-                    <IconButton onClick={exportExpiredCSV} title="CSV">
-                      <FileText size={16} /> CSV
-                    </IconButton>
-                    <IconButton
-                      onClick={() =>
-                        exportExcel(
-                          expired.map((m: any) => ({
-                            ID: m.id,
-                            Nombre: m.name,
-                            'Fecha de Vencimiento': new Date(m.expiration_date).toLocaleDateString(),
-                          })),
-                          'vencidos.xlsx'
-                        )
-                      }
-                      title="Excel"
-                    >
-                      <FileSpreadsheet size={16} /> Excel
-                    </IconButton>
-                    <IconButton
-                      onClick={() =>
-                        exportPDF(
-                          expired.map((m: any) => [
-                            m.id,
-                            m.name,
-                            new Date(m.expiration_date).toLocaleDateString(),
-                          ]),
-                          ['ID', 'Nombre', 'Fecha de Vencimiento'],
-                          'vencidos.pdf'
-                        )
-                      }
-                      title="PDF"
-                    >
-                      <FileBarChart2 size={16} /> PDF
-                    </IconButton>
-                  </ButtonGroup>
-                </SectionHeader>
-                <List>
-                  {expired.length === 0 && (
-                    <ListItem style={{ color: '#dc2626' }}>No hay medicamentos vencidos.</ListItem>
-                  )}
-                  {expired.map((m: any) => (
-                    <ListItem key={m.id}>
-                      #{m.id} - {m.name} - Venció: {new Date(m.expiration_date).toLocaleDateString()}
-                    </ListItem>
-                  ))}
-                </List>
-              </Section>
-            </>
-          )}
+        {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
+          <>
+            <Section>
+              <SectionHeader>
+                <SectionTitle>Medicamentos por vencer</SectionTitle>
+                <ButtonGroup>
+                  <IconButton onClick={exportExpiringCSV} title="CSV">
+                    <FileText size={16} /> CSV
+                  </IconButton>
+                  <IconButton
+                    onClick={() =>
+                      exportExcel(
+                        expiring.map((m: any) => ({
+                          ID: m.id,
+                          Nombre: m.name,
+                          'Fecha de Vencimiento': new Date(m.expiration_date).toLocaleDateString(),
+                        })),
+                        'por_vencer.xlsx'
+                      )
+                    }
+                    title="Excel"
+                  >
+                    <FileSpreadsheet size={16} /> Excel
+                  </IconButton>
+                  <IconButton
+                    onClick={() =>
+                      exportPDF(
+                        expiring.map((m: any) => [
+                          m.id,
+                          m.name,
+                          new Date(m.expiration_date).toLocaleDateString(),
+                        ]),
+                        ['ID', 'Nombre', 'Fecha de Vencimiento'],
+                        'por_vencer.pdf'
+                      )
+                    }
+                    title="PDF"
+                  >
+                    <FileBarChart2 size={16} /> PDF
+                  </IconButton>
+                </ButtonGroup>
+              </SectionHeader>
+              <List>
+                {expiring.length === 0 && (
+                  <ListItem style={{ color: '#d97706' }}>No hay medicamentos próximos a vencer.</ListItem>
+                )}
+                {expiring.map((m: any) => (
+                  <ListItem key={m.id}>
+                    #{m.id} - {m.name} - Vence: {new Date(m.expiration_date).toLocaleDateString()}
+                  </ListItem>
+                ))}
+              </List>
+            </Section>
+            <Section>
+              <SectionHeader>
+                <SectionTitle>Medicamentos vencidos</SectionTitle>
+                <ButtonGroup>
+                  <IconButton onClick={exportExpiredCSV} title="CSV">
+                    <FileText size={16} /> CSV
+                  </IconButton>
+                  <IconButton
+                    onClick={() =>
+                      exportExcel(
+                        expired.map((m: any) => ({
+                          ID: m.id,
+                          Nombre: m.name,
+                          'Fecha de Vencimiento': new Date(m.expiration_date).toLocaleDateString(),
+                        })),
+                        'vencidos.xlsx'
+                      )
+                    }
+                    title="Excel"
+                  >
+                    <FileSpreadsheet size={16} /> Excel
+                  </IconButton>
+                  <IconButton
+                    onClick={() =>
+                      exportPDF(
+                        expired.map((m: any) => [
+                          m.id,
+                          m.name,
+                          new Date(m.expiration_date).toLocaleDateString(),
+                        ]),
+                        ['ID', 'Nombre', 'Fecha de Vencimiento'],
+                        'vencidos.pdf'
+                      )
+                    }
+                    title="PDF"
+                  >
+                    <FileBarChart2 size={16} /> PDF
+                  </IconButton>
+                </ButtonGroup>
+              </SectionHeader>
+              <List>
+                {expired.length === 0 && (
+                  <ListItem style={{ color: '#dc2626' }}>No hay medicamentos vencidos.</ListItem>
+                )}
+                {expired.map((m: any) => (
+                  <ListItem key={m.id}>
+                    #{m.id} - {m.name} - Venció: {new Date(m.expiration_date).toLocaleDateString()}
+                  </ListItem>
+                ))}
+              </List>
+            </Section>
+          </>
+        )}
 
         {/* Stock bajo: solo admin y farmacéutico */}
         {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (

@@ -8,7 +8,6 @@ import { getPrescriptionsByClient } from '../services/prescription.service';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/User';
 import { getCashboxSummary, getCashboxDetails, CashboxSummary, CashboxDetails } from '../services/cashbox.service';
-import { ElectronImage } from '../hooks/useElectronImage';
 // Cuadre de caja visual
 const CashboxCard = styled.div`
   background: #fffbe6;
@@ -1700,7 +1699,7 @@ const SalesPOS: React.FC = () => {
       {/* Updated Sidebar with collapsed state */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <ElectronImage src="logo.png" alt="Logo" />
+          <img src="/imagenes/logo.png" alt="Logo" />
         </SidebarLogo>
         
         <SidebarContent>

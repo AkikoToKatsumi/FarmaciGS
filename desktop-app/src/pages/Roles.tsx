@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart2, ShoppingCart, Users, Package, ClipboardList, FileText, Shield, Truck, Layers, LogOut, User } from 'lucide-react';
 import styled from 'styled-components';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
-import { ElectronImage } from '../hooks/useElectronImage';
 
 // Interfaces
 interface Role {
@@ -586,7 +585,7 @@ const Roles = () => {
       {/* Add Sidebar */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="logo.png" alt="Logo" />
+          <img src="/imagenes/logo.png" alt="Logo" />
         </SidebarLogo>
         
         <SidebarContent>

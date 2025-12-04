@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  getProviders, 
-  createProvider, 
-  updateProvider, 
+import {
+  getProviders,
+  createProvider,
+  updateProvider,
   deleteProvider,
   Provider,
   CreateProviderData,
@@ -450,56 +450,56 @@ const Providers = () => {
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
-    
+
     if (!form.name.trim()) {
       newErrors.name = 'El nombre es obligatorio';
     } else if (form.name.trim().length < 2) {
       newErrors.name = 'El nombre debe tener al menos 2 caracteres';
     }
-    
+
     if (!form.email.trim()) {
       newErrors.email = 'El email es obligatorio';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = 'El formato del email no es válido';
     }
-    
+
     if (!form.phone.trim()) {
       newErrors.phone = 'El teléfono es obligatorio';
     } else if (!/^[+]?[\d\s\-\(\)]{7,20}$/.test(form.phone)) {
       newErrors.phone = 'El formato del teléfono no es válido';
     }
-    
+
     if (!form.taxId.trim()) {
       newErrors.taxId = 'El número de identificación fiscal es obligatorio';
     } else if (form.taxId.trim().length < 5) {
       newErrors.taxId = 'El número de identificación fiscal debe tener al menos 5 caracteres';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     try {
       setSubmitting(true);
-      
+
       const providerData = {
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
         taxId: form.taxId.trim()
       };
-      
+
       if (editingId) {
         await updateProvider(editingId, providerData, token!);
       } else {
         await createProvider(providerData, token!);
       }
-      
+
       setForm({ name: '', email: '', phone: '', taxId: '' });
       setEditingId(null);
       setErrors({});
@@ -545,7 +545,7 @@ const Providers = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-    
+
     // Limpiar errores mientras el usuario escribe
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -566,9 +566,9 @@ const Providers = () => {
       {/* Add Sidebar */}
       <Sidebar>
         <SidebarLogo onClick={() => navigate('/dashboard')}>
-          <img src="imagenes/logo.png" alt="Logo" />
+          <img src="/imagenes/logo.png" alt="Logo" />
         </SidebarLogo>
-        
+
         <SidebarContent>
           <SidebarMenu>
             {/* Overview */}
@@ -577,7 +577,7 @@ const Providers = () => {
                 <BarChart2 />
               </button>
             </SidebarMenuItem>
-            
+
             {/* Ventas */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -586,7 +586,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Clientes */}
             {(user?.role_name === 'admin' || user?.role_name === 'cashier' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -595,7 +595,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Inventario */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -604,7 +604,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Prescripciones */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist') && (
               <SidebarMenuItem>
@@ -613,7 +613,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Usuarios */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -622,7 +622,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Reportes */}
             {(user?.role_name === 'admin' || user?.role_name === 'pharmacist' || user?.role_name === 'cashier') && (
               <SidebarMenuItem>
@@ -631,7 +631,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Administración */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -640,7 +640,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Roles */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -649,7 +649,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Proveedores */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem active={true}>
@@ -658,7 +658,7 @@ const Providers = () => {
                 </button>
               </SidebarMenuItem>
             )}
-            
+
             {/* Categorías */}
             {user?.role_name === 'admin' && (
               <SidebarMenuItem>
@@ -669,7 +669,7 @@ const Providers = () => {
             )}
           </SidebarMenu>
         </SidebarContent>
-        
+
         <SidebarFooter>
           <LogoutButton onClick={() => {
             clearUser();
