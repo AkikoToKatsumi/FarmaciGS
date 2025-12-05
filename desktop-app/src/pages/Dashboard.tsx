@@ -180,7 +180,7 @@ const Main = styled.div<{ $collapsed: boolean; $isMobile: boolean }>`
   }};
   transition: margin-left 0.3s ease;
   padding: 2rem;
-  background: #f7f9fb;
+  background: #f7f9fbff;
   min-height: 100vh;
   position: relative;
 

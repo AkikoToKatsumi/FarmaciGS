@@ -28,6 +28,11 @@ pgsql/
 *.dump
 *.exe
 *.dll
+*.zip
+
+# Archivos de despliegue (muy grandes para Git)
+farmacia-gs-frontend*.zip
+deploy/
 
 # Editor directories and files
 .vscode/*
